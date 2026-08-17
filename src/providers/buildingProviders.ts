@@ -20,7 +20,7 @@ export const BUILDING_PROVIDERS = {
     role: "base-geometry",
     url: "https://www.historygis.udd.gov.taipei/arcgis/rest/services/Hosted/LOD1_2024/SceneServer/layers/0",
     verified: true,
-    notes: "2024 full-city LOD1. Browser smoke-tested as the Taipei municipal base geometry provider.",
+    notes: "2024 full-city LOD1. Browser smoke-tested as the Taipei municipal base geometry provider. Base geometry style is overridden by the app; provider-native color is not product semantics.",
   },
   newTaipeiNlsc: {
     id: "new-taipei-nlsc-layer-5",
@@ -30,7 +30,7 @@ export const BUILDING_PROVIDERS = {
     role: "base-geometry",
     url: "https://i3s.nlsc.gov.tw/building/i3s/SceneServer/layers/5",
     verified: true,
-    notes: "NLSC I3S layer 5 (I3s - 114 F). Browser metadata scan and dedicated smoke test confirmed broad New Taipei urban coverage.",
+    notes: "NLSC I3S layer 5 (I3s - 114 F). Browser metadata scan and dedicated smoke test confirmed broad New Taipei urban coverage. Provider textures/colors are intentionally replaced by the app neutral base renderer.",
   },
   taipeiCadastral: {
     id: "taipei-cadastral-2023",

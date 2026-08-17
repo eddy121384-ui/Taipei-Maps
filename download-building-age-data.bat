@@ -2,6 +2,9 @@
 setlocal
 cd /d "%~dp0"
 
+set "NO_PAUSE="
+if /I "%~1"=="--no-pause" set "NO_PAUSE=1"
+
 echo ========================================
 echo   Taipei-Maps building-age data pipeline
 echo ========================================
@@ -27,7 +30,7 @@ if exist "%OUT%" (
     echo [ERROR] Download failed.
     echo Dataset page:
     echo https://data.taipei/dataset/detail?id=c876ff02-af2e-4eb8-bd33-d444f5052733
-    pause
+    if not defined NO_PAUSE pause
     exit /b 1
   )
 )
@@ -38,8 +41,8 @@ if errorlevel 1 (
   echo Download complete, but Python was not found.
   echo Raw file is ready at:
   echo   %OUT%
-  pause
-  exit /b 0
+  if not defined NO_PAUSE pause
+  exit /b 1
 )
 
 echo [1/2] Inspecting XML schema in UTF-8...
@@ -47,7 +50,7 @@ python -X utf8 tools\data\inspect_use_permits.py "%OUT%" > "data\derived\use_per
 if errorlevel 1 (
   echo.
   echo [ERROR] XML inspection failed.
-  pause
+  if not defined NO_PAUSE pause
   exit /b 1
 )
 
@@ -56,7 +59,7 @@ python -X utf8 tools\data\normalize_use_permits.py "%OUT%" --out-dir "data\deriv
 if errorlevel 1 (
   echo.
   echo [ERROR] Normalization failed.
-  pause
+  if not defined NO_PAUSE pause
   exit /b 1
 )
 
@@ -69,7 +72,5 @@ echo   data\derived\use_permit_normalization_report.txt
 echo   data\derived\use_permits.csv
 echo   data\derived\use_permit_addresses.csv
 echo.
-echo Next research step: geocode/join the exploded address table to LOD1_2024.
-echo.
-pause
+if not defined NO_PAUSE pause
 endlocal

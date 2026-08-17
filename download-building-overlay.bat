@@ -12,6 +12,7 @@ if not exist "data\derived" mkdir "data\derived"
 
 set "ZIP=data\raw\taipei_building_overlay.zip"
 set "OUTDIR=data\raw\building_overlay"
+set "USECSV=data\derived\use_permits.csv"
 set "URL=https://data.taipei/api/frontstage/tpeod/dataset/resource.download?rid=ccdfe8df-ef54-4c13-a93d-ba42968ced3b"
 
 where python >nul 2>nul
@@ -64,11 +65,27 @@ if errorlevel 1 (
 )
 
 echo.
-echo Done.
-echo Report:
-echo   data\derived\building_overlay_schema.txt
+if exist "%USECSV%" (
+  echo Comparing BUDATT_NO with normalized use-permit records...
+  python -X utf8 tools\data\compare_overlay_use_permits.py "%DBF%" "%USECSV%" --out-csv "data\derived\building_overlay_age_join_preview.csv" > "data\derived\building_overlay_join_report.txt"
+  if errorlevel 1 (
+    echo [ERROR] Permit-key join diagnostics failed.
+    pause
+    exit /b 1
+  )
+) else (
+  echo [WARN] %USECSV% was not found.
+  echo Run download-building-age-data.bat first if you want the exact permit-key join test.
+)
+
 echo.
-echo Send that small TXT file back to ChatGPT.
+echo Done.
+echo Generated reports:
+echo   data\derived\building_overlay_schema.txt
+if exist "data\derived\building_overlay_join_report.txt" echo   data\derived\building_overlay_join_report.txt
+if exist "data\derived\building_overlay_age_join_preview.csv" echo   data\derived\building_overlay_age_join_preview.csv
+echo.
+echo Send building_overlay_join_report.txt back to ChatGPT if it was generated.
 echo.
 pause
 endlocal

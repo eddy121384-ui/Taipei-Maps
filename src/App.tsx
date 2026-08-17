@@ -5,7 +5,10 @@ import OpenStreetMapLayer from "@arcgis/core/layers/OpenStreetMapLayer.js";
 import SceneLayer from "@arcgis/core/layers/SceneLayer.js";
 import SceneView from "@arcgis/core/views/SceneView.js";
 
-const TAIPEI_BUILDINGS_URL =
+const TAIPEI_LOD1_URL =
+  "https://www.historygis.udd.gov.taipei/arcgis/rest/services/Hosted/LOD1_2024/SceneServer/layers/0";
+
+const TAIPEI_CADASTRAL_URL =
   "https://3d.land.gov.taipei/arcgis/rest/services/Hosted/CadastralBuilding_2023/SceneServer/layers/0";
 
 type Attributes = Record<string, unknown>;
@@ -18,8 +21,10 @@ function formatValue(value: unknown) {
 
 export default function App() {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
-  const [status, setStatus] = useState("載入 3D 台北建築…");
+  const cadastralLayerRef = useRef<SceneLayer | null>(null);
+  const [status, setStatus] = useState("載入全市 3D 建築…");
   const [selectedAttributes, setSelectedAttributes] = useState<Attributes | null>(null);
+  const [showCadastral, setShowCadastral] = useState(false);
 
   const visibleAttributes = useMemo(() => {
     if (!selectedAttributes) return [];
@@ -29,14 +34,28 @@ export default function App() {
   }, [selectedAttributes]);
 
   useEffect(() => {
+    if (cadastralLayerRef.current) {
+      cadastralLayerRef.current.visible = showCadastral;
+    }
+  }, [showCadastral]);
+
+  useEffect(() => {
     if (!mapContainerRef.current) return;
 
-    const buildings = new SceneLayer({
-      url: TAIPEI_BUILDINGS_URL,
+    const cityBuildings = new SceneLayer({
+      url: TAIPEI_LOD1_URL,
+      title: "臺北市全市積木模型（2024）",
+      popupEnabled: false,
+    });
+
+    const cadastralBuildings = new SceneLayer({
+      url: TAIPEI_CADASTRAL_URL,
       title: "臺北市三維產權建物",
       outFields: ["*"],
       popupEnabled: false,
+      visible: false,
     });
+    cadastralLayerRef.current = cadastralBuildings;
 
     const basemap = new Basemap({
       baseLayers: [new OpenStreetMapLayer()],
@@ -45,7 +64,7 @@ export default function App() {
 
     const map = new ArcGISMap({
       basemap,
-      layers: [buildings],
+      layers: [cityBuildings, cadastralBuildings],
     });
 
     const view = new SceneView({
@@ -65,17 +84,17 @@ export default function App() {
 
     let clickHandle: IHandle | null = null;
 
-    Promise.all([view.when(), buildings.load()])
+    Promise.all([view.when(), cityBuildings.load(), cadastralBuildings.load()])
       .then(() => {
-        setStatus("3D 建築已載入 · 點一棟建築查看原始屬性");
+        setStatus("全市 3D 建築已載入 · 可切換產權模型查看詳細資料");
 
         clickHandle = view.on("click", async (event) => {
           const response = await view.hitTest(event);
-          const buildingHit = response.results.find((result: any) => result.graphic?.layer === buildings) as
-            | any
-            | undefined;
+          const cadastralHit = response.results.find(
+            (result: any) => result.graphic?.layer === cadastralBuildings,
+          ) as any | undefined;
 
-          setSelectedAttributes(buildingHit?.graphic?.attributes ?? null);
+          setSelectedAttributes(cadastralHit?.graphic?.attributes ?? null);
         });
       })
       .catch((error) => {
@@ -85,6 +104,7 @@ export default function App() {
 
     return () => {
       clickHandle?.remove();
+      cadastralLayerRef.current = null;
       view.destroy();
     };
   }, []);
@@ -95,7 +115,7 @@ export default function App() {
 
       <header className="glass top-bar">
         <div>
-          <p className="eyebrow">TAIPEI-MAPS · v0.0.1</p>
+          <p className="eyebrow">TAIPEI-MAPS · v0.0.2</p>
           <h1>3D Taipei</h1>
         </div>
         <div className="status-dot-wrap">
@@ -107,8 +127,41 @@ export default function App() {
       <aside className="glass info-panel">
         <div className="panel-heading">
           <div>
+            <p className="eyebrow">3D LAYERS</p>
+            <h2>台北建築圖層</h2>
+          </div>
+        </div>
+
+        <div className="layer-card">
+          <div>
+            <strong>全市 3D 建築</strong>
+            <span>2024 LOD1 · 都發局</span>
+          </div>
+          <span className="layer-state on">ON</span>
+        </div>
+
+        <button
+          className={`layer-card layer-button ${showCadastral ? "active" : ""}`}
+          onClick={() => {
+            setShowCadastral((current) => !current);
+            setSelectedAttributes(null);
+          }}
+        >
+          <div>
+            <strong>產權模型</strong>
+            <span>地政局 · 有門牌 / 層數 / 完工日期等欄位</span>
+          </div>
+          <span className={`layer-state ${showCadastral ? "on" : ""}`}>
+            {showCadastral ? "ON" : "OFF"}
+          </span>
+        </button>
+
+        <div className="inspector-divider" />
+
+        <div className="panel-heading compact">
+          <div>
             <p className="eyebrow">BUILDING INSPECTOR</p>
-            <h2>{selectedAttributes ? "建築原始資料" : "點一棟建築"}</h2>
+            <h2>{selectedAttributes ? "建築原始資料" : "建築資訊"}</h2>
           </div>
           {selectedAttributes && (
             <button className="clear-button" onClick={() => setSelectedAttributes(null)}>
@@ -117,9 +170,13 @@ export default function App() {
           )}
         </div>
 
-        {!selectedAttributes ? (
+        {!showCadastral ? (
           <p className="empty-copy">
-            用滑鼠拖曳旋轉、滾輪縮放、右鍵或 Ctrl + 拖曳調整視角。點選建築後，這裡會先直接顯示臺北市 SceneServer 回傳的欄位。
+            全市白模用來完整呈現台北建築量體。若要點建築查看地政屬性，請開啟上方「產權模型」圖層。
+          </p>
+        ) : !selectedAttributes ? (
+          <p className="empty-copy">
+            產權模型已開啟。點選有產權模型覆蓋的建築，這裡會顯示臺北市 SceneServer 回傳的原始欄位。
           </p>
         ) : (
           <dl className="attribute-list">
@@ -133,7 +190,7 @@ export default function App() {
         )}
 
         <div className="source-note">
-          Source: 臺北市多維度測繪管理系統 · CadastralBuilding_2023
+          Base 3D: 臺北市都發局 LOD1_2024 · Detail: 臺北市地政局 CadastralBuilding_2023
         </div>
       </aside>
     </main>

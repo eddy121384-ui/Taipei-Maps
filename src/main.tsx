@@ -11,10 +11,22 @@ const params = new URLSearchParams(window.location.search);
 const showNlscProbe = params.has("nlscProbe");
 const show3D = params.get("mode") === "3d";
 
+function returnTo2D() {
+  const next = new URLSearchParams(window.location.search);
+  next.delete("mode");
+  const query = next.toString();
+  window.location.href = `${window.location.pathname}${query ? `?${query}` : ""}`;
+}
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <Suspense fallback={<div className="app-loading">載入地圖介面…</div>}>
       {showNlscProbe ? <NlscLayerProbe /> : show3D ? <GreaterTaipeiApp /> : <Analysis2DApp />}
+      {!showNlscProbe && show3D && (
+        <button className="presentation-return-button" type="button" onClick={returnTo2D}>
+          ← 回 2D 分析
+        </button>
+      )}
     </Suspense>
   </StrictMode>,
 );

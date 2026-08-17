@@ -287,21 +287,34 @@ export default function AgeMapApp() {
     };
   }, []);
 
-  const jumpToBanqiao = () => {
+  const jumpToBanqiao = async () => {
     const view = viewRef.current;
-    if (!view) return;
-    void view.goTo(
-      {
-        position: {
-          longitude: 121.4623,
-          latitude: 25.0123,
-          z: 1900,
+    if (!view) {
+      setStatus("板橋測試：3D 視圖尚未就緒");
+      return;
+    }
+
+    setStatus("正在飛往板橋…");
+    try {
+      await view.when();
+      await view.goTo(
+        {
+          center: [121.4623, 25.0123],
+          zoom: 15,
+          heading: 20,
+          tilt: 65,
         },
-        heading: 20,
-        tilt: 65,
-      },
-      { duration: 1200 },
-    );
+        { duration: 1400 },
+      );
+      setStatus("板橋測試視角已就位");
+    } catch (error: any) {
+      if (error?.name === "AbortError") {
+        setStatus("板橋移動已中止");
+        return;
+      }
+      console.error("Banqiao goTo failed", error);
+      setStatus("板橋測試移動失敗 · 請看 browser console");
+    }
   };
 
   return (
@@ -310,7 +323,7 @@ export default function AgeMapApp() {
 
       <header className="glass top-bar">
         <div>
-          <p className="eyebrow">TAIPEI-MAPS · v0.0.5 PROVIDER SPIKE</p>
+          <p className="eyebrow">TAIPEI-MAPS · v0.0.5.1 PROVIDER SPIKE</p>
           <h1>3D Greater Taipei</h1>
         </div>
         <div className="status-dot-wrap">
@@ -325,8 +338,8 @@ export default function AgeMapApp() {
             <p className="eyebrow">3D LAYERS</p>
             <h2>台北＋新北建築圖層</h2>
           </div>
-          <button className="clear-button" onClick={jumpToBanqiao}>
-            板橋測試
+          <button className="clear-button" onClick={() => void jumpToBanqiao()}>
+            板橋定位
           </button>
         </div>
 
@@ -368,7 +381,7 @@ export default function AgeMapApp() {
 
         {showNational3D && (
           <div className="age-source-note warning">
-            NLSC 是全國建物層，台北市範圍會和 LOD1 重疊；比較新北時可先把「台北市 3D 建築」關掉，再按「板橋測試」。
+            NLSC 是全國建物層，台北市範圍會和 LOD1 重疊；比較新北時可先把「台北市 3D 建築」關掉，再按「板橋定位」。
           </div>
         )}
 

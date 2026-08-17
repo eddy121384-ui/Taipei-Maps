@@ -1,43 +1,49 @@
-# 2D-first analysis mode
+# Single-map analytical layer model
 
-Related: Greater Taipei v0.1 (#7)
+Related: Greater Taipei v0.1 (#7), #26
 
-## Product decision
+## Corrected product decision
 
-3D is an optional presentation mode, not the default product surface.
+There should not be separate 2D and 3D map experiences.
 
-The default working experience should be a clean 2D map where data lenses are easy to read and compare. The same underlying data should be renderable at multiple spatial scales and presentations.
+Taipei-Maps keeps one persistent Greater Taipei map / camera / layer stack. The 3D building models are optional geometry layers inside that map, just like any other layer.
+
+A user can turn 3D buildings off to get a cleaner street-map view while keeping analytical information in exactly the same geographic context.
 
 ## Mental model
 
-`data lens -> analysis scale -> renderer`
+`one map -> geometry layers + data lenses`
 
-Examples:
+Geometry layers:
+- Taipei 3D buildings
+- New Taipei 3D buildings
+- optional cadastral/detail geometry
 
-- building age -> building -> 2D polygon fill
-- building age -> building -> 3D extrusion
-- building age -> block -> 2D choropleth
-- price -> block -> 2D choropleth
-- redevelopment potential -> block -> 2D choropleth
+Data lenses:
+- building age
+- price
+- school zones
+- flood risk
+- zoning
+- redevelopment potential
 
-3D should be available when users want spatial form, density, height, or a more immersive city view, but it should not be required to consume the analytical data.
+The data lens owns the analytical meaning. The 3D building layer only changes how much city form is visible behind/with it.
 
-## v0.1 implementation order
+## Renderer behavior
 
-1. Add a visible `2D / 3D` presentation toggle.
-2. Default to 2D analysis mode.
-3. In 2D mode, do not show Taipei/New Taipei 3D building SceneLayers.
-4. Reuse the existing Taipei age GeoJSON as a flat polygon-fill renderer so the age lens remains useful without 3D.
-5. Preserve the existing 3D extrusion renderer when switching to 3D.
-6. Preserve map location as closely as practical when switching presentation modes.
-7. Keep the age coverage warning unchanged.
+A lens can adapt its renderer without moving the user to another page or another map.
 
-## Next phase: block aggregation
+Example — building age:
+- 3D buildings ON: age can remain a 3D extrusion/color lens so the values are visible on building form.
+- 3D buildings OFF: the same age GeoJSON becomes a flat footprint/ground overlay.
 
-After the basic 2D presentation works, create a street-block / analysis-block derivative where a lens can be aggregated into a smaller number of polygons.
+Future block-level lenses should generally stay as calm ground-level choropleths whether 3D buildings are on or off.
+
+## Street-block phase
+
+The preferred everyday analytical view is likely to be street/block level rather than thousands of individually colored buildings.
 
 Candidate statistics:
-
 - median building age
 - old-building share
 - transaction median price per ping
@@ -45,11 +51,16 @@ Candidate statistics:
 - transaction count / liquidity
 - redevelopment potential
 
-The purpose is readability and performance: a consumer should be able to see the structure of a neighborhood without decoding thousands of individually colored buildings.
+These derived blocks should remain visible independently of the 3D building toggle.
 
 ## Guardrails
 
-- 2D mode is not a degraded fallback; it is the primary analytical mode.
-- 3D is not the data model. Data lenses must remain presentation-independent.
-- Do not imply that uncolored buildings have a particular age or price.
-- Do not build block aggregation by arbitrary screen pixels; use a reproducible geographic unit or derived street block.
+- One map, not a 2D app plus a 3D app.
+- No page reload or navigation to hide/show 3D buildings.
+- Camera and layer context must stay put when 3D buildings are toggled.
+- Analytical overlays must remain usable with the 3D geometry hidden.
+- 3D is not the data model.
+- Do not imply uncolored buildings/blocks have a specific age or price.
+- Do not build block aggregation by arbitrary screen pixels; use reproducible geographic units.
+
+The earlier separate `MapView` implementation was a misunderstanding and should not be treated as the target UX.

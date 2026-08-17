@@ -30,7 +30,7 @@ function formatValue(value: unknown) {
   return String(value);
 }
 
-function makeAgeSymbol(color: string): any {
+function makeAge3DSymbol(color: string): any {
   return {
     type: "polygon-3d",
     symbolLayers: [
@@ -43,18 +43,35 @@ function makeAgeSymbol(color: string): any {
   };
 }
 
-function createAgeRenderer(): any {
+function makeAgeFlatSymbol(color: string): any {
+  return {
+    type: "simple-fill",
+    color,
+    outline: {
+      color: [66, 74, 84, 0.5],
+      width: 0.55,
+    },
+  };
+}
+
+function createAgeRenderer(use3D: boolean): any {
+  const symbol = use3D ? makeAge3DSymbol : makeAgeFlatSymbol;
+
   return {
     type: "unique-value",
     field: "age_bin",
-    defaultSymbol: makeAgeSymbol("#cbd1d8"),
+    defaultSymbol: symbol("#cbd1d8"),
     defaultLabel: "其他 / 無資料",
     uniqueValueInfos: AGE_BINS.map((bin) => ({
       value: bin.value,
       label: bin.label,
-      symbol: makeAgeSymbol(bin.color),
+      symbol: symbol(bin.color),
     })),
-    visualVariables: [{ type: "size", field: "height_m", valueUnit: "meters" }],
+    ...(use3D
+      ? {
+          visualVariables: [{ type: "size", field: "height_m", valueUnit: "meters" }],
+        }
+      : {}),
   };
 }
 
@@ -66,9 +83,8 @@ export default function GreaterTaipeiApp() {
   const cadastralRef = useRef<SceneLayer | null>(null);
   const ageRef = useRef<GeoJSONLayer | null>(null);
 
-  const [status, setStatus] = useState("載入大台北 3D…");
-  const [showTaipei, setShowTaipei] = useState(true);
-  const [showNewTaipei, setShowNewTaipei] = useState(true);
+  const [status, setStatus] = useState("載入大台北地圖…");
+  const [show3DBuildings, setShow3DBuildings] = useState(true);
   const [showCadastral, setShowCadastral] = useState(false);
   const [showAge, setShowAge] = useState(false);
   const [newTaipeiReady, setNewTaipeiReady] = useState(false);
@@ -87,24 +103,38 @@ export default function GreaterTaipeiApp() {
   }, [selectedAttributes]);
 
   const statusText = useMemo(() => {
-    const parts = [status];
-    if (showTaipei) parts.push("台北 3D ON");
-    if (showNewTaipei && newTaipeiReady) parts.push("新北 3D ON");
-    if (showAge && ageReady) parts.push(`屋齡 ON${ageFeatureCount ? `（${ageFeatureCount.toLocaleString("zh-TW")} 棟）` : ""}`);
+    const parts = [status, show3DBuildings ? "3D 建築 ON" : "3D 建築 OFF"];
+    if (showAge && ageReady) {
+      parts.push(
+        `屋齡 ON${ageFeatureCount ? `（${ageFeatureCount.toLocaleString("zh-TW")} 棟）` : ""}`,
+      );
+    }
     if (newTaipeiError) parts.push("新北 3D ERR");
     if (ageError) parts.push("屋齡檔未載入");
     return parts.join(" · ");
-  }, [status, showTaipei, showNewTaipei, newTaipeiReady, showAge, ageReady, ageFeatureCount, newTaipeiError, ageError]);
+  }, [status, show3DBuildings, showAge, ageReady, ageFeatureCount, newTaipeiError, ageError]);
 
   useEffect(() => {
     if (taipeiRef.current) {
-      taipeiRef.current.visible = showTaipei;
-      taipeiRef.current.opacity = showAge ? 0.22 : 1;
+      taipeiRef.current.visible = show3DBuildings;
+      taipeiRef.current.opacity = show3DBuildings && showAge ? 0.22 : 1;
     }
-    if (newTaipeiRef.current) newTaipeiRef.current.visible = showNewTaipei && newTaipeiReady;
-    if (cadastralRef.current) cadastralRef.current.visible = showCadastral;
-    if (ageRef.current) ageRef.current.visible = showAge && ageReady;
-  }, [showTaipei, showNewTaipei, newTaipeiReady, showCadastral, showAge, ageReady]);
+
+    if (newTaipeiRef.current) {
+      newTaipeiRef.current.visible = show3DBuildings && newTaipeiReady;
+      newTaipeiRef.current.opacity = show3DBuildings && showAge ? 0.28 : 0.94;
+    }
+
+    if (cadastralRef.current) {
+      cadastralRef.current.visible = show3DBuildings && showCadastral;
+    }
+
+    if (ageRef.current) {
+      ageRef.current.visible = showAge && ageReady;
+      ageRef.current.renderer = createAgeRenderer(show3DBuildings);
+      ageRef.current.opacity = show3DBuildings ? 1 : 0.76;
+    }
+  }, [show3DBuildings, showCadastral, showAge, ageReady, newTaipeiReady]);
 
   useEffect(() => {
     if (!mapContainerRef.current) return;
@@ -142,7 +172,7 @@ export default function GreaterTaipeiApp() {
       outFields: ["*"],
       popupEnabled: false,
       visible: false,
-      renderer: createAgeRenderer(),
+      renderer: createAgeRenderer(true),
       elevationInfo: { mode: "on-the-ground" },
     });
 
@@ -152,7 +182,10 @@ export default function GreaterTaipeiApp() {
     ageRef.current = ageBuildings;
 
     const map = new ArcGISMap({
-      basemap: new Basemap({ baseLayers: [new OpenStreetMapLayer()], title: "OpenStreetMap" }),
+      basemap: new Basemap({
+        baseLayers: [new OpenStreetMapLayer()],
+        title: "OpenStreetMap",
+      }),
       layers: [newTaipeiBuildings, taipeiBuildings, cadastralBuildings, ageBuildings],
     });
 
@@ -175,6 +208,7 @@ export default function GreaterTaipeiApp() {
       .then(() => {
         if (disposed) return;
         setStatus("大台北主視圖已就緒");
+
         clickHandle = view.on("click", async (event) => {
           const response = await view.hitTest(event);
           const orderedLayers = [
@@ -185,7 +219,10 @@ export default function GreaterTaipeiApp() {
           ];
 
           for (const candidate of orderedLayers) {
-            const hit = response.results.find((result: any) => result.graphic?.layer === candidate.layer) as any | undefined;
+            const hit = response.results.find(
+              (result: any) => result.graphic?.layer === candidate.layer,
+            ) as any | undefined;
+
             if (hit?.graphic?.attributes) {
               setSelectedAttributes(hit.graphic.attributes);
               setSelectedLayerLabel(candidate.label);
@@ -248,10 +285,14 @@ export default function GreaterTaipeiApp() {
   const jumpToBanqiao = async () => {
     const view = viewRef.current;
     if (!view) return;
+
     setStatus("正在移動到板橋…");
     try {
       await view.when();
-      await view.goTo({ center: [121.4623, 25.0123], zoom: 15, heading: 20, tilt: 65 }, { duration: 1200 });
+      await view.goTo(
+        { center: [121.4623, 25.0123], zoom: 15, heading: 20, tilt: 65 },
+        { duration: 1200 },
+      );
       setStatus("板橋視角已就位");
     } catch (error: any) {
       if (error?.name !== "AbortError") console.error("Banqiao goTo failed", error);
@@ -266,7 +307,7 @@ export default function GreaterTaipeiApp() {
       <header className="glass top-bar">
         <div>
           <p className="eyebrow">TAIPEI-MAPS · GREATER TAIPEI v0.1 DEV</p>
-          <h1>3D Greater Taipei</h1>
+          <h1>Greater Taipei Analysis Map</h1>
         </div>
         <div className="status-dot-wrap">
           <span className="status-dot" />
@@ -277,69 +318,89 @@ export default function GreaterTaipeiApp() {
       <aside className="glass info-panel">
         <div className="panel-heading">
           <div>
-            <p className="eyebrow">CITY LAYERS</p>
-            <h2>大台北城市圖層</h2>
+            <p className="eyebrow">MAP LAYERS</p>
+            <h2>大台北地圖圖層</h2>
           </div>
           <button className="clear-button" onClick={() => void jumpToBanqiao()}>
             板橋定位
           </button>
         </div>
 
-        <button className={`layer-card layer-button ${showTaipei ? "active" : ""}`} onClick={() => setShowTaipei((current) => !current)}>
-          <div>
-            <strong>台北 3D</strong>
-            <span>臺北市都發局 · 2024 LOD1{showAge ? " · 屋齡開啟時淡化作背景" : ""}</span>
-          </div>
-          <span className={`layer-state ${showTaipei ? "on" : ""}`}>{showTaipei ? "ON" : "OFF"}</span>
-        </button>
-
         <button
-          className={`layer-card layer-button ${showNewTaipei ? "active" : ""}`}
-          disabled={!newTaipeiReady}
-          onClick={() => setShowNewTaipei((current) => !current)}
+          className={`layer-card layer-button ${show3DBuildings ? "active" : ""}`}
+          onClick={() => setShow3DBuildings((current) => !current)}
         >
           <div>
-            <strong>新北 3D</strong>
+            <strong>3D 建築</strong>
             <span>
-              {newTaipeiReady
-                ? "國土測繪中心 NLSC · verified layer 5"
-                : newTaipeiError
-                  ? "新北 3D 載入失敗 · 請看 browser console"
-                  : "正在載入新北 3D provider…"}
+              台北都發局 + 新北 NLSC · 關掉後仍保留所有分析圖層
             </span>
           </div>
-          <span className={`layer-state ${showNewTaipei ? "on" : ""}`}>
-            {showNewTaipei && newTaipeiReady ? "ON" : newTaipeiReady ? "OFF" : newTaipeiError ? "ERR" : "WAIT"}
+          <span className={`layer-state ${show3DBuildings ? "on" : ""}`}>
+            {show3DBuildings ? "ON" : "OFF"}
           </span>
         </button>
 
-        <button className={`layer-card layer-button ${showCadastral ? "active" : ""}`} onClick={() => setShowCadastral((current) => !current)}>
+        <button
+          className={`layer-card layer-button ${showCadastral ? "active" : ""}`}
+          disabled={!show3DBuildings}
+          onClick={() => setShowCadastral((current) => !current)}
+        >
           <div>
             <strong>台北產權細節</strong>
-            <span>臺北市地政局 · 選配細部屬性</span>
+            <span>
+              {show3DBuildings
+                ? "臺北市地政局 · 選配細部 3D 屬性"
+                : "3D 建築關閉時暫停顯示"}
+            </span>
           </div>
-          <span className={`layer-state ${showCadastral ? "on" : ""}`}>{showCadastral ? "ON" : "OFF"}</span>
+          <span className={`layer-state ${showCadastral && show3DBuildings ? "on" : ""}`}>
+            {showCadastral && show3DBuildings ? "ON" : "OFF"}
+          </span>
         </button>
 
-        <button className={`layer-card layer-button age-layer ${showAge ? "active" : ""}`} disabled={!ageReady} onClick={() => setShowAge((current) => !current)}>
+        <div className="inspector-divider" />
+
+        <div className="panel-heading compact">
+          <div>
+            <p className="eyebrow">DATA LENSES</p>
+            <h2>分析圖層</h2>
+          </div>
+        </div>
+
+        <button
+          className={`layer-card layer-button age-layer ${showAge ? "active" : ""}`}
+          disabled={!ageReady}
+          onClick={() => setShowAge((current) => !current)}
+        >
           <div>
             <strong>台北屋齡</strong>
             <span>
               {ageReady
-                ? `官方建照套繪 × 使用執照 · 2001+${ageFeatureCount ? ` · ${ageFeatureCount.toLocaleString("zh-TW")} 棟` : ""}`
+                ? `${show3DBuildings ? "3D 建物著色" : "平面 footprint"} · 2001+${ageFeatureCount ? ` · ${ageFeatureCount.toLocaleString("zh-TW")} 棟` : ""}`
                 : ageError
                   ? "尚未找到 generated building-age GeoJSON"
                   : "載入屋齡資料…"}
             </span>
           </div>
-          <span className={`layer-state ${showAge ? "on" : ""}`}>{showAge ? "ON" : ageReady ? "OFF" : "WAIT"}</span>
+          <span className={`layer-state ${showAge ? "on" : ""}`}>
+            {showAge ? "ON" : ageReady ? "OFF" : "WAIT"}
+          </span>
         </button>
+
+        <div className="layer-card" style={{ opacity: 0.58 }}>
+          <div>
+            <strong>屋齡 · 街廓</strong>
+            <span>下一階段：街廓中位屋齡 / 老屋比例 choropleth</span>
+          </div>
+          <span className="layer-state">NEXT</span>
+        </div>
 
         {showAge && ageReady && (
           <div className="age-legend">
             <div className="legend-heading">
               <strong>屋齡色階</strong>
-              <span>3D extrusion</span>
+              <span>{show3DBuildings ? "3D 建物著色" : "平面 footprint"}</span>
             </div>
             <div className="legend-list">
               {AGE_BINS.map((bin) => (
@@ -350,22 +411,29 @@ export default function GreaterTaipeiApp() {
               ))}
             </div>
             <div className="age-source-note warning">
-              灰色／未著色建築不是老屋；目前屋齡只涵蓋可精確 join 的 2001+ 子集。
+              未著色區域不是老屋；目前屋齡只涵蓋可精確 join 的 2001+ 子集。
             </div>
           </div>
         )}
 
         <div className="inspector-divider" />
+
         <div className="panel-heading compact">
           <div>
-            <p className="eyebrow">BUILDING INSPECTOR</p>
-            <h2>{selectedAttributes ? selectedLayerLabel ?? "建築資料" : "建築資訊"}</h2>
+            <p className="eyebrow">INSPECTOR</p>
+            <h2>{selectedAttributes ? selectedLayerLabel ?? "地圖資料" : "位置資訊"}</h2>
           </div>
-          {selectedAttributes && <button className="clear-button" onClick={() => setSelectedAttributes(null)}>清除</button>}
+          {selectedAttributes && (
+            <button className="clear-button" onClick={() => setSelectedAttributes(null)}>
+              清除
+            </button>
+          )}
         </div>
 
         {!selectedAttributes ? (
-          <p className="empty-copy">點建築查看屬性。台北與新北現在是兩個明確 provider；屋齡目前只屬於台北分析層。</p>
+          <p className="empty-copy">
+            圖層彼此獨立：關掉 3D 建築不會關掉屋齡、學區、房價或未來的街廓分析。
+          </p>
         ) : (
           <dl className="attribute-list">
             {visibleAttributes.map(([key, value]) => (
@@ -378,7 +446,7 @@ export default function GreaterTaipeiApp() {
         )}
 
         <div className="source-note">
-          Taipei base: DUD LOD1_2024 · New Taipei base: NLSC I3S layer 5 · Age: Taipei permit-overlay × use-permit join · Detail: Taipei CadastralBuilding_2023
+          Basemap: OpenStreetMap · Taipei 3D: DUD LOD1_2024 · New Taipei 3D: NLSC layer 5 · Age: Taipei permit-overlay × use-permit join
         </div>
       </aside>
     </main>

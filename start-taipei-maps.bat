@@ -29,8 +29,11 @@ if not exist node_modules (
 )
 
 echo Starting Taipei-Maps...
-start "" cmd /c "ping 127.0.0.1 -n 4 >nul && start http://localhost:5173/"
-call npm run dev
+echo Your browser will open automatically.
+echo Close this window when you want to stop the local server.
+echo.
+
+call npm run dev -- --open
 
 if errorlevel 1 (
   echo.

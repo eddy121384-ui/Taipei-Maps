@@ -1,0 +1,48 @@
+.mode-switch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin: -6px 0 10px;
+  padding: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.mode-button {
+  border: 1px solid transparent;
+  border-radius: 9px;
+  padding: 9px 10px;
+  color: rgba(236, 242, 247, 0.62);
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.mode-button:hover {
+  color: rgba(247, 249, 251, 0.92);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.mode-button.active {
+  color: #f7f9fb;
+  border-color: rgba(255, 255, 255, 0.13);
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.14);
+}
+
+.planned-card {
+  opacity: 0.6;
+}
+
+.app-loading {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: rgba(236, 242, 247, 0.72);
+  background: #0b0f14;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+}

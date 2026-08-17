@@ -12,6 +12,9 @@ const TAIPEI_LOD1_URL =
 const TAIPEI_CADASTRAL_URL =
   "https://3d.land.gov.taipei/arcgis/rest/services/Hosted/CadastralBuilding_2023/SceneServer/layers/0";
 
+const NLSC_BUILDING_URL =
+  "https://i3s.nlsc.gov.tw/building/i3s/SceneServer/layers/0";
+
 const AGE_GEOJSON_URL = "/generated/building_age_2001plus.geojson";
 
 const AGE_BINS = [
@@ -71,7 +74,9 @@ function createAgeRenderer(): any {
 
 export default function AgeMapApp() {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
+  const viewRef = useRef<SceneView | null>(null);
   const cityLayerRef = useRef<SceneLayer | null>(null);
+  const nationalLayerRef = useRef<SceneLayer | null>(null);
   const cadastralLayerRef = useRef<SceneLayer | null>(null);
   const ageLayerRef = useRef<GeoJSONLayer | null>(null);
 
@@ -80,8 +85,11 @@ export default function AgeMapApp() {
   const [selectedLayerLabel, setSelectedLayerLabel] = useState<string | null>(null);
 
   const [showCity3D, setShowCity3D] = useState(true);
+  const [showNational3D, setShowNational3D] = useState(false);
   const [showCadastral, setShowCadastral] = useState(false);
   const [showAgeOverlay, setShowAgeOverlay] = useState(false);
+  const [nationalReady, setNationalReady] = useState(false);
+  const [nationalError, setNationalError] = useState<string | null>(null);
   const [ageReady, setAgeReady] = useState(false);
   const [ageError, setAgeError] = useState<string | null>(null);
   const [ageFeatureCount, setAgeFeatureCount] = useState<number | null>(null);
@@ -94,16 +102,19 @@ export default function AgeMapApp() {
   }, [selectedAttributes]);
 
   const statusText = useMemo(() => {
+    if (showNational3D && nationalReady) return `${status} · NLSC 大台北 3D ON`;
+    if (nationalError) return `${status} · NLSC 3D 測試失敗`;
     if (ageError) return `${status} · 屋齡檔未載入`;
     if (!ageReady) return `${status} · 準備屋齡 3D 圖層…`;
     if (showAgeOverlay) {
       return `${status} · 屋齡圖層 ON${ageFeatureCount ? `（${ageFeatureCount.toLocaleString("zh-TW")} 棟）` : ""}`;
     }
     return `${status} · 屋齡資料已就緒`;
-  }, [status, ageError, ageReady, showAgeOverlay, ageFeatureCount]);
+  }, [status, nationalError, nationalReady, showNational3D, ageError, ageReady, showAgeOverlay, ageFeatureCount]);
 
   useEffect(() => {
     const cityLayer = cityLayerRef.current;
+    const nationalLayer = nationalLayerRef.current;
     const cadastralLayer = cadastralLayerRef.current;
     const ageLayer = ageLayerRef.current;
 
@@ -112,9 +123,10 @@ export default function AgeMapApp() {
       cityLayer.opacity = showAgeOverlay ? 0.22 : 1;
     }
 
+    if (nationalLayer) nationalLayer.visible = showNational3D && nationalReady;
     if (cadastralLayer) cadastralLayer.visible = showCadastral;
     if (ageLayer) ageLayer.visible = showAgeOverlay && ageReady;
-  }, [showCity3D, showCadastral, showAgeOverlay, ageReady]);
+  }, [showCity3D, showNational3D, nationalReady, showCadastral, showAgeOverlay, ageReady]);
 
   useEffect(() => {
     if (!mapContainerRef.current) return;
@@ -124,6 +136,14 @@ export default function AgeMapApp() {
       title: "臺北市全市積木模型（2024）",
       outFields: ["*"],
       popupEnabled: false,
+    });
+
+    const nationalBuildings = new SceneLayer({
+      url: NLSC_BUILDING_URL,
+      title: "國土測繪中心全國三維建物（NLSC I3S）",
+      popupEnabled: false,
+      visible: false,
+      opacity: 0.94,
     });
 
     const cadastralBuildings = new SceneLayer({
@@ -145,6 +165,7 @@ export default function AgeMapApp() {
     });
 
     cityLayerRef.current = cityBuildings;
+    nationalLayerRef.current = nationalBuildings;
     cadastralLayerRef.current = cadastralBuildings;
     ageLayerRef.current = ageBuildings;
 
@@ -155,7 +176,7 @@ export default function AgeMapApp() {
 
     const map = new ArcGISMap({
       basemap,
-      layers: [cityBuildings, cadastralBuildings, ageBuildings],
+      layers: [nationalBuildings, cityBuildings, cadastralBuildings, ageBuildings],
     });
 
     const view = new SceneView({
@@ -172,6 +193,7 @@ export default function AgeMapApp() {
         tilt: 66,
       },
     });
+    viewRef.current = view;
 
     let clickHandle: IHandle | null = null;
     let disposed = false;
@@ -193,8 +215,11 @@ export default function AgeMapApp() {
           const cityHit = response.results.find(
             (result: any) => result.graphic?.layer === cityBuildings,
           ) as any | undefined;
+          const nationalHit = response.results.find(
+            (result: any) => result.graphic?.layer === nationalBuildings,
+          ) as any | undefined;
 
-          const chosen = ageHit ?? cadastralHit ?? cityHit;
+          const chosen = ageHit ?? cadastralHit ?? cityHit ?? nationalHit;
 
           if (!chosen?.graphic?.attributes) {
             setSelectedAttributes(null);
@@ -207,6 +232,8 @@ export default function AgeMapApp() {
             setSelectedLayerLabel("屋齡套繪資料");
           } else if (chosen.graphic.layer === cadastralBuildings) {
             setSelectedLayerLabel("產權模型屬性");
+          } else if (chosen.graphic.layer === nationalBuildings) {
+            setSelectedLayerLabel("NLSC 全國 3D 建物屬性");
           } else {
             setSelectedLayerLabel("全市白模屬性");
           }
@@ -215,6 +242,20 @@ export default function AgeMapApp() {
       .catch((error) => {
         console.error(error);
         if (!disposed) setStatus("3D 建築載入失敗，請查看瀏覽器 console");
+      });
+
+    nationalBuildings
+      .load()
+      .then(() => {
+        if (disposed) return;
+        setNationalReady(true);
+        setNationalError(null);
+      })
+      .catch((error) => {
+        console.error("NLSC I3S building layer failed to load", error);
+        if (disposed) return;
+        setNationalReady(false);
+        setNationalError("NLSC I3S 無法載入");
       });
 
     ageBuildings
@@ -237,12 +278,31 @@ export default function AgeMapApp() {
     return () => {
       disposed = true;
       clickHandle?.remove();
+      viewRef.current = null;
       cityLayerRef.current = null;
+      nationalLayerRef.current = null;
       cadastralLayerRef.current = null;
       ageLayerRef.current = null;
       view.destroy();
     };
   }, []);
+
+  const jumpToBanqiao = () => {
+    const view = viewRef.current;
+    if (!view) return;
+    void view.goTo(
+      {
+        position: {
+          longitude: 121.4623,
+          latitude: 25.0123,
+          z: 1900,
+        },
+        heading: 20,
+        tilt: 65,
+      },
+      { duration: 1200 },
+    );
+  };
 
   return (
     <main className="app-shell">
@@ -250,8 +310,8 @@ export default function AgeMapApp() {
 
       <header className="glass top-bar">
         <div>
-          <p className="eyebrow">TAIPEI-MAPS · v0.0.4</p>
-          <h1>3D Taipei</h1>
+          <p className="eyebrow">TAIPEI-MAPS · v0.0.5 PROVIDER SPIKE</p>
+          <h1>3D Greater Taipei</h1>
         </div>
         <div className="status-dot-wrap">
           <span className="status-dot" />
@@ -263,8 +323,11 @@ export default function AgeMapApp() {
         <div className="panel-heading">
           <div>
             <p className="eyebrow">3D LAYERS</p>
-            <h2>台北建築圖層</h2>
+            <h2>台北＋新北建築圖層</h2>
           </div>
+          <button className="clear-button" onClick={jumpToBanqiao}>
+            板橋測試
+          </button>
         </div>
 
         <button
@@ -272,7 +335,7 @@ export default function AgeMapApp() {
           onClick={() => setShowCity3D((current) => !current)}
         >
           <div>
-            <strong>全市 3D 建築</strong>
+            <strong>台北市 3D 建築</strong>
             <span>
               2024 LOD1 · 都發局
               {showAgeOverlay ? " · 屋齡開啟時自動淡化作為背景" : ""}
@@ -284,6 +347,32 @@ export default function AgeMapApp() {
         </button>
 
         <button
+          className={`layer-card layer-button ${showNational3D ? "active" : ""}`}
+          disabled={!nationalReady}
+          onClick={() => setShowNational3D((current) => !current)}
+        >
+          <div>
+            <strong>大台北 / 全國 3D（NLSC）</strong>
+            <span>
+              {nationalReady
+                ? "國土測繪中心 · OGC I3S · 新北覆蓋測試"
+                : nationalError
+                  ? "NLSC I3S 載入失敗 · 請看 browser console"
+                  : "正在測試 NLSC 全國三維建物服務…"}
+            </span>
+          </div>
+          <span className={`layer-state ${showNational3D ? "on" : ""}`}>
+            {showNational3D ? "ON" : nationalReady ? "OFF" : nationalError ? "ERR" : "WAIT"}
+          </span>
+        </button>
+
+        {showNational3D && (
+          <div className="age-source-note warning">
+            NLSC 是全國建物層，台北市範圍會和 LOD1 重疊；比較新北時可先把「台北市 3D 建築」關掉，再按「板橋測試」。
+          </div>
+        )}
+
+        <button
           className={`layer-card layer-button ${showCadastral ? "active" : ""}`}
           onClick={() => {
             setShowCadastral((current) => !current);
@@ -291,7 +380,7 @@ export default function AgeMapApp() {
           }}
         >
           <div>
-            <strong>產權模型</strong>
+            <strong>台北產權模型</strong>
             <span>地政局 · 門牌 / 層數等細部屬性</span>
           </div>
           <span className={`layer-state ${showCadastral ? "on" : ""}`}>
@@ -305,7 +394,7 @@ export default function AgeMapApp() {
           onClick={() => setShowAgeOverlay((current) => !current)}
         >
           <div>
-            <strong>屋齡圖層</strong>
+            <strong>台北屋齡圖層</strong>
             <span>
               {ageReady
                 ? `官方建照套繪 × 使用執照 · 2001+${ageFeatureCount ? ` · ${ageFeatureCount.toLocaleString("zh-TW")} 棟` : ""}`
@@ -355,7 +444,7 @@ export default function AgeMapApp() {
 
         {!selectedAttributes ? (
           <p className="empty-copy">
-            點選建築查看屬性。屋齡圖層開啟時會優先命中 permit-joined polygon，可直接看到 building_age、completion_year、height_m 與 permit_key。
+            點選建築查看屬性。NLSC 目前先當作新北 / 全國 geometry provider spike；台北屋齡圖層仍優先命中 permit-joined polygon。
           </p>
         ) : (
           <dl className="attribute-list">
@@ -370,18 +459,18 @@ export default function AgeMapApp() {
 
         {ageReady ? (
           <div className="age-source-note">
-            屋齡來源：官方建照套繪 polygon × 歷史使用執照 permit-key exact join；目前為 2001+ 驗證層。
+            台北屋齡來源：官方建照套繪 polygon × 歷史使用執照 permit-key exact join；目前為 2001+ 驗證層。
           </div>
         ) : (
           <div className="age-source-note warning">
             {ageError
-              ? "屋齡 GeoJSON 尚未存在。請先執行 download-building-overlay.bat 產生資料。"
+              ? "屋齡 GeoJSON 尚未存在。新版 start-taipei-maps.bat 會自動補資料。"
               : "正在載入屋齡 GeoJSON…"}
           </div>
         )}
 
         <div className="source-note">
-          Base 3D: 臺北市都發局 LOD1_2024 · Age subset: 建照套繪 × 使用執照 · Detail: 臺北市地政局 CadastralBuilding_2023
+          Taipei 3D: 都發局 LOD1_2024 · New Taipei / national spike: NLSC I3S · Age subset: 建照套繪 × 使用執照 · Detail: 台北地政局 CadastralBuilding_2023
         </div>
       </aside>
     </main>

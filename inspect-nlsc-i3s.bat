@@ -3,23 +3,14 @@ setlocal
 cd /d "%~dp0"
 
 echo =============================================
-echo   Taipei-Maps NLSC I3S layer metadata probe
+echo   Taipei-Maps NLSC I3S probe
 echo =============================================
 echo.
-
-where node >nul 2>nul
-if errorlevel 1 (
-  echo [ERROR] Node.js was not found.
-  echo Install Node.js first, then run this file again.
-  echo.
-  pause
-  exit /b 1
-)
-
-node tools\data\inspect_nlsc_i3s.mjs
-
+echo The old Node fetch probe is deprecated because Node could not establish
+echo the NLSC HTTPS connection even for layer 0, which the browser loads fine.
 echo.
-echo Copy the output above and send it back to ChatGPT.
+echo Please run:
+echo   start-nlsc-browser-probe.bat
 echo.
 pause
 endlocal

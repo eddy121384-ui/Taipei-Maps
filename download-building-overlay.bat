@@ -21,17 +21,6 @@ if errorlevel 1 (
   exit /b 1
 )
 
-python -c "import shapefile" >nul 2>nul
-if errorlevel 1 (
-  echo Installing lightweight pyshp dependency...
-  python -m pip install -r requirements-data.txt
-  if errorlevel 1 (
-    echo [ERROR] Could not install pyshp.
-    pause
-    exit /b 1
-  )
-)
-
 if exist "%ZIP%" (
   echo Building overlay ZIP already exists. Skipping download.
 ) else (
@@ -46,7 +35,7 @@ if exist "%ZIP%" (
   )
 )
 
-echo Extracting SHP...
+echo Extracting SHP package...
 powershell -NoProfile -ExecutionPolicy Bypass -Command "Expand-Archive -LiteralPath '%ZIP%' -DestinationPath '%OUTDIR%' -Force"
 if errorlevel 1 (
   echo [ERROR] Could not extract building overlay ZIP.
@@ -54,18 +43,20 @@ if errorlevel 1 (
   exit /b 1
 )
 
-set "SHP="
-for /r "%OUTDIR%" %%F in (*.shp) do if not defined SHP set "SHP=%%F"
+set "DBF="
+for /r "%OUTDIR%" %%F in (*.dbf) do if not defined DBF set "DBF=%%F"
 
-if not defined SHP (
-  echo [ERROR] No .shp file found after extraction.
+if not defined DBF (
+  echo [ERROR] No .dbf attribute file found after extraction.
   pause
   exit /b 1
 )
 
-echo Inspecting:
-echo   %SHP%
-python -X utf8 tools\data\inspect_building_overlay.py "%SHP%" > "data\derived\building_overlay_schema.txt"
+echo Inspecting attribute table:
+echo   %DBF%
+echo.
+echo No pip packages are required for this step.
+python -X utf8 tools\data\inspect_building_overlay.py "%DBF%" > "data\derived\building_overlay_schema.txt"
 if errorlevel 1 (
   echo [ERROR] Building overlay inspection failed.
   pause

@@ -1,6 +1,7 @@
 import { StrictMode, Suspense, lazy } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
+import "./analysis-mode.css";
 
 const Analysis2DApp = lazy(() => import("./Analysis2DApp"));
 const GreaterTaipeiApp = lazy(() => import("./GreaterTaipeiApp"));

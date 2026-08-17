@@ -22,6 +22,34 @@ if errorlevel 1 (
   exit /b 1
 )
 
+rem -----------------------------------------------------------------
+rem Ensure the normalized use-permit table exists before join testing.
+rem Fresh ZIP downloads do not carry data\derived from earlier runs.
+rem -----------------------------------------------------------------
+if not exist "%USECSV%" (
+  echo Normalized use-permit table is missing.
+  echo Running building-age data bootstrap automatically...
+  echo.
+  call download-building-age-data.bat
+  if errorlevel 1 (
+    echo.
+    echo [ERROR] Could not build %USECSV%.
+    pause
+    exit /b 1
+  )
+
+  if not exist "%USECSV%" (
+    echo.
+    echo [ERROR] Building-age bootstrap finished but %USECSV% still does not exist.
+    pause
+    exit /b 1
+  )
+
+  echo.
+  echo Use-permit table is ready. Continuing overlay join test...
+  echo.
+)
+
 if exist "%ZIP%" (
   echo Building overlay ZIP already exists. Skipping download.
 ) else (
@@ -65,27 +93,22 @@ if errorlevel 1 (
 )
 
 echo.
-if exist "%USECSV%" (
-  echo Comparing BUDATT_NO with normalized use-permit records...
-  python -X utf8 tools\data\compare_overlay_use_permits.py "%DBF%" "%USECSV%" --out-csv "data\derived\building_overlay_age_join_preview.csv" > "data\derived\building_overlay_join_report.txt"
-  if errorlevel 1 (
-    echo [ERROR] Permit-key join diagnostics failed.
-    pause
-    exit /b 1
-  )
-) else (
-  echo [WARN] %USECSV% was not found.
-  echo Run download-building-age-data.bat first if you want the exact permit-key join test.
+echo Comparing BUDATT_NO with normalized use-permit records...
+python -X utf8 tools\data\compare_overlay_use_permits.py "%DBF%" "%USECSV%" --out-csv "data\derived\building_overlay_age_join_preview.csv" > "data\derived\building_overlay_join_report.txt"
+if errorlevel 1 (
+  echo [ERROR] Permit-key join diagnostics failed.
+  pause
+  exit /b 1
 )
 
 echo.
 echo Done.
 echo Generated reports:
 echo   data\derived\building_overlay_schema.txt
-if exist "data\derived\building_overlay_join_report.txt" echo   data\derived\building_overlay_join_report.txt
-if exist "data\derived\building_overlay_age_join_preview.csv" echo   data\derived\building_overlay_age_join_preview.csv
+echo   data\derived\building_overlay_join_report.txt
+echo   data\derived\building_overlay_age_join_preview.csv
 echo.
-echo Send building_overlay_join_report.txt back to ChatGPT if it was generated.
+echo Send building_overlay_join_report.txt back to ChatGPT.
 echo.
 pause
 endlocal

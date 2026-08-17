@@ -32,6 +32,25 @@
   box-shadow: 0 5px 18px rgba(0, 0, 0, 0.14);
 }
 
+.presentation-return-button {
+  position: fixed;
+  z-index: 30;
+  left: 22px;
+  bottom: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  padding: 9px 13px;
+  color: rgba(247, 249, 251, 0.9);
+  background: rgba(10, 15, 21, 0.82);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(14px);
+  cursor: pointer;
+}
+
+.presentation-return-button:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
 .planned-card {
   opacity: 0.6;
 }

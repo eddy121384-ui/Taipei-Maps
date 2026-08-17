@@ -85,7 +85,7 @@ const html = String.raw`<!doctype html>
 
     setStatus("正在載入 NLSC layer 5 metadata…");
     await Promise.all([view.when(), layer.load()]);
-    setStatus(`layer 5 metadata 已載入：${layer.title || "I3s - 114 F"}。正在串流板橋 3D tile…`, "ok");
+    setStatus("layer 5 metadata 已載入：" + (layer.title || "I3s - 114 F") + "。正在串流板橋 3D tile…", "ok");
 
     const layerView = await view.whenLayerView(layer);
     const updateStatus = () => {
@@ -106,7 +106,7 @@ const html = String.raw`<!doctype html>
     });
   } catch (error) {
     console.error(error);
-    setStatus(`載入失敗：${error?.message ?? error}`, "err");
+    setStatus("載入失敗：" + (error?.message ?? String(error)), "err");
   }
 </script>
 </body>

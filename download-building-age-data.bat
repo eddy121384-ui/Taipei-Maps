@@ -3,7 +3,7 @@ setlocal
 cd /d "%~dp0"
 
 echo ========================================
-echo   Taipei-Maps building-age data bootstrap
+echo   Taipei-Maps building-age data pipeline
 echo ========================================
 echo.
 
@@ -38,14 +38,12 @@ if errorlevel 1 (
   echo Download complete, but Python was not found.
   echo Raw file is ready at:
   echo   %OUT%
-  echo.
-  echo The XML inspector was not run.
   pause
   exit /b 0
 )
 
-echo Inspecting XML schema...
-python tools\data\inspect_use_permits.py "%OUT%" > "data\derived\use_permit_schema.txt"
+echo [1/2] Inspecting XML schema in UTF-8...
+python -X utf8 tools\data\inspect_use_permits.py "%OUT%" > "data\derived\use_permit_schema.txt"
 if errorlevel 1 (
   echo.
   echo [ERROR] XML inspection failed.
@@ -53,10 +51,25 @@ if errorlevel 1 (
   exit /b 1
 )
 
+echo [2/2] Normalizing building-age tables...
+python -X utf8 tools\data\normalize_use_permits.py "%OUT%" --out-dir "data\derived" > "data\derived\use_permit_normalization_report.txt"
+if errorlevel 1 (
+  echo.
+  echo [ERROR] Normalization failed.
+  pause
+  exit /b 1
+)
+
 echo.
 echo Done.
-echo Schema report:
+echo.
+echo Generated files:
 echo   data\derived\use_permit_schema.txt
+echo   data\derived\use_permit_normalization_report.txt
+echo   data\derived\use_permits.csv
+echo   data\derived\use_permit_addresses.csv
+echo.
+echo Next research step: geocode/join the exploded address table to LOD1_2024.
 echo.
 pause
 endlocal

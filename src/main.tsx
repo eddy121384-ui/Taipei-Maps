@@ -11,6 +11,26 @@ const params = new URLSearchParams(window.location.search);
 const showNlscProbe = params.has("nlscProbe");
 const show3D = params.get("mode") === "3d";
 
+if (!showNlscProbe) {
+  let changed = false;
+  if (!params.has("lon")) {
+    params.set("lon", "121.51");
+    changed = true;
+  }
+  if (!params.has("lat")) {
+    params.set("lat", "25.035");
+    changed = true;
+  }
+  if (!params.has("zoom")) {
+    params.set("zoom", "13");
+    changed = true;
+  }
+  if (changed) {
+    const query = params.toString();
+    window.history.replaceState(null, "", `${window.location.pathname}?${query}`);
+  }
+}
+
 function returnTo2D() {
   const next = new URLSearchParams(window.location.search);
   next.delete("mode");

@@ -1,6 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import AgeMapApp from "./AgeMapApp";
+import GreaterTaipeiApp from "./GreaterTaipeiApp";
 import NlscLayerProbe from "./NlscLayerProbe";
 import "./styles.css";
 
@@ -9,6 +9,6 @@ const showNlscProbe = params.has("nlscProbe");
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    {showNlscProbe ? <NlscLayerProbe /> : <AgeMapApp />}
+    {showNlscProbe ? <NlscLayerProbe /> : <GreaterTaipeiApp />}
   </StrictMode>,
 );

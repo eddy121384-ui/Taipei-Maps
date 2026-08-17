@@ -6,3 +6,4 @@ dist/
 # Local GIS / open-data working files
 data/raw/
 data/derived/
+public/generated/

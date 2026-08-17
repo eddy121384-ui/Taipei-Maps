@@ -30,6 +30,29 @@ function formatValue(value: unknown) {
   return String(value);
 }
 
+function createNeutralBuildingRenderer(): any {
+  return {
+    type: "simple",
+    symbol: {
+      type: "mesh-3d",
+      symbolLayers: [
+        {
+          type: "fill",
+          material: {
+            color: "#e5e9ee",
+            colorMixMode: "replace",
+          },
+          edges: {
+            type: "solid",
+            color: [74, 82, 92, 0.36],
+            size: 0.45,
+          },
+        },
+      ],
+    },
+  };
+}
+
 function makeAge3DSymbol(color: string): any {
   return {
     type: "polygon-3d",
@@ -142,12 +165,14 @@ export default function GreaterTaipeiApp() {
     const taipeiProvider = BUILDING_PROVIDERS.taipeiLod1;
     const newTaipeiProvider = BUILDING_PROVIDERS.newTaipeiNlsc;
     const cadastralProvider = BUILDING_PROVIDERS.taipeiCadastral;
+    const neutralBuildingRenderer = createNeutralBuildingRenderer();
 
     const taipeiBuildings = new SceneLayer({
       url: taipeiProvider.url,
       title: taipeiProvider.label,
       outFields: ["*"],
       popupEnabled: false,
+      renderer: neutralBuildingRenderer,
     });
 
     const newTaipeiBuildings = new SceneLayer({
@@ -156,6 +181,7 @@ export default function GreaterTaipeiApp() {
       popupEnabled: false,
       visible: false,
       opacity: 0.94,
+      renderer: createNeutralBuildingRenderer(),
     });
 
     const cadastralBuildings = new SceneLayer({
@@ -333,7 +359,7 @@ export default function GreaterTaipeiApp() {
           <div>
             <strong>3D 建築</strong>
             <span>
-              台北都發局 + 新北 NLSC · 關掉後仍保留所有分析圖層
+              台北都發局 + 新北 NLSC · 統一中性白模 · 關掉後仍保留所有分析圖層
             </span>
           </div>
           <span className={`layer-state ${show3DBuildings ? "on" : ""}`}>
@@ -446,7 +472,7 @@ export default function GreaterTaipeiApp() {
         )}
 
         <div className="source-note">
-          Basemap: OpenStreetMap · Taipei 3D: DUD LOD1_2024 · New Taipei 3D: NLSC layer 5 · Age: Taipei permit-overlay × use-permit join
+          Basemap: OpenStreetMap · Taipei 3D: DUD LOD1_2024 · New Taipei 3D: NLSC layer 5 · Base style: neutral white override · Age: Taipei permit-overlay × use-permit join
         </div>
       </aside>
     </main>

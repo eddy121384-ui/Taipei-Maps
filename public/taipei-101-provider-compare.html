@@ -16,7 +16,7 @@
     #overture,#official{position:absolute;inset:0}
     .tag{position:absolute;z-index:8;top:12px;left:12px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.94);box-shadow:0 4px 18px rgba(0,0,0,.15);font-size:12px;line-height:1.35}
     .tag strong{display:block;font-size:14px}.tag small{color:#5d6872}
-    #panel{position:absolute;z-index:20;left:50%;bottom:14px;transform:translateX(-50%);width:min(820px,calc(100vw - 28px));padding:10px 12px;border:1px solid #cbd2d8;border-radius:12px;background:rgba(255,255,255,.96);box-shadow:0 8px 28px rgba(0,0,0,.16)}
+    #panel{position:absolute;z-index:20;left:50%;bottom:14px;transform:translateX(-50%);width:min(860px,calc(100vw - 28px));padding:10px 12px;border:1px solid #cbd2d8;border-radius:12px;background:rgba(255,255,255,.96);box-shadow:0 8px 28px rgba(0,0,0,.16)}
     #panelTop{display:flex;align-items:center;gap:10px;flex-wrap:wrap}button{border:1px solid #c8d0d7;border-radius:9px;padding:7px 10px;background:#fff;font-weight:700;cursor:pointer}button.active{background:#26313b;color:#fff}.metric{font-size:12px;color:#65707b}.metric b{color:#202a33}.note{margin-top:6px;font-size:10.5px;color:#68727d;line-height:1.4}
     @media(max-width:900px){#grid{grid-template-columns:1fr;grid-template-rows:1fr 1fr}.tag{top:8px;left:8px}#panel{bottom:8px}}
   </style>
@@ -31,11 +31,11 @@
     <button id="reset" class="active">重置到 101</button>
     <button id="parts" class="active">Overture Parts ON</button>
     <span class="metric">Overture ready: <b id="oTime">—</b></span>
-    <span class="metric">Official ready: <b id="aTime">—</b></span>
+    <span class="metric">Official useful: <b id="aTime">—</b></span>
     <span class="metric">Overture visible: <b id="oCount">—</b></span>
     <span class="metric">Official status: <b id="aStatus">loading</b></span>
   </div>
-  <div class="note">Phase A 先比較「資料幾何品質」：左邊是 Overture 全球 fallback，右邊是台北市都發局官方 LOD1_2024 I3S。這還不是同 renderer A/B；若官方量體明顯更像，下一步才追可合法重用的 SHP / vector-tile footprint+height，餵進同一套 MapLibre extrusion。</div>
+  <div class="note">Phase A 比較資料幾何品質。右側現在沿用已在 GreaterTaipeiApp 驗證過的 SceneView camera/goTo 寫法，並且等 Taipei DUD layer + layerView + 首次停止 updating 後才標記 ready，避免「view ready 但其實在看天空」的假成功。</div>
 </div>
 <script type="module">
 const started=performance.now();
@@ -67,29 +67,54 @@ async function buildOverture(){
 }
 
 async function buildOfficial(){
-  const [ArcGISMap,SceneView,SceneLayer,Basemap,OpenStreetMapLayer]=await $arcgis.import([
-    '@arcgis/core/Map.js','@arcgis/core/views/SceneView.js','@arcgis/core/layers/SceneLayer.js','@arcgis/core/Basemap.js','@arcgis/core/layers/OpenStreetMapLayer.js'
+  const status=document.querySelector('#aStatus');
+  status.textContent='importing ArcGIS';
+  const [ArcGISMap,SceneView,SceneLayer,Basemap,OpenStreetMapLayer,reactiveUtils]=await $arcgis.import([
+    '@arcgis/core/Map.js','@arcgis/core/views/SceneView.js','@arcgis/core/layers/SceneLayer.js','@arcgis/core/Basemap.js','@arcgis/core/layers/OpenStreetMapLayer.js','@arcgis/core/core/reactiveUtils.js'
   ]);
+
   const layer=new SceneLayer({
     url:DUD,
-    renderer:{type:'simple',symbol:{type:'mesh-3d',symbolLayers:[{type:'fill',material:{color:[226,231,235]},colorMixMode:'replace',outline:{color:[126,136,146,0.32],size:0.35}}]}}
+    title:'Taipei DUD LOD1_2024',
+    popupEnabled:false,
+    renderer:{type:'simple',symbol:{type:'mesh-3d',symbolLayers:[{type:'fill',material:{color:'#e2e7eb',colorMixMode:'replace'},edges:{type:'solid',color:[126,136,146,0.34],size:0.35}}]}}
   });
-  const map=new ArcGISMap({basemap:new Basemap({baseLayers:[new OpenStreetMapLayer()]}),layers:[layer]});
-  const view=new SceneView({container:'official',map,qualityProfile:'high',environment:{atmosphereEnabled:false,starsEnabled:false,lighting:{directShadowsEnabled:true,ambientOcclusionEnabled:true}}});
+  const map=new ArcGISMap({basemap:new Basemap({baseLayers:[new OpenStreetMapLayer()],title:'OpenStreetMap'}),layers:[layer]});
+
+  // Use the same known-good SceneView camera pattern as GreaterTaipeiApp first,
+  // then goTo(center/zoom/heading/tilt). The previous target:{point}+zoom path could
+  // leave the camera pointed at sky while view.when() still reported ready.
+  const view=new SceneView({
+    container:'official',
+    map,
+    qualityProfile:'high',
+    camera:{position:{longitude:121.51,latitude:25.035,z:3000},heading:345,tilt:66},
+    environment:{atmosphereEnabled:false,starsEnabled:false,lighting:{directShadowsEnabled:true,ambientOcclusionEnabled:true}}
+  });
+
+  status.textContent='loading view';
   await view.when();
-  await view.goTo({target:{type:'point',longitude:C[0],latitude:C[1]},zoom:16.1,heading:28,tilt:61},{animate:false});
+  status.textContent='loading DUD layer';
+  await layer.load();
+  status.textContent='creating layerView';
+  await view.whenLayerView(layer);
+  status.textContent='moving to 101';
+  await view.goTo({center:C,zoom:16.1,heading:332,tilt:61},{animate:false});
+  status.textContent='rendering';
+  await reactiveUtils.whenOnce(()=>!view.updating);
+
   document.querySelector('#aTime').textContent=`${Math.round(performance.now()-started)} ms`;
-  document.querySelector('#aStatus').textContent='ready';
+  status.textContent='ready · layer rendered';
   return view;
 }
 
 let omap=null, aview=null;
 try{omap=await buildOverture();}catch(e){document.querySelector('#oTime').textContent='ERROR';console.error(e)}
-try{aview=await buildOfficial();}catch(e){document.querySelector('#aStatus').textContent='ERROR';console.error(e)}
+try{aview=await buildOfficial();}catch(e){document.querySelector('#aStatus').textContent=`ERROR · ${e?.message||e}`;console.error(e)}
 
 document.querySelector('#reset').onclick=async()=>{
   if(omap)omap.easeTo({center:C,zoom:16.15,pitch:61,bearing:-28,duration:500});
-  if(aview)await aview.goTo({target:{type:'point',longitude:C[0],latitude:C[1]},zoom:16.1,heading:28,tilt:61},{duration:500});
+  if(aview)await aview.goTo({center:C,zoom:16.1,heading:332,tilt:61},{duration:500});
 };
 </script>
 </body>

@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Taipei-Maps · MapLibre performance spike v2</title>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" />
+  <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+  <style>
+    html, body, #map { width: 100%; height: 100%; margin: 0; }
+    body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; overflow: hidden; }
+    #map { background: #eef1f4; }
+    .panel { position:absolute; z-index:5; top:16px; left:16px; width:min(360px,calc(100vw - 32px)); padding:14px; border:1px solid rgba(0,0,0,.12); border-radius:14px; background:rgba(255,255,255,.94); box-shadow:0 10px 30px rgba(0,0,0,.14); backdrop-filter:blur(12px); }
+    .eyebrow { font-size:11px; font-weight:800; letter-spacing:.12em; color:#68727d; }
+    h1 { margin:5px 0 6px; font-size:20px; line-height:1.15; }
+    .sub { margin:0 0 12px; color:#59636e; font-size:12px; line-height:1.45; }
+    .controls { display:flex; flex-wrap:wrap; gap:8px; }
+    button { border:1px solid #cbd2d9; border-radius:9px; padding:8px 10px; background:#fff; color:#26313b; font-weight:700; cursor:pointer; }
+    button.active { background:#26313b; color:#fff; border-color:#26313b; }
+    button:disabled { opacity:.45; cursor:wait; }
+    .metrics { display:grid; grid-template-columns:1fr auto; gap:5px 12px; margin-top:12px; padding-top:10px; border-top:1px solid #dde2e7; font-size:12px; }
+    .metrics span:nth-child(odd) { color:#65707b; }
+    .metrics span:nth-child(even) { font-variant-numeric:tabular-nums; font-weight:700; }
+    .note { margin-top:10px; font-size:11px; color:#6c7680; line-height:1.45; }
+    #status { margin-top:9px; font-size:12px; font-weight:700; }
+    #status.error { color:#b42318; }
+    .legend { display:none; margin-top:10px; gap:7px; flex-wrap:wrap; font-size:10px; color:#59636e; }
+    .legend.show { display:flex; }
+    .swatch { display:inline-flex; align-items:center; gap:3px; }
+    .dot { width:10px; height:10px; border-radius:2px; display:inline-block; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <section class="panel">
+    <div class="eyebrow">ISSUE #27 · DISPOSABLE SPIKE · V2</div>
+    <h1>MapLibre footprint extrusion</h1>
+    <p class="sub">同一份 2D 建築 footprint + height_m，由 GPU 即時擠成立體；不碰 ArcGIS / I3S。</p>
+    <div class="controls">
+      <button id="toggle3d" class="active" disabled>3D 建築 ON</button>
+      <button id="toggleAge" disabled>屋齡 OFF</button>
+      <button id="goto101" disabled>台北 101</button>
+      <button id="overview" disabled>總覽</button>
+    </div>
+    <div id="legend" class="legend">
+      <span class="swatch"><i class="dot" style="background:#73b7ff"></i>0–10</span>
+      <span class="swatch"><i class="dot" style="background:#66d4a9"></i>10–20</span>
+      <span class="swatch"><i class="dot" style="background:#d4dc63"></i>20–30</span>
+      <span class="swatch"><i class="dot" style="background:#f0b45a"></i>30–40</span>
+      <span class="swatch"><i class="dot" style="background:#ea7d49"></i>40–50</span>
+      <span class="swatch"><i class="dot" style="background:#d14b4b"></i>50+</span>
+    </div>
+    <div class="metrics">
+      <span>Map load</span><span id="mapLoad">—</span>
+      <span>GeoJSON fetch + parse</span><span id="dataLoad">—</span>
+      <span>Features</span><span id="featureCount">—</span>
+      <span>First idle after buildings</span><span id="firstIdle">—</span>
+      <span>Last camera move</span><span id="lastMove">—</span>
+    </div>
+    <div id="status">Booting MapLibre…</div>
+    <div class="note">第一階段仍一次載入約 8k 棟 GeoJSON；真正 City Dashboard 等級還要再改成 vector tiles。這一版先純測 renderer。</div>
+  </section>
+
+  <script>
+    const startedAt = performance.now();
+    const statusEl = document.querySelector('#status');
+    const mapLoadEl = document.querySelector('#mapLoad');
+    const dataLoadEl = document.querySelector('#dataLoad');
+    const featureCountEl = document.querySelector('#featureCount');
+    const firstIdleEl = document.querySelector('#firstIdle');
+    const lastMoveEl = document.querySelector('#lastMove');
+    const toggle3d = document.querySelector('#toggle3d');
+    const toggleAge = document.querySelector('#toggleAge');
+    const goto101 = document.querySelector('#goto101');
+    const overview = document.querySelector('#overview');
+    const legend = document.querySelector('#legend');
+
+    function fail(message) {
+      statusEl.textContent = message;
+      statusEl.classList.add('error');
+    }
+
+    if (!window.maplibregl) {
+      fail('MapLibre JS 沒有載入：請把這個畫面截給我。');
+      throw new Error('maplibregl global missing');
+    }
+
+    let show3d = true;
+    let showAge = false;
+    let moveStartedAt = null;
+    let firstIdleCaptured = false;
+
+    const ageColor = ['step', ['to-number', ['get', 'building_age']], '#73b7ff', 11, '#66d4a9', 21, '#d4dc63', 31, '#f0b45a', 41, '#ea7d49', 51, '#d14b4b'];
+
+    const map = new maplibregl.Map({
+      container: 'map',
+      center: [121.5485, 25.0418],
+      zoom: 13.4,
+      pitch: 52,
+      bearing: -18,
+      antialias: true,
+      maxPitch: 75,
+      style: {
+        version: 8,
+        sources: {
+          osm: {
+            type: 'raster',
+            tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+            tileSize: 256,
+            attribution: '© OpenStreetMap contributors'
+          }
+        },
+        layers: [{ id: 'osm', type: 'raster', source: 'osm' }]
+      }
+    });
+
+    map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
+    map.addControl(new maplibregl.ScaleControl({ maxWidth: 120, unit: 'metric' }), 'bottom-right');
+
+    function syncLayers() {
+      if (!map.getLayer('age-footprints') || !map.getLayer('age-extrusion')) return;
+      map.setLayoutProperty('age-extrusion', 'visibility', show3d ? 'visible' : 'none');
+      map.setLayoutProperty('age-footprints', 'visibility', !show3d && showAge ? 'visible' : 'none');
+      map.setPaintProperty('age-extrusion', 'fill-extrusion-color', showAge ? ageColor : '#e5e9ee');
+      toggle3d.textContent = `3D 建築 ${show3d ? 'ON' : 'OFF'}`;
+      toggle3d.classList.toggle('active', show3d);
+      toggleAge.textContent = `屋齡 ${showAge ? 'ON' : 'OFF'}`;
+      toggleAge.classList.toggle('active', showAge);
+      legend.classList.toggle('show', showAge);
+    }
+
+    map.on('error', (event) => {
+      if (event && event.error) console.error('MapLibre error:', event.error);
+    });
+    map.on('movestart', () => { moveStartedAt = performance.now(); });
+    map.on('moveend', () => {
+      if (moveStartedAt !== null) {
+        lastMoveEl.textContent = `${Math.round(performance.now() - moveStartedAt)} ms`;
+        moveStartedAt = null;
+      }
+    });
+
+    map.on('load', async () => {
+      mapLoadEl.textContent = `${Math.round(performance.now() - startedAt)} ms`;
+      statusEl.textContent = 'Map ready. Loading building footprints…';
+      const dataStartedAt = performance.now();
+      try {
+        const response = await fetch('/generated/building_age_2001plus.geojson', { cache: 'no-store' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const geojson = await response.json();
+        dataLoadEl.textContent = `${Math.round(performance.now() - dataStartedAt)} ms`;
+        featureCountEl.textContent = Number(geojson.features?.length || 0).toLocaleString();
+
+        map.addSource('age-buildings', { type: 'geojson', data: geojson });
+        map.addLayer({
+          id: 'age-footprints', type: 'fill', source: 'age-buildings', minzoom: 11,
+          layout: { visibility: 'none' },
+          paint: { 'fill-color': ageColor, 'fill-opacity': 0.72, 'fill-outline-color': 'rgba(45,55,65,0.28)' }
+        });
+        map.addLayer({
+          id: 'age-extrusion', type: 'fill-extrusion', source: 'age-buildings', minzoom: 12,
+          paint: {
+            'fill-extrusion-height': ['coalesce', ['to-number', ['get', 'height_m']], 9.6],
+            'fill-extrusion-base': 0,
+            'fill-extrusion-color': '#e5e9ee',
+            'fill-extrusion-opacity': 0.92,
+            'fill-extrusion-vertical-gradient': true
+          }
+        });
+
+        toggle3d.disabled = false;
+        toggleAge.disabled = false;
+        goto101.disabled = false;
+        overview.disabled = false;
+        syncLayers();
+        statusEl.textContent = 'Ready — 現在可以拖、轉、縮放。';
+
+        map.once('idle', () => {
+          if (!firstIdleCaptured) {
+            firstIdleCaptured = true;
+            firstIdleEl.textContent = `${Math.round(performance.now() - startedAt)} ms`;
+          }
+        });
+      } catch (error) {
+        fail(`Building data failed: ${error.message}`);
+      }
+    });
+
+    toggle3d.addEventListener('click', () => { show3d = !show3d; syncLayers(); });
+    toggleAge.addEventListener('click', () => { showAge = !showAge; syncLayers(); });
+    goto101.addEventListener('click', () => map.easeTo({ center:[121.56447,25.03396], zoom:16.1, pitch:62, bearing:-28, duration:900 }));
+    overview.addEventListener('click', () => map.easeTo({ center:[121.5485,25.0418], zoom:13.4, pitch:52, bearing:-18, duration:900 }));
+  </script>
+</body>
+</html>

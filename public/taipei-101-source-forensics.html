@@ -9,7 +9,7 @@
   <script src="https://unpkg.com/pmtiles@4.4.1/dist/pmtiles.js"></script>
   <style>
     html,body,#map{width:100%;height:100%;margin:0} body{font-family:Inter,system-ui,sans-serif;overflow:hidden}
-    .panel{position:absolute;z-index:5;top:14px;left:14px;width:min(430px,calc(100vw - 28px));max-height:calc(100vh - 28px);overflow:auto;padding:14px;border:1px solid #ccd3d9;border-radius:14px;background:rgba(255,255,255,.96);box-shadow:0 10px 28px rgba(0,0,0,.14)}
+    .panel{position:absolute;z-index:5;top:14px;left:14px;width:min(445px,calc(100vw - 28px));max-height:calc(100vh - 28px);overflow:auto;padding:14px;border:1px solid #ccd3d9;border-radius:14px;background:rgba(255,255,255,.96);box-shadow:0 10px 28px rgba(0,0,0,.14)}
     .eyebrow{font-size:11px;font-weight:800;letter-spacing:.12em;color:#68727d} h1{font-size:20px;margin:5px 0}.sub,.note{font-size:11.5px;color:#5e6872;line-height:1.45}
     button{border:1px solid #c8d0d7;border-radius:9px;padding:7px 9px;background:#fff;font-weight:700;cursor:pointer;margin:3px 4px 3px 0}.active{background:#25313b;color:#fff}
     .metrics{display:grid;grid-template-columns:1fr auto;gap:4px 10px;border-top:1px solid #dde2e7;border-bottom:1px solid #dde2e7;padding:9px 0;margin:9px 0;font-size:12px}.metrics span:nth-child(odd){color:#66717b}.metrics span:nth-child(even){font-weight:800;font-variant-numeric:tabular-nums}
@@ -19,28 +19,35 @@
 <body>
 <div id="map"></div>
 <section class="panel">
-  <div class="eyebrow">ISSUE #27 · TAIPEI 101 SOURCE FORENSICS</div>
-  <h1>101 到底被切成幾塊？</h1>
-  <div class="sub">先把 Overture 在台北 101 周邊真正送進 renderer 的 building / building_part 拆開看。下一步再把台北官方 provider 接進同一個 harness 比較。</div>
-  <div><button id="reset" class="active">101 固定視角</button><button id="toggleParts" class="active">Parts ON</button><button id="scan">重新掃描</button></div>
+  <div class="eyebrow">ISSUE #27 · TAIPEI 101 SOURCE FORENSICS v2</div>
+  <h1>101 是一根豆腐，還是多段量體？</h1>
+  <div class="sub">上一版有兩個問題：MapLibre 的 querySourceFeatures 回傳物件不保證帶 sourceLayer，所以 building / part 被錯算成 0；更重要的是我們把 has_parts=true 的父建築整根 508m 也畫出來，可能直接把內部 building parts 蓋住。這版兩個一起修。</div>
+  <div>
+    <button id="reset" class="active">101 固定視角</button>
+    <button id="partsAware" class="active">Parts-aware ON</button>
+    <button id="toggleParts" class="active">Parts ON</button>
+    <button id="scan">重新掃描</button>
+  </div>
   <div class="metrics">
     <span>PMTiles release</span><span id="release">—</span>
     <span>掃描半徑</span><span>150 m</span>
     <span>building fragments</span><span id="buildingCount">—</span>
     <span>building_part fragments</span><span id="partCount">—</span>
+    <span>has_parts=true parents</span><span id="parentWithParts">—</span>
     <span>直接 height</span><span id="heightCount">—</span>
     <span>只有 floors</span><span id="floorCount">—</span>
     <span>fallback</span><span id="fallbackCount">—</span>
-    <span>不同高度值</span><span id="uniqueHeights">—</span>
+    <span>不同 render 高度</span><span id="uniqueHeights">—</span>
   </div>
   <div id="status">Preflighting Overture…</div>
   <div id="rows" class="table"></div>
-  <div class="note">注意：這裡統計的是目前 vector tiles 內、距離 101 中心約 150m 的 fragments，不等於正式建物棟數。目的是驗證 landmark 是否有多個 building parts / 多段高度。</div>
+  <div class="note"><strong>Parts-aware ON</strong> 時：若 parent building 標記 has_parts=true，就不再把整棟父 footprint 拉到 full height，只畫 building_part。這才是複雜建物正確的 2.5D 語意。把它關掉可以故意重現「508m 巨型豆腐」。</div>
 </section>
 <script>
 (async()=>{
   const $=s=>document.querySelector(s), status=$('#status'), rows=$('#rows');
   if(!window.maplibregl||!window.pmtiles){status.textContent='ERROR: MapLibre / PMTiles CDN 未載入';status.className='error';return;}
+
   const candidates=[
     {release:'2026-07-22.0',url:'https://overturemaps-extras-us-west-2.s3.us-west-2.amazonaws.com/tiles/2026-07-22.0/buildings.pmtiles'},
     {release:'2026-06-17.0',url:'https://overturemaps-extras-us-west-2.s3.us-west-2.amazonaws.com/tiles/2026-06-17.0/buildings.pmtiles'}
@@ -48,38 +55,89 @@
   let selected=null, metadata=null;
   for(const c of candidates){try{const a=new pmtiles.PMTiles(c.url);metadata=await a.getMetadata();await a.getHeader();selected=c;break}catch(e){console.warn(c.release,e)}}
   if(!selected){status.textContent='ERROR: 找不到可用 Overture buildings PMTiles';status.className='error';return;}
-  const ids=(metadata?.vector_layers||[]).map(x=>x.id); if(!ids.includes('building')){status.textContent='ERROR: PMTiles 沒有 building layer';status.className='error';return;}
-  const hasParts=ids.includes('building_part'); $('#release').textContent=selected.release;
+
+  const ids=(metadata?.vector_layers||[]).map(x=>x.id);
+  if(!ids.includes('building')){status.textContent='ERROR: PMTiles 沒有 building layer';status.className='error';return;}
+  const hasPartsLayer=ids.includes('building_part');
+  $('#release').textContent=selected.release;
+
   const protocol=new pmtiles.Protocol({metadata:true}); maplibregl.addProtocol('pmtiles',protocol.tile);
-  const C=[121.56447,25.03396]; let showParts=hasParts;
-  const heightExpr=['case',['>', ['to-number',['get','height'],0],0],['to-number',['get','height'],0],['>', ['to-number',['get','num_floors'],0],0],['*',['to-number',['get','num_floors'],0],3.2],9.6];
+  const C=[121.56447,25.03396];
+  let showParts=hasPartsLayer;
+  let partsAware=true;
+
+  const heightExpr=['case',
+    ['>', ['to-number',['get','height'],0],0],['to-number',['get','height'],0],
+    ['>', ['to-number',['get','num_floors'],0],0],['*',['to-number',['get','num_floors'],0],3.2],
+    9.6
+  ];
+  const noPartsParentFilter=['!', ['==',['get','has_parts'],true]];
+
   const layers=[
     {id:'osm',type:'raster',source:'osm'},
-    {id:'b3d',type:'fill-extrusion',source:'overture','source-layer':'building',minzoom:14,paint:{'fill-extrusion-height':heightExpr,'fill-extrusion-color':'#e3e8ec','fill-extrusion-opacity':.86,'fill-extrusion-vertical-gradient':true}}
+    {id:'b3d',type:'fill-extrusion',source:'overture','source-layer':'building',minzoom:14,filter:noPartsParentFilter,paint:{'fill-extrusion-height':heightExpr,'fill-extrusion-color':'#e3e8ec','fill-extrusion-opacity':.86,'fill-extrusion-vertical-gradient':true}}
   ];
-  if(hasParts) layers.push({id:'p3d',type:'fill-extrusion',source:'overture','source-layer':'building_part',minzoom:14,paint:{'fill-extrusion-base':['to-number',['get','min_height'],0],'fill-extrusion-height':heightExpr,'fill-extrusion-color':'#bccbd5','fill-extrusion-opacity':.94,'fill-extrusion-vertical-gradient':true}});
+  if(hasPartsLayer) layers.push({id:'p3d',type:'fill-extrusion',source:'overture','source-layer':'building_part',minzoom:14,paint:{'fill-extrusion-base':['to-number',['get','min_height'],0],'fill-extrusion-height':heightExpr,'fill-extrusion-color':'#b7c9d5','fill-extrusion-opacity':.96,'fill-extrusion-vertical-gradient':true}});
+
   const map=new maplibregl.Map({container:'map',center:C,zoom:16.35,pitch:61,bearing:-28,maxPitch:75,antialias:true,style:{version:8,sources:{osm:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,attribution:'© OpenStreetMap contributors'},overture:{type:'vector',url:`pmtiles://${selected.url}`,attribution:'© Overture Maps Foundation / source contributors'}},layers}});
   map.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'top-right');
+
   const meters=(a,b)=>{const R=6371008.8,d2r=Math.PI/180,lat1=a[1]*d2r,lat2=b[1]*d2r,dlat=(b[1]-a[1])*d2r,dlon=(b[0]-a[0])*d2r;const h=Math.sin(dlat/2)**2+Math.cos(lat1)*Math.cos(lat2)*Math.sin(dlon/2)**2;return 2*R*Math.asin(Math.sqrt(h));};
   const centerOf=f=>{const g=f.geometry;if(!g)return null;let coords=[];if(g.type==='Polygon')coords=g.coordinates.flat();else if(g.type==='MultiPolygon')coords=g.coordinates.flat(2);else return null;if(!coords.length)return null;let x=0,y=0;for(const p of coords){x+=p[0];y+=p[1]}return[x/coords.length,y/coords.length];};
-  const dedupe=fs=>{const m=new Map();for(const f of fs){const p=f.properties||{},key=`${f.sourceLayer}|${p.id||f.id||JSON.stringify(f.geometry).slice(0,120)}`;if(!m.has(key))m.set(key,f)}return [...m.values()];};
+  const tag=(fs,layer)=>fs.map(f=>({feature:f,layer}));
+  const dedupe=items=>{const m=new Map();for(const item of items){const f=item.feature,p=f.properties||{},key=`${item.layer}|${p.id||f.id||JSON.stringify(f.geometry).slice(0,160)}`;if(!m.has(key))m.set(key,item)}return[...m.values()];};
+
+  function applySemanticRendering(){
+    if(!map.getLayer('b3d'))return;
+    map.setFilter('b3d', partsAware && showParts && hasPartsLayer ? noPartsParentFilter : null);
+    if(hasPartsLayer) map.setLayoutProperty('p3d','visibility',showParts?'visible':'none');
+    $('#partsAware').textContent=`Parts-aware ${partsAware?'ON':'OFF'}`;
+    $('#partsAware').classList.toggle('active',partsAware);
+    $('#toggleParts').textContent=`Parts ${showParts?'ON':'OFF'}`;
+    $('#toggleParts').classList.toggle('active',showParts);
+  }
+
   function scan(){
     if(!map.isStyleLoaded())return;
-    let fs=[]; try{fs.push(...map.querySourceFeatures('overture',{sourceLayer:'building'}));if(hasParts)fs.push(...map.querySourceFeatures('overture',{sourceLayer:'building_part'}));}catch(e){console.error(e);}
-    fs=dedupe(fs).filter(f=>{const c=centerOf(f);return c&&meters(C,c)<=150;});
-    const buildings=fs.filter(f=>f.sourceLayer==='building'), parts=fs.filter(f=>f.sourceLayer==='building_part');
+    let items=[];
+    try{
+      items.push(...tag(map.querySourceFeatures('overture',{sourceLayer:'building'}),'building'));
+      if(hasPartsLayer) items.push(...tag(map.querySourceFeatures('overture',{sourceLayer:'building_part'}),'building_part'));
+    }catch(e){console.error(e);}
+
+    items=dedupe(items).filter(item=>{const c=centerOf(item.feature);return c&&meters(C,c)<=150;});
+    const buildings=items.filter(x=>x.layer==='building');
+    const parts=items.filter(x=>x.layer==='building_part');
+    const parentsWithParts=buildings.filter(x=>x.feature.properties?.has_parts===true || x.feature.properties?.has_parts==='true');
+
     let hc=0,fc=0,xc=0; const hs=new Set();
-    for(const f of fs){const p=f.properties||{},h=Number(p.height||0),n=Number(p.num_floors||0);if(h>0){hc++;hs.add(h.toFixed(2))}else if(n>0){fc++;hs.add((n*3.2).toFixed(2))}else{xc++;hs.add('9.60')}}
-    $('#buildingCount').textContent=buildings.length;$('#partCount').textContent=parts.length;$('#heightCount').textContent=hc;$('#floorCount').textContent=fc;$('#fallbackCount').textContent=xc;$('#uniqueHeights').textContent=hs.size;
-    const sorted=fs.map(f=>{const p=f.properties||{},h=Number(p.height||0),n=Number(p.num_floors||0),rh=h>0?h:n>0?n*3.2:9.6;return{layer:f.sourceLayer,id:p.id||f.id||'—',height:p.height??'—',floors:p.num_floors??'—',min:p.min_height??'—',render:rh,hasParts:p.has_parts??'—'}}).sort((a,b)=>b.render-a.render).slice(0,40);
+    for(const item of items){const p=item.feature.properties||{},h=Number(p.height||0),n=Number(p.num_floors||0);if(h>0){hc++;hs.add(h.toFixed(2))}else if(n>0){fc++;hs.add((n*3.2).toFixed(2))}else{xc++;hs.add('9.60')}}
+
+    $('#buildingCount').textContent=buildings.length;
+    $('#partCount').textContent=parts.length;
+    $('#parentWithParts').textContent=parentsWithParts.length;
+    $('#heightCount').textContent=hc;
+    $('#floorCount').textContent=fc;
+    $('#fallbackCount').textContent=xc;
+    $('#uniqueHeights').textContent=hs.size;
+
+    const sorted=items.map(item=>{const f=item.feature,p=f.properties||{},h=Number(p.height||0),n=Number(p.num_floors||0),rh=h>0?h:n>0?n*3.2:9.6;return{layer:item.layer,id:p.id||f.id||'—',height:p.height??'—',floors:p.num_floors??'—',min:p.min_height??'—',render:rh,hasParts:p.has_parts??'—'}}).sort((a,b)=>b.render-a.render).slice(0,50);
+
     rows.innerHTML=sorted.map((r,i)=>`<div class="row"><strong>#${i+1} · ${r.layer} · render ${r.render.toFixed(1)}m</strong><span class="badge">height ${r.height}</span><span class="badge">floors ${r.floors}</span><span class="badge">min ${r.min}</span><span class="badge">has_parts ${r.hasParts}</span><div class="mono">${r.id}</div></div>`).join('')||'<div class="row">150m 內目前沒抓到 fragments；稍等 tiles idle 後再按重新掃描。</div>';
-    status.textContent=`掃描完成：${fs.length} fragments within 150m。`;
+
+    const verdict=parts.length>0
+      ? `找到 ${parts.length} 個 building_part。Parts-aware ON 時父體不會再把 parts 蓋住。`
+      : `目前 150m 內沒有 building_part；若 101 parent 仍 has_parts=true，表示 parts 可能在不同 tile/位置或 Overture 此處資料不完整。`;
+    status.textContent=`掃描完成：${items.length} fragments。${verdict}`;
   }
-  map.on('load',()=>{status.textContent='Map ready，等 tile idle 後自動掃描…';});
+
+  map.on('load',()=>{applySemanticRendering();status.textContent='Map ready，等 tile idle 後自動掃描…';});
   map.on('idle',scan);
   $('#scan').onclick=scan;
   $('#reset').onclick=()=>map.easeTo({center:C,zoom:16.35,pitch:61,bearing:-28,duration:500});
-  $('#toggleParts').disabled=!hasParts; $('#toggleParts').onclick=()=>{showParts=!showParts;if(hasParts)map.setLayoutProperty('p3d','visibility',showParts?'visible':'none');$('#toggleParts').textContent=`Parts ${showParts?'ON':'OFF'}`;$('#toggleParts').classList.toggle('active',showParts);};
+  $('#toggleParts').disabled=!hasPartsLayer;
+  $('#toggleParts').onclick=()=>{showParts=!showParts;applySemanticRendering();scan();};
+  $('#partsAware').onclick=()=>{partsAware=!partsAware;applySemanticRendering();scan();};
 })();
 </script>
 </body>

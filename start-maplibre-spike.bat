@@ -40,12 +40,12 @@ if not exist "%AGE_GEOJSON%" (
 )
 
 echo.
-echo Starting Vite and opening the isolated MapLibre benchmark...
+echo Starting Vite and opening the isolated MapLibre benchmark v2...
 echo This does NOT replace the normal ArcGIS app.
 echo Close this window to stop the local server.
 echo.
 
-call npm run dev -- --open /maplibre-spike.html
+call npm run dev -- --open /maplibre-spike-v2.html
 
 if errorlevel 1 (
   echo.

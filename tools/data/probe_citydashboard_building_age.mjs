@@ -6,9 +6,8 @@ import path from "node:path";
 const input = process.argv[2] || "data/derived/citydashboard_building_age.geojson";
 const reportPath = process.argv[3] || "data/derived/citydashboard_building_age_report.txt";
 
-function q(values, p) {
-  if (!values.length) return null;
-  const xs = [...values].sort((a, b) => a - b);
+function qSorted(xs, p) {
+  if (!xs.length) return null;
   const i = (xs.length - 1) * p;
   const lo = Math.floor(i);
   const hi = Math.ceil(i);
@@ -95,6 +94,12 @@ function binCounts(values, shift = 0) {
 const bySourceAge = binCounts(ages, 0);
 const byCurrentAge = ageShift != null ? binCounts(ages, ageShift) : null;
 
+// Sort numeric ages once. Avoid Math.min(...ages) / Math.max(...ages):
+// spreading a citywide feature array as function arguments can exceed V8's
+// maximum call stack / argument count. Reusing one sorted array also avoids
+// sorting the same large dataset three times for quartiles.
+const sortedAges = [...ages].sort((a, b) => a - b);
+
 const sortedFeatureAges = features
   .map((f) => ({ f, age: ageKey == null ? NaN : Number(f?.properties?.[ageKey]) }))
   .filter((x) => Number.isFinite(x.age))
@@ -130,14 +135,14 @@ lines.push(`Rows with numeric age: ${ages.length.toLocaleString()}`);
 lines.push(`Rows with missing/non-numeric age: ${missingAge.toLocaleString()}`);
 lines.push(`Rows with address: ${withAddress.toLocaleString()}`);
 
-if (ages.length) {
+if (sortedAges.length) {
   lines.push("");
   lines.push("Source age statistics:");
-  lines.push(`  min: ${Math.min(...ages)}`);
-  lines.push(`  p25: ${q(ages, 0.25)}`);
-  lines.push(`  median: ${q(ages, 0.5)}`);
-  lines.push(`  p75: ${q(ages, 0.75)}`);
-  lines.push(`  max: ${Math.max(...ages)}`);
+  lines.push(`  min: ${sortedAges[0]}`);
+  lines.push(`  p25: ${qSorted(sortedAges, 0.25)}`);
+  lines.push(`  median: ${qSorted(sortedAges, 0.5)}`);
+  lines.push(`  p75: ${qSorted(sortedAges, 0.75)}`);
+  lines.push(`  max: ${sortedAges[sortedAges.length - 1]}`);
   lines.push("");
   lines.push("Source age bins:");
   for (const [name, value] of bySourceAge) lines.push(`  ${name}: ${value.toLocaleString()}`);

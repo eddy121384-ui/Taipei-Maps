@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Taipei-Maps · Taipei 101 source forensics</title>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" />
+  <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+  <script src="https://unpkg.com/pmtiles@4.4.1/dist/pmtiles.js"></script>
+  <style>
+    html,body,#map{width:100%;height:100%;margin:0} body{font-family:Inter,system-ui,sans-serif;overflow:hidden}
+    .panel{position:absolute;z-index:5;top:14px;left:14px;width:min(430px,calc(100vw - 28px));max-height:calc(100vh - 28px);overflow:auto;padding:14px;border:1px solid #ccd3d9;border-radius:14px;background:rgba(255,255,255,.96);box-shadow:0 10px 28px rgba(0,0,0,.14)}
+    .eyebrow{font-size:11px;font-weight:800;letter-spacing:.12em;color:#68727d} h1{font-size:20px;margin:5px 0}.sub,.note{font-size:11.5px;color:#5e6872;line-height:1.45}
+    button{border:1px solid #c8d0d7;border-radius:9px;padding:7px 9px;background:#fff;font-weight:700;cursor:pointer;margin:3px 4px 3px 0}.active{background:#25313b;color:#fff}
+    .metrics{display:grid;grid-template-columns:1fr auto;gap:4px 10px;border-top:1px solid #dde2e7;border-bottom:1px solid #dde2e7;padding:9px 0;margin:9px 0;font-size:12px}.metrics span:nth-child(odd){color:#66717b}.metrics span:nth-child(even){font-weight:800;font-variant-numeric:tabular-nums}
+    #status{font-size:12px;font-weight:700;line-height:1.4}.error{color:#b42318}.table{font-size:11px;line-height:1.35}.row{padding:6px 0;border-bottom:1px solid #edf0f2}.row strong{display:block}.badge{display:inline-block;background:#eef2f4;border-radius:999px;padding:2px 6px;margin:2px 3px 0 0}.mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+  </style>
+</head>
+<body>
+<div id="map"></div>
+<section class="panel">
+  <div class="eyebrow">ISSUE #27 · TAIPEI 101 SOURCE FORENSICS</div>
+  <h1>101 到底被切成幾塊？</h1>
+  <div class="sub">先把 Overture 在台北 101 周邊真正送進 renderer 的 building / building_part 拆開看。下一步再把台北官方 provider 接進同一個 harness 比較。</div>
+  <div><button id="reset" class="active">101 固定視角</button><button id="toggleParts" class="active">Parts ON</button><button id="scan">重新掃描</button></div>
+  <div class="metrics">
+    <span>PMTiles release</span><span id="release">—</span>
+    <span>掃描半徑</span><span>150 m</span>
+    <span>building fragments</span><span id="buildingCount">—</span>
+    <span>building_part fragments</span><span id="partCount">—</span>
+    <span>直接 height</span><span id="heightCount">—</span>
+    <span>只有 floors</span><span id="floorCount">—</span>
+    <span>fallback</span><span id="fallbackCount">—</span>
+    <span>不同高度值</span><span id="uniqueHeights">—</span>
+  </div>
+  <div id="status">Preflighting Overture…</div>
+  <div id="rows" class="table"></div>
+  <div class="note">注意：這裡統計的是目前 vector tiles 內、距離 101 中心約 150m 的 fragments，不等於正式建物棟數。目的是驗證 landmark 是否有多個 building parts / 多段高度。</div>
+</section>
+<script>
+(async()=>{
+  const $=s=>document.querySelector(s), status=$('#status'), rows=$('#rows');
+  if(!window.maplibregl||!window.pmtiles){status.textContent='ERROR: MapLibre / PMTiles CDN 未載入';status.className='error';return;}
+  const candidates=[
+    {release:'2026-07-22.0',url:'https://overturemaps-extras-us-west-2.s3.us-west-2.amazonaws.com/tiles/2026-07-22.0/buildings.pmtiles'},
+    {release:'2026-06-17.0',url:'https://overturemaps-extras-us-west-2.s3.us-west-2.amazonaws.com/tiles/2026-06-17.0/buildings.pmtiles'}
+  ];
+  let selected=null, metadata=null;
+  for(const c of candidates){try{const a=new pmtiles.PMTiles(c.url);metadata=await a.getMetadata();await a.getHeader();selected=c;break}catch(e){console.warn(c.release,e)}}
+  if(!selected){status.textContent='ERROR: 找不到可用 Overture buildings PMTiles';status.className='error';return;}
+  const ids=(metadata?.vector_layers||[]).map(x=>x.id); if(!ids.includes('building')){status.textContent='ERROR: PMTiles 沒有 building layer';status.className='error';return;}
+  const hasParts=ids.includes('building_part'); $('#release').textContent=selected.release;
+  const protocol=new pmtiles.Protocol({metadata:true}); maplibregl.addProtocol('pmtiles',protocol.tile);
+  const C=[121.56447,25.03396]; let showParts=hasParts;
+  const heightExpr=['case',['>', ['to-number',['get','height'],0],0],['to-number',['get','height'],0],['>', ['to-number',['get','num_floors'],0],0],['*',['to-number',['get','num_floors'],0],3.2],9.6];
+  const layers=[
+    {id:'osm',type:'raster',source:'osm'},
+    {id:'b3d',type:'fill-extrusion',source:'overture','source-layer':'building',minzoom:14,paint:{'fill-extrusion-height':heightExpr,'fill-extrusion-color':'#e3e8ec','fill-extrusion-opacity':.86,'fill-extrusion-vertical-gradient':true}}
+  ];
+  if(hasParts) layers.push({id:'p3d',type:'fill-extrusion',source:'overture','source-layer':'building_part',minzoom:14,paint:{'fill-extrusion-base':['to-number',['get','min_height'],0],'fill-extrusion-height':heightExpr,'fill-extrusion-color':'#bccbd5','fill-extrusion-opacity':.94,'fill-extrusion-vertical-gradient':true}});
+  const map=new maplibregl.Map({container:'map',center:C,zoom:16.35,pitch:61,bearing:-28,maxPitch:75,antialias:true,style:{version:8,sources:{osm:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,attribution:'© OpenStreetMap contributors'},overture:{type:'vector',url:`pmtiles://${selected.url}`,attribution:'© Overture Maps Foundation / source contributors'}},layers}});
+  map.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'top-right');
+  const meters=(a,b)=>{const R=6371008.8,d2r=Math.PI/180,lat1=a[1]*d2r,lat2=b[1]*d2r,dlat=(b[1]-a[1])*d2r,dlon=(b[0]-a[0])*d2r;const h=Math.sin(dlat/2)**2+Math.cos(lat1)*Math.cos(lat2)*Math.sin(dlon/2)**2;return 2*R*Math.asin(Math.sqrt(h));};
+  const centerOf=f=>{const g=f.geometry;if(!g)return null;let coords=[];if(g.type==='Polygon')coords=g.coordinates.flat();else if(g.type==='MultiPolygon')coords=g.coordinates.flat(2);else return null;if(!coords.length)return null;let x=0,y=0;for(const p of coords){x+=p[0];y+=p[1]}return[x/coords.length,y/coords.length];};
+  const dedupe=fs=>{const m=new Map();for(const f of fs){const p=f.properties||{},key=`${f.sourceLayer}|${p.id||f.id||JSON.stringify(f.geometry).slice(0,120)}`;if(!m.has(key))m.set(key,f)}return [...m.values()];};
+  function scan(){
+    if(!map.isStyleLoaded())return;
+    let fs=[]; try{fs.push(...map.querySourceFeatures('overture',{sourceLayer:'building'}));if(hasParts)fs.push(...map.querySourceFeatures('overture',{sourceLayer:'building_part'}));}catch(e){console.error(e);}
+    fs=dedupe(fs).filter(f=>{const c=centerOf(f);return c&&meters(C,c)<=150;});
+    const buildings=fs.filter(f=>f.sourceLayer==='building'), parts=fs.filter(f=>f.sourceLayer==='building_part');
+    let hc=0,fc=0,xc=0; const hs=new Set();
+    for(const f of fs){const p=f.properties||{},h=Number(p.height||0),n=Number(p.num_floors||0);if(h>0){hc++;hs.add(h.toFixed(2))}else if(n>0){fc++;hs.add((n*3.2).toFixed(2))}else{xc++;hs.add('9.60')}}
+    $('#buildingCount').textContent=buildings.length;$('#partCount').textContent=parts.length;$('#heightCount').textContent=hc;$('#floorCount').textContent=fc;$('#fallbackCount').textContent=xc;$('#uniqueHeights').textContent=hs.size;
+    const sorted=fs.map(f=>{const p=f.properties||{},h=Number(p.height||0),n=Number(p.num_floors||0),rh=h>0?h:n>0?n*3.2:9.6;return{layer:f.sourceLayer,id:p.id||f.id||'—',height:p.height??'—',floors:p.num_floors??'—',min:p.min_height??'—',render:rh,hasParts:p.has_parts??'—'}}).sort((a,b)=>b.render-a.render).slice(0,40);
+    rows.innerHTML=sorted.map((r,i)=>`<div class="row"><strong>#${i+1} · ${r.layer} · render ${r.render.toFixed(1)}m</strong><span class="badge">height ${r.height}</span><span class="badge">floors ${r.floors}</span><span class="badge">min ${r.min}</span><span class="badge">has_parts ${r.hasParts}</span><div class="mono">${r.id}</div></div>`).join('')||'<div class="row">150m 內目前沒抓到 fragments；稍等 tiles idle 後再按重新掃描。</div>';
+    status.textContent=`掃描完成：${fs.length} fragments within 150m。`;
+  }
+  map.on('load',()=>{status.textContent='Map ready，等 tile idle 後自動掃描…';});
+  map.on('idle',scan);
+  $('#scan').onclick=scan;
+  $('#reset').onclick=()=>map.easeTo({center:C,zoom:16.35,pitch:61,bearing:-28,duration:500});
+  $('#toggleParts').disabled=!hasParts; $('#toggleParts').onclick=()=>{showParts=!showParts;if(hasParts)map.setLayoutProperty('p3d','visibility',showParts?'visible':'none');$('#toggleParts').textContent=`Parts ${showParts?'ON':'OFF'}`;$('#toggleParts').classList.toggle('active',showParts);};
+})();
+</script>
+</body>
+</html>

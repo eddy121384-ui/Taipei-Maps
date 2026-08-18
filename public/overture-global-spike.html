@@ -8,41 +8,27 @@
   <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
   <script src="https://unpkg.com/pmtiles@4.4.1/dist/pmtiles.js"></script>
   <style>
-    html, body, #map { width: 100%; height: 100%; margin: 0; }
-    body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; overflow: hidden; }
-    #map { background: #edf1f4; }
-    .panel {
-      position: absolute; z-index: 5; top: 16px; left: 16px;
-      width: min(390px, calc(100vw - 32px)); padding: 14px;
-      border: 1px solid rgba(0,0,0,.12); border-radius: 14px;
-      background: rgba(255,255,255,.95); box-shadow: 0 10px 30px rgba(0,0,0,.14);
-      backdrop-filter: blur(12px);
-    }
-    .eyebrow { font-size: 11px; font-weight: 800; letter-spacing: .12em; color: #68727d; }
-    h1 { margin: 5px 0 5px; font-size: 20px; line-height: 1.15; }
-    .sub { margin: 0 0 11px; color: #59636e; font-size: 12px; line-height: 1.45; }
-    .controls { display: flex; flex-wrap: wrap; gap: 7px; }
-    button {
-      border: 1px solid #cbd2d9; border-radius: 9px; padding: 8px 10px;
-      background: #fff; color: #26313b; font-weight: 700; cursor: pointer;
-    }
-    button.active { background: #26313b; color: #fff; border-color: #26313b; }
-    button.city.active { background: #0f6b5b; border-color: #0f6b5b; }
-    .metrics {
-      display: grid; grid-template-columns: 1fr auto; gap: 5px 12px;
-      margin-top: 11px; padding-top: 10px; border-top: 1px solid #dde2e7; font-size: 12px;
-    }
-    .metrics span:nth-child(odd) { color: #65707b; }
-    .metrics span:nth-child(even) { font-variant-numeric: tabular-nums; font-weight: 700; }
-    #status { margin-top: 9px; font-size: 12px; font-weight: 700; }
-    #status.error { color: #b42318; }
-    .note { margin-top: 8px; font-size: 10.5px; color: #6c7680; line-height: 1.45; }
-    .inspector {
-      margin-top: 10px; padding-top: 9px; border-top: 1px solid #dde2e7;
-      font-size: 11px; line-height: 1.45; color: #49545e; max-height: 150px; overflow: auto;
-    }
-    .inspector strong { color: #202a33; }
-    .badge { display: inline-block; padding: 2px 6px; border-radius: 999px; background: #eef2f4; margin-right: 4px; }
+    html, body, #map { width:100%; height:100%; margin:0; }
+    body { font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; overflow:hidden; }
+    #map { background:#edf1f4; }
+    .panel { position:absolute; z-index:5; top:16px; left:16px; width:min(405px,calc(100vw - 32px)); padding:14px; border:1px solid rgba(0,0,0,.12); border-radius:14px; background:rgba(255,255,255,.95); box-shadow:0 10px 30px rgba(0,0,0,.14); backdrop-filter:blur(12px); }
+    .eyebrow { font-size:11px; font-weight:800; letter-spacing:.12em; color:#68727d; }
+    h1 { margin:5px 0; font-size:20px; line-height:1.15; }
+    .sub { margin:0 0 11px; color:#59636e; font-size:12px; line-height:1.45; }
+    .controls { display:flex; flex-wrap:wrap; gap:7px; }
+    button { border:1px solid #cbd2d9; border-radius:9px; padding:8px 10px; background:#fff; color:#26313b; font-weight:700; cursor:pointer; }
+    button.active { background:#26313b; color:#fff; border-color:#26313b; }
+    button.city.active { background:#0f6b5b; border-color:#0f6b5b; }
+    button:disabled { opacity:.45; cursor:wait; }
+    .metrics { display:grid; grid-template-columns:1fr auto; gap:5px 12px; margin-top:11px; padding-top:10px; border-top:1px solid #dde2e7; font-size:12px; }
+    .metrics span:nth-child(odd) { color:#65707b; }
+    .metrics span:nth-child(even) { font-variant-numeric:tabular-nums; font-weight:700; }
+    #status { margin-top:9px; font-size:12px; font-weight:700; line-height:1.45; }
+    #status.error { color:#b42318; }
+    .note { margin-top:8px; font-size:10.5px; color:#6c7680; line-height:1.45; }
+    .inspector { margin-top:10px; padding-top:9px; border-top:1px solid #dde2e7; font-size:11px; line-height:1.45; color:#49545e; max-height:150px; overflow:auto; }
+    .inspector strong { color:#202a33; }
+    .badge { display:inline-block; padding:2px 6px; border-radius:999px; background:#eef2f4; margin:2px 4px 2px 0; }
   </style>
 </head>
 <body>
@@ -50,20 +36,20 @@
   <section class="panel">
     <div class="eyebrow">ISSUE #27 · GLOBAL BUILDING UNIVERSE SPIKE</div>
     <h1>Overture → MapLibre extrusion</h1>
-    <p class="sub">同一份全球 Overture 建築向量磚，直接切換台北、東京、紐約。沒有下載整座城市；瀏覽器只用 PMTiles range requests 取目前視窗需要的 tiles。</p>
-
+    <p class="sub">先驗證 Overture PMTiles 本體與 source layers，通過後才建立地圖。這次不再出現「嘴巴說 Ready、實際 0 棟」的假成功。</p>
     <div class="controls" style="margin-bottom:7px">
-      <button class="city active" data-city="taipei">台北 101</button>
-      <button class="city" data-city="tokyo">東京新宿</button>
-      <button class="city" data-city="nyc">紐約 Midtown</button>
+      <button class="city active" data-city="taipei" disabled>台北 101</button>
+      <button class="city" data-city="tokyo" disabled>東京新宿</button>
+      <button class="city" data-city="nyc" disabled>紐約 Midtown</button>
     </div>
     <div class="controls">
-      <button id="toggle3d" class="active">3D 建築 ON</button>
-      <button id="toggleParts" class="active">Building Parts ON</button>
-      <button id="resetPitch">俯視</button>
+      <button id="toggle3d" class="active" disabled>3D 建築 ON</button>
+      <button id="toggleParts" class="active" disabled>Building Parts ON</button>
+      <button id="resetPitch" disabled>俯視</button>
     </div>
-
     <div class="metrics">
+      <span>PMTiles release</span><span id="release">—</span>
+      <span>Source layers</span><span id="sourceLayers">—</span>
       <span>Map load</span><span id="mapLoad">—</span>
       <span>Last move → idle</span><span id="lastIdle">—</span>
       <span>Visible rendered fragments</span><span id="visibleCount">—</span>
@@ -71,236 +57,184 @@
       <span>只有樓層可估高</span><span id="floorCount">—</span>
       <span>無高度資料 fallback</span><span id="fallbackCount">—</span>
     </div>
-
-    <div id="status">Loading MapLibre + PMTiles…</div>
-    <div id="inspector" class="inspector">點一棟建築，可以看 Overture tile 實際帶回來的 height / floors / parts 屬性。</div>
-    <div class="note">
-      Overture release: <strong>2026-06-17.0</strong>。這是官方全球 buildings PMTiles 的瀏覽器直連實驗，不是地方政府權威建管資料。高度缺失時先用 floors×3.2m，兩者都沒有才用 9.6m，只為驗證 renderer / coverage。
-    </div>
+    <div id="status">Preflighting Overture PMTiles…</div>
+    <div id="inspector" class="inspector">PMTiles 驗證成功後，點建築可看 tile 實際屬性。</div>
+    <div class="note">Overture 公開 release 最多保留約 60 天；舊版 URL 會失效。因此這個 spike 現在先讀 PMTiles header/metadata，再開始 render。地方政府資料仍應優先於全球 fallback。</div>
   </section>
 
   <script>
-    (() => {
-      const startedAt = performance.now();
-      const statusEl = document.querySelector('#status');
-      const inspectorEl = document.querySelector('#inspector');
-      const mapLoadEl = document.querySelector('#mapLoad');
-      const lastIdleEl = document.querySelector('#lastIdle');
-      const visibleCountEl = document.querySelector('#visibleCount');
-      const heightCountEl = document.querySelector('#heightCount');
-      const floorCountEl = document.querySelector('#floorCount');
-      const fallbackCountEl = document.querySelector('#fallbackCount');
-      const toggle3d = document.querySelector('#toggle3d');
-      const toggleParts = document.querySelector('#toggleParts');
+  (async () => {
+    const startedAt = performance.now();
+    const $ = (s) => document.querySelector(s);
+    const statusEl = $('#status');
+    const releaseEl = $('#release');
+    const sourceLayersEl = $('#sourceLayers');
+    const mapLoadEl = $('#mapLoad');
+    const lastIdleEl = $('#lastIdle');
+    const visibleCountEl = $('#visibleCount');
+    const heightCountEl = $('#heightCount');
+    const floorCountEl = $('#floorCount');
+    const fallbackCountEl = $('#fallbackCount');
+    const inspectorEl = $('#inspector');
+    const toggle3d = $('#toggle3d');
+    const toggleParts = $('#toggleParts');
+    const resetPitch = $('#resetPitch');
+    const cityButtons = [...document.querySelectorAll('button.city')];
 
-      if (!window.maplibregl) {
-        statusEl.textContent = 'ERROR: MapLibre JS 沒有載入。';
-        statusEl.classList.add('error');
-        return;
+    function fail(message) {
+      statusEl.textContent = message;
+      statusEl.classList.add('error');
+      console.error(message);
+    }
+
+    if (!window.maplibregl) return fail('ERROR: MapLibre JS 沒有載入。');
+    if (!window.pmtiles) return fail('ERROR: PMTiles JS 沒有載入。');
+
+    // Overture retains public releases for a maximum of about 60 days.
+    // Prefer the newest confirmed release first; older candidate is diagnostic fallback only.
+    const candidates = [
+      { release:'2026-07-22.0', url:'https://overturemaps-extras-us-west-2.s3.us-west-2.amazonaws.com/tiles/2026-07-22.0/buildings.pmtiles' },
+      { release:'2026-06-17.0', url:'https://overturemaps-extras-us-west-2.s3.us-west-2.amazonaws.com/tiles/2026-06-17.0/buildings.pmtiles' }
+    ];
+
+    let selected = null;
+    let metadata = null;
+    let header = null;
+    const failures = [];
+
+    for (const candidate of candidates) {
+      statusEl.textContent = `Checking Overture ${candidate.release} buildings.pmtiles…`;
+      try {
+        const archive = new pmtiles.PMTiles(candidate.url);
+        [header, metadata] = await Promise.all([archive.getHeader(), archive.getMetadata()]);
+        selected = candidate;
+        break;
+      } catch (error) {
+        failures.push(`${candidate.release}: ${error?.message || error}`);
       }
-      if (!window.pmtiles) {
-        statusEl.textContent = 'ERROR: PMTiles JS 沒有載入。';
-        statusEl.classList.add('error');
-        return;
+    }
+
+    if (!selected) {
+      fail('PMTiles preflight failed：' + failures.join(' | '));
+      return;
+    }
+
+    const vectorLayers = Array.isArray(metadata?.vector_layers) ? metadata.vector_layers : [];
+    const layerIds = vectorLayers.map(v => v.id).filter(Boolean);
+    const buildingLayer = layerIds.includes('building') ? 'building' : null;
+    const partsLayer = layerIds.includes('building_part') ? 'building_part' : null;
+
+    releaseEl.textContent = selected.release;
+    sourceLayersEl.textContent = layerIds.length ? layerIds.join(', ') : '(metadata 無 vector_layers)';
+
+    if (!buildingLayer) {
+      fail(`PMTiles 有回應，但找不到 building source-layer。實際 layers: ${layerIds.join(', ') || 'NONE'}`);
+      return;
+    }
+
+    statusEl.textContent = `PMTiles OK · ${selected.release} · layers: ${layerIds.join(', ')}`;
+    statusEl.classList.remove('error');
+
+    const protocol = new pmtiles.Protocol({ metadata:true });
+    maplibregl.addProtocol('pmtiles', protocol.tile);
+
+    const cities = {
+      taipei:{ label:'台北 101', center:[121.56447,25.03396], zoom:15.25, pitch:58, bearing:-26 },
+      tokyo:{ label:'東京新宿', center:[139.6986,35.6938], zoom:15.15, pitch:58, bearing:18 },
+      nyc:{ label:'紐約 Midtown', center:[-73.9855,40.7580], zoom:15.15, pitch:60, bearing:-28 }
+    };
+
+    const heightExpr = ['case',
+      ['>', ['to-number',['get','height'],0],0], ['to-number',['get','height'],0],
+      ['>', ['to-number',['get','num_floors'],0],0], ['*',['to-number',['get','num_floors'],0],3.2],
+      9.6
+    ];
+    const baseExpr = ['to-number',['get','min_height'],0];
+    let show3d = true;
+    let showParts = Boolean(partsLayer);
+    let moveStartedAt = null;
+    let currentCity = 'taipei';
+
+    const layers = [
+      { id:'osm', type:'raster', source:'osm' },
+      { id:'building-flat', type:'fill', source:'overtureBuildings', 'source-layer':buildingLayer, minzoom:14, layout:{visibility:'none'}, paint:{'fill-color':'#dce3e8','fill-opacity':.84,'fill-outline-color':'rgba(85,97,108,.28)'} },
+      { id:'building-3d', type:'fill-extrusion', source:'overtureBuildings', 'source-layer':buildingLayer, minzoom:14, paint:{'fill-extrusion-base':baseExpr,'fill-extrusion-height':heightExpr,'fill-extrusion-color':'#e2e7eb','fill-extrusion-opacity':.9,'fill-extrusion-vertical-gradient':true} }
+    ];
+
+    if (partsLayer) {
+      layers.push(
+        { id:'parts-flat', type:'fill', source:'overtureBuildings', 'source-layer':partsLayer, minzoom:14, layout:{visibility:'none'}, paint:{'fill-color':'#c8d5dd','fill-opacity':.88,'fill-outline-color':'rgba(60,74,86,.3)'} },
+        { id:'parts-3d', type:'fill-extrusion', source:'overtureBuildings', 'source-layer':partsLayer, minzoom:14, paint:{'fill-extrusion-base':baseExpr,'fill-extrusion-height':heightExpr,'fill-extrusion-color':'#cbd7df','fill-extrusion-opacity':.94,'fill-extrusion-vertical-gradient':true} }
+      );
+    }
+
+    const map = new maplibregl.Map({
+      container:'map', center:cities.taipei.center, zoom:cities.taipei.zoom, pitch:cities.taipei.pitch, bearing:cities.taipei.bearing, maxPitch:75, antialias:true,
+      style:{ version:8, sources:{
+        osm:{ type:'raster', tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'], tileSize:256, attribution:'© OpenStreetMap contributors' },
+        overtureBuildings:{ type:'vector', url:`pmtiles://${selected.url}`, attribution:'© Overture Maps Foundation / source contributors' }
+      }, layers }
+    });
+
+    map.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'top-right');
+    map.addControl(new maplibregl.ScaleControl({maxWidth:120,unit:'metric'}),'bottom-right');
+
+    function syncVisibility() {
+      if (!map.isStyleLoaded()) return;
+      const set = (id,on) => map.getLayer(id) && map.setLayoutProperty(id,'visibility',on?'visible':'none');
+      set('building-3d',show3d); set('building-flat',!show3d);
+      if (partsLayer) { set('parts-3d',show3d&&showParts); set('parts-flat',!show3d&&showParts); }
+      toggle3d.textContent=`3D 建築 ${show3d?'ON':'OFF'}`; toggle3d.classList.toggle('active',show3d);
+      toggleParts.textContent=`Building Parts ${showParts?'ON':'OFF'}`; toggleParts.classList.toggle('active',showParts);
+    }
+
+    function activeLayerIds() {
+      const ids = [show3d?'building-3d':'building-flat'];
+      if (partsLayer && showParts) ids.push(show3d?'parts-3d':'parts-flat');
+      return ids.filter(id=>map.getLayer(id));
+    }
+
+    function refreshVisibleStats() {
+      if (!map.isStyleLoaded()) return;
+      const features = map.queryRenderedFeatures({layers:activeLayerIds()});
+      let h=0,f=0,x=0;
+      for (const ft of features) {
+        const hv=Number(ft.properties?.height||0), nv=Number(ft.properties?.num_floors||0);
+        if (Number.isFinite(hv)&&hv>0) h++; else if(Number.isFinite(nv)&&nv>0) f++; else x++;
       }
+      visibleCountEl.textContent=features.length.toLocaleString(); heightCountEl.textContent=h.toLocaleString(); floorCountEl.textContent=f.toLocaleString(); fallbackCountEl.textContent=x.toLocaleString();
+    }
 
-      const BUILDINGS_PM = 'https://overturemaps-extras-us-west-2.s3.us-west-2.amazonaws.com/tiles/2026-06-17.0/buildings.pmtiles';
-      const protocol = new pmtiles.Protocol({ metadata: true });
-      maplibregl.addProtocol('pmtiles', protocol.tile);
+    map.on('load',()=>{
+      mapLoadEl.textContent=`${Math.round(performance.now()-startedAt)} ms`;
+      statusEl.textContent=`Ready · Overture ${selected.release} · ${buildingLayer}${partsLayer?' + '+partsLayer:''}`;
+      cityButtons.forEach(b=>b.disabled=false); toggle3d.disabled=false; toggleParts.disabled=!partsLayer; resetPitch.disabled=false;
+      syncVisibility();
+    });
+    map.on('movestart',()=>{moveStartedAt=performance.now();});
+    map.on('idle',()=>{ if(moveStartedAt!=null){lastIdleEl.textContent=`${Math.round(performance.now()-moveStartedAt)} ms`;moveStartedAt=null;} refreshVisibleStats(); });
+    map.on('error',(event)=>{ const m=event?.error?.message||String(event?.error||'unknown map error'); console.error(event); statusEl.textContent=`Map error: ${m}`; statusEl.classList.add('error'); });
 
-      const cities = {
-        taipei: { label: '台北 101', center: [121.56447, 25.03396], zoom: 15.25, pitch: 58, bearing: -26 },
-        tokyo: { label: '東京新宿', center: [139.6986, 35.6938], zoom: 15.15, pitch: 58, bearing: 18 },
-        nyc: { label: '紐約 Midtown', center: [-73.9855, 40.7580], zoom: 15.15, pitch: 60, bearing: -28 },
-      };
+    toggle3d.addEventListener('click',()=>{show3d=!show3d;syncVisibility();refreshVisibleStats();});
+    toggleParts.addEventListener('click',()=>{showParts=!showParts;syncVisibility();refreshVisibleStats();});
+    resetPitch.addEventListener('click',()=>map.easeTo({pitch:0,bearing:0,duration:700}));
 
-      const heightExpr = [
-        'case',
-        ['>', ['to-number', ['get', 'height'], 0], 0], ['to-number', ['get', 'height'], 0],
-        ['>', ['to-number', ['get', 'num_floors'], 0], 0], ['*', ['to-number', ['get', 'num_floors'], 0], 3.2],
-        9.6
-      ];
-      const baseExpr = ['to-number', ['get', 'min_height'], 0];
+    cityButtons.forEach(button=>button.addEventListener('click',()=>{
+      currentCity=button.dataset.city; const city=cities[currentCity];
+      cityButtons.forEach(b=>b.classList.toggle('active',b===button));
+      statusEl.classList.remove('error'); statusEl.textContent=`Flying to ${city.label}…`;
+      map.flyTo({center:city.center,zoom:city.zoom,pitch:city.pitch,bearing:city.bearing,speed:1.25,curve:1.4,essential:true});
+      map.once('idle',()=>{ refreshVisibleStats(); const n=visibleCountEl.textContent; statusEl.textContent=`${city.label} ready · rendered fragments: ${n}`; });
+    }));
 
-      let show3d = true;
-      let showParts = true;
-      let moveStartedAt = null;
-      let currentCity = 'taipei';
-
-      const map = new maplibregl.Map({
-        container: 'map',
-        center: cities.taipei.center,
-        zoom: cities.taipei.zoom,
-        pitch: cities.taipei.pitch,
-        bearing: cities.taipei.bearing,
-        maxPitch: 75,
-        antialias: true,
-        style: {
-          version: 8,
-          sources: {
-            osm: {
-              type: 'raster',
-              tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-              tileSize: 256,
-              attribution: '© OpenStreetMap contributors'
-            },
-            overtureBuildings: {
-              type: 'vector',
-              url: `pmtiles://${BUILDINGS_PM}`,
-              attribution: '© Overture Maps Foundation / source contributors'
-            }
-          },
-          layers: [
-            { id: 'osm', type: 'raster', source: 'osm' },
-            {
-              id: 'building-flat', type: 'fill', source: 'overtureBuildings', 'source-layer': 'building', minzoom: 14,
-              layout: { visibility: 'none' },
-              paint: { 'fill-color': '#dce3e8', 'fill-opacity': 0.84, 'fill-outline-color': 'rgba(85,97,108,.28)' }
-            },
-            {
-              id: 'parts-flat', type: 'fill', source: 'overtureBuildings', 'source-layer': 'building_part', minzoom: 14,
-              layout: { visibility: 'none' },
-              paint: { 'fill-color': '#ccd8df', 'fill-opacity': 0.88, 'fill-outline-color': 'rgba(60,74,86,.32)' }
-            },
-            {
-              id: 'building-3d', type: 'fill-extrusion', source: 'overtureBuildings', 'source-layer': 'building', minzoom: 14,
-              paint: {
-                'fill-extrusion-base': baseExpr,
-                'fill-extrusion-height': heightExpr,
-                'fill-extrusion-color': '#e2e7eb',
-                'fill-extrusion-opacity': 0.90,
-                'fill-extrusion-vertical-gradient': true
-              }
-            },
-            {
-              id: 'parts-3d', type: 'fill-extrusion', source: 'overtureBuildings', 'source-layer': 'building_part', minzoom: 14,
-              paint: {
-                'fill-extrusion-base': baseExpr,
-                'fill-extrusion-height': heightExpr,
-                'fill-extrusion-color': '#cfd9e0',
-                'fill-extrusion-opacity': 0.94,
-                'fill-extrusion-vertical-gradient': true
-              }
-            }
-          ]
-        }
-      });
-
-      map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
-      map.addControl(new maplibregl.ScaleControl({ maxWidth: 120, unit: 'metric' }), 'bottom-right');
-
-      function syncVisibility() {
-        if (!map.isStyleLoaded()) return;
-        const set = (id, visible) => map.getLayer(id) && map.setLayoutProperty(id, 'visibility', visible ? 'visible' : 'none');
-        set('building-3d', show3d);
-        set('parts-3d', show3d && showParts);
-        set('building-flat', !show3d);
-        set('parts-flat', !show3d && showParts);
-        toggle3d.textContent = `3D 建築 ${show3d ? 'ON' : 'OFF'}`;
-        toggle3d.classList.toggle('active', show3d);
-        toggleParts.textContent = `Building Parts ${showParts ? 'ON' : 'OFF'}`;
-        toggleParts.classList.toggle('active', showParts);
-      }
-
-      function refreshVisibleStats() {
-        if (!map.isStyleLoaded()) return;
-        const layerIds = [];
-        if (show3d) {
-          layerIds.push('building-3d');
-          if (showParts) layerIds.push('parts-3d');
-        } else {
-          layerIds.push('building-flat');
-          if (showParts) layerIds.push('parts-flat');
-        }
-        const features = map.queryRenderedFeatures({ layers: layerIds.filter(id => map.getLayer(id)) });
-        let height = 0, floors = 0, fallback = 0;
-        for (const f of features) {
-          const h = Number(f.properties?.height || 0);
-          const n = Number(f.properties?.num_floors || 0);
-          if (Number.isFinite(h) && h > 0) height += 1;
-          else if (Number.isFinite(n) && n > 0) floors += 1;
-          else fallback += 1;
-        }
-        visibleCountEl.textContent = features.length.toLocaleString();
-        heightCountEl.textContent = height.toLocaleString();
-        floorCountEl.textContent = floors.toLocaleString();
-        fallbackCountEl.textContent = fallback.toLocaleString();
-      }
-
-      map.on('load', () => {
-        mapLoadEl.textContent = `${Math.round(performance.now() - startedAt)} ms`;
-        statusEl.textContent = 'Ready — 全球 Overture building tiles 已接上。拖、轉、縮放，或直接切城市。';
-        syncVisibility();
-      });
-
-      map.on('movestart', () => { moveStartedAt = performance.now(); });
-      map.on('idle', () => {
-        if (moveStartedAt != null) {
-          lastIdleEl.textContent = `${Math.round(performance.now() - moveStartedAt)} ms`;
-          moveStartedAt = null;
-        }
-        refreshVisibleStats();
-      });
-
-      map.on('error', (event) => {
-        const message = event?.error?.message || String(event?.error || 'unknown map error');
-        console.error(event);
-        statusEl.textContent = `Map error: ${message}`;
-        statusEl.classList.add('error');
-      });
-
-      toggle3d.addEventListener('click', () => {
-        show3d = !show3d;
-        syncVisibility();
-        refreshVisibleStats();
-      });
-      toggleParts.addEventListener('click', () => {
-        showParts = !showParts;
-        syncVisibility();
-        refreshVisibleStats();
-      });
-      document.querySelector('#resetPitch').addEventListener('click', () => {
-        map.easeTo({ pitch: 0, bearing: 0, duration: 700 });
-      });
-
-      document.querySelectorAll('button.city').forEach((button) => {
-        button.addEventListener('click', () => {
-          const id = button.dataset.city;
-          const city = cities[id];
-          currentCity = id;
-          document.querySelectorAll('button.city').forEach(b => b.classList.toggle('active', b === button));
-          statusEl.classList.remove('error');
-          statusEl.textContent = `Flying to ${city.label}…`;
-          map.flyTo({ center: city.center, zoom: city.zoom, pitch: city.pitch, bearing: city.bearing, speed: 1.25, curve: 1.4, essential: true });
-          map.once('idle', () => { statusEl.textContent = `${city.label} ready — 只載目前視窗需要的全球 building tiles。`; });
-        });
-      });
-
-      const interactiveLayers = ['parts-3d', 'building-3d', 'parts-flat', 'building-flat'];
-      map.on('click', (e) => {
-        const layers = interactiveLayers.filter(id => map.getLayer(id));
-        const features = map.queryRenderedFeatures(e.point, { layers });
-        if (!features.length) return;
-        const f = features[0];
-        const p = f.properties || {};
-        const sourceLayer = f.sourceLayer || '?';
-        const h = Number(p.height || 0);
-        const floors = Number(p.num_floors || 0);
-        const inferred = h > 0 ? `${h} m（直接 height）` : floors > 0 ? `${(floors * 3.2).toFixed(1)} m（${floors} floors × 3.2）` : '9.6 m（fallback）';
-        inspectorEl.innerHTML = `
-          <strong>${cities[currentCity].label} · ${sourceLayer}</strong><br>
-          <span class="badge">height: ${p.height ?? '—'}</span>
-          <span class="badge">floors: ${p.num_floors ?? '—'}</span>
-          <span class="badge">has_parts: ${p.has_parts ?? '—'}</span><br>
-          renderer 高度：<strong>${inferred}</strong><br>
-          class: ${p.class ?? '—'} · subtype: ${p.subtype ?? '—'}<br>
-          id: ${p.id ?? f.id ?? '—'}
-        `;
-      });
-
-      map.on('mouseenter', 'building-3d', () => { map.getCanvas().style.cursor = 'pointer'; });
-      map.on('mouseleave', 'building-3d', () => { map.getCanvas().style.cursor = ''; });
-    })();
+    map.on('click',(e)=>{
+      const features=map.queryRenderedFeatures(e.point,{layers:activeLayerIds()});
+      if(!features.length) return;
+      const ft=features[0], p=ft.properties||{}; const hv=Number(p.height||0), floors=Number(p.num_floors||0);
+      const inferred=hv>0?`${hv} m（direct height）`:floors>0?`${(floors*3.2).toFixed(1)} m（${floors} floors×3.2）`:'9.6 m（fallback）';
+      inspectorEl.innerHTML=`<strong>${cities[currentCity].label} · ${ft.sourceLayer||'?'}</strong><br><span class="badge">height: ${p.height??'—'}</span><span class="badge">floors: ${p.num_floors??'—'}</span><span class="badge">has_parts: ${p.has_parts??'—'}</span><br>renderer 高度：<strong>${inferred}</strong><br>id: ${p.id??ft.id??'—'}`;
+    });
+  })();
   </script>
 </body>
 </html>

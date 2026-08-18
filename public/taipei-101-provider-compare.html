@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Taipei-Maps · Taipei 101 provider compare</title>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" />
+  <link rel="stylesheet" href="https://js.arcgis.com/5.1/esri/themes/light/main.css" />
+  <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+  <script src="https://unpkg.com/pmtiles@4.4.1/dist/pmtiles.js"></script>
+  <script type="module" src="https://js.arcgis.com/5.1/"></script>
+  <style>
+    html,body{width:100%;height:100%;margin:0;font-family:Inter,system-ui,sans-serif;overflow:hidden;background:#eef1f4}
+    #grid{position:absolute;inset:0;display:grid;grid-template-columns:1fr 1fr;gap:2px;background:#111}
+    .pane{position:relative;min-width:0;min-height:0;background:#edf1f4}
+    #overture,#official{position:absolute;inset:0}
+    .tag{position:absolute;z-index:8;top:12px;left:12px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.94);box-shadow:0 4px 18px rgba(0,0,0,.15);font-size:12px;line-height:1.35}
+    .tag strong{display:block;font-size:14px}.tag small{color:#5d6872}
+    #panel{position:absolute;z-index:20;left:50%;bottom:14px;transform:translateX(-50%);width:min(820px,calc(100vw - 28px));padding:10px 12px;border:1px solid #cbd2d8;border-radius:12px;background:rgba(255,255,255,.96);box-shadow:0 8px 28px rgba(0,0,0,.16)}
+    #panelTop{display:flex;align-items:center;gap:10px;flex-wrap:wrap}button{border:1px solid #c8d0d7;border-radius:9px;padding:7px 10px;background:#fff;font-weight:700;cursor:pointer}button.active{background:#26313b;color:#fff}.metric{font-size:12px;color:#65707b}.metric b{color:#202a33}.note{margin-top:6px;font-size:10.5px;color:#68727d;line-height:1.4}
+    @media(max-width:900px){#grid{grid-template-columns:1fr;grid-template-rows:1fr 1fr}.tag{top:8px;left:8px}#panel{bottom:8px}}
+  </style>
+</head>
+<body>
+<div id="grid">
+  <section class="pane"><div id="overture"></div><div class="tag"><strong>Overture · MapLibre</strong><small>global fallback · parts-aware extrusion</small></div></section>
+  <section class="pane"><div id="official"></div><div class="tag"><strong>Taipei DUD · ArcGIS I3S</strong><small>official LOD1_2024 · authoritative geometry benchmark</small></div></section>
+</div>
+<div id="panel">
+  <div id="panelTop">
+    <button id="reset" class="active">重置到 101</button>
+    <button id="parts" class="active">Overture Parts ON</button>
+    <span class="metric">Overture ready: <b id="oTime">—</b></span>
+    <span class="metric">Official ready: <b id="aTime">—</b></span>
+    <span class="metric">Overture visible: <b id="oCount">—</b></span>
+    <span class="metric">Official status: <b id="aStatus">loading</b></span>
+  </div>
+  <div class="note">Phase A 先比較「資料幾何品質」：左邊是 Overture 全球 fallback，右邊是台北市都發局官方 LOD1_2024 I3S。這還不是同 renderer A/B；若官方量體明顯更像，下一步才追可合法重用的 SHP / vector-tile footprint+height，餵進同一套 MapLibre extrusion。</div>
+</div>
+<script type="module">
+const started=performance.now();
+const C=[121.56447,25.03396];
+const OVERTURE='https://overturemaps-extras-us-west-2.s3.us-west-2.amazonaws.com/tiles/2026-07-22.0/buildings.pmtiles';
+const DUD='https://www.historygis.udd.gov.taipei/arcgis/rest/services/Hosted/LOD1_2024/SceneServer/layers/0';
+let showParts=true;
+
+async function buildOverture(){
+  if(!window.maplibregl||!window.pmtiles) throw new Error('MapLibre/PMTiles CDN unavailable');
+  const archive=new pmtiles.PMTiles(OVERTURE); const metadata=await archive.getMetadata(); await archive.getHeader();
+  const ids=(metadata?.vector_layers||[]).map(x=>x.id); if(!ids.includes('building')) throw new Error('No building layer');
+  const hasParts=ids.includes('building_part');
+  const protocol=new pmtiles.Protocol({metadata:true}); maplibregl.addProtocol('pmtiles',protocol.tile);
+  const height=['case',['>', ['to-number',['get','height'],0],0],['to-number',['get','height'],0],['>', ['to-number',['get','num_floors'],0],0],['*',['to-number',['get','num_floors'],0],3.2],9.6];
+  const noPartsParent=['!', ['==',['get','has_parts'],true]];
+  const layers=[
+    {id:'osm',type:'raster',source:'osm'},
+    {id:'b3d',type:'fill-extrusion',source:'overture','source-layer':'building',minzoom:14,filter:hasParts?noPartsParent:null,paint:{'fill-extrusion-height':height,'fill-extrusion-color':'#e3e8ec','fill-extrusion-opacity':.9,'fill-extrusion-vertical-gradient':true}}
+  ];
+  if(hasParts) layers.push({id:'p3d',type:'fill-extrusion',source:'overture','source-layer':'building_part',minzoom:14,paint:{'fill-extrusion-base':['to-number',['get','min_height'],0],'fill-extrusion-height':height,'fill-extrusion-color':'#bdcad3','fill-extrusion-opacity':.96,'fill-extrusion-vertical-gradient':true}});
+  const map=new maplibregl.Map({container:'overture',center:C,zoom:16.15,pitch:61,bearing:-28,maxPitch:75,antialias:true,style:{version:8,sources:{osm:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,attribution:'© OpenStreetMap contributors'},overture:{type:'vector',url:`pmtiles://${OVERTURE}`,attribution:'© Overture Maps Foundation / contributors'}},layers}});
+  map.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'top-right');
+  map.on('load',()=>document.querySelector('#oTime').textContent=`${Math.round(performance.now()-started)} ms`);
+  map.on('idle',()=>{const ids=['b3d'];if(hasParts&&showParts)ids.push('p3d');const f=map.queryRenderedFeatures({layers:ids.filter(id=>map.getLayer(id))});document.querySelector('#oCount').textContent=f.length.toLocaleString();});
+  document.querySelector('#parts').disabled=!hasParts;
+  document.querySelector('#parts').onclick=()=>{showParts=!showParts;if(hasParts)map.setLayoutProperty('p3d','visibility',showParts?'visible':'none');document.querySelector('#parts').textContent=`Overture Parts ${showParts?'ON':'OFF'}`;document.querySelector('#parts').classList.toggle('active',showParts);};
+  return map;
+}
+
+async function buildOfficial(){
+  const [ArcGISMap,SceneView,SceneLayer,Basemap,OpenStreetMapLayer]=await $arcgis.import([
+    '@arcgis/core/Map.js','@arcgis/core/views/SceneView.js','@arcgis/core/layers/SceneLayer.js','@arcgis/core/Basemap.js','@arcgis/core/layers/OpenStreetMapLayer.js'
+  ]);
+  const layer=new SceneLayer({
+    url:DUD,
+    renderer:{type:'simple',symbol:{type:'mesh-3d',symbolLayers:[{type:'fill',material:{color:[226,231,235]},colorMixMode:'replace',outline:{color:[126,136,146,0.32],size:0.35}}]}}
+  });
+  const map=new ArcGISMap({basemap:new Basemap({baseLayers:[new OpenStreetMapLayer()]}),layers:[layer]});
+  const view=new SceneView({container:'official',map,qualityProfile:'high',environment:{atmosphereEnabled:false,starsEnabled:false,lighting:{directShadowsEnabled:true,ambientOcclusionEnabled:true}}});
+  await view.when();
+  await view.goTo({target:{type:'point',longitude:C[0],latitude:C[1]},zoom:16.1,heading:28,tilt:61},{animate:false});
+  document.querySelector('#aTime').textContent=`${Math.round(performance.now()-started)} ms`;
+  document.querySelector('#aStatus').textContent='ready';
+  return view;
+}
+
+let omap=null, aview=null;
+try{omap=await buildOverture();}catch(e){document.querySelector('#oTime').textContent='ERROR';console.error(e)}
+try{aview=await buildOfficial();}catch(e){document.querySelector('#aStatus').textContent='ERROR';console.error(e)}
+
+document.querySelector('#reset').onclick=async()=>{
+  if(omap)omap.easeTo({center:C,zoom:16.15,pitch:61,bearing:-28,duration:500});
+  if(aview)await aview.goTo({target:{type:'point',longitude:C[0],latitude:C[1]},zoom:16.1,heading:28,tilt:61},{duration:500});
+};
+</script>
+</body>
+</html>

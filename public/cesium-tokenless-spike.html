@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Taipei-Maps · Tokenless Cesium I3S Spike</title>
+  <script>
+    window.CESIUM_BASE_URL = "https://cesium.com/downloads/cesiumjs/releases/1.144/Build/Cesium/";
+  </script>
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.144/Build/Cesium/Cesium.js"></script>
+  <link rel="stylesheet" href="https://cesium.com/downloads/cesiumjs/releases/1.144/Build/Cesium/Widgets/widgets.css" />
+  <style>
+    html,body,#cesiumContainer{width:100%;height:100%;margin:0;padding:0;overflow:hidden}
+    body{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#0b0f14}
+    .panel{position:absolute;z-index:10;top:14px;left:14px;width:min(470px,calc(100vw - 28px));max-height:calc(100vh - 28px);overflow:auto;padding:14px 16px;border:1px solid rgba(255,255,255,.18);border-radius:14px;background:rgba(15,20,27,.90);color:#f5f7fa;box-shadow:0 12px 34px rgba(0,0,0,.28);backdrop-filter:blur(10px)}
+    h1{font-size:18px;margin:4px 0 8px}.eyebrow{font-size:10px;font-weight:800;letter-spacing:.12em;color:#95a1ae}.sub{font-size:12px;line-height:1.5;color:#c9d1da;margin-bottom:10px}.row{display:flex;gap:7px;flex-wrap:wrap;margin:7px 0}.row button{border:1px solid #53606e;border-radius:9px;padding:7px 10px;background:#202833;color:#f4f7fa;font-weight:700;cursor:pointer}.row button:hover{background:#2c3744}.checks{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;margin:8px 0}.metrics{display:grid;grid-template-columns:auto 1fr;gap:5px 10px;margin:10px 0;padding:9px 0;border-top:1px solid #33404d;border-bottom:1px solid #33404d;font-size:11.5px}.metrics span:nth-child(odd){color:#95a1ae}.mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;word-break:break-word}.good{color:#74d99f}.bad{color:#ff827d}.warn{color:#ffd479}.note{font-size:11px;line-height:1.45;color:#9eabb7}
+  </style>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<section class="panel">
+  <div class="eyebrow">TOKENLESS ENGINE SPIKE · NO CESIUM ION</div>
+  <h1>CesiumJS 1.144 · OSM + Taipei / New Taipei I3S</h1>
+  <div class="sub">目的只有一個：驗證單一 Cesium WebGL scene 能否直接吃公開 OSM 與既有 ArcGIS I3S，並從台北移動到中國時維持正常顯示。此頁不設定 Ion token、不呼叫 World Imagery / World Terrain。</div>
+  <div class="row">
+    <button id="taipei">台北</button>
+    <button id="banqiao">板橋</button>
+    <button id="shanghai">上海</button>
+    <button id="beijing">北京</button>
+    <button id="amsterdam">阿姆斯特丹</button>
+  </div>
+  <div class="checks">
+    <label><input id="taipei3d" type="checkbox" checked /> 台北 I3S</label>
+    <label><input id="newtaipei3d" type="checkbox" checked /> 新北 I3S</label>
+  </div>
+  <div class="metrics">
+    <span>OSM</span><span id="osm" class="warn">初始化中…</span>
+    <span>台北 I3S</span><span id="taipeiStatus" class="warn">載入中…</span>
+    <span>新北 I3S</span><span id="newTaipeiStatus" class="warn">載入中…</span>
+    <span>WebGL</span><span id="webgl" class="good">context alive</span>
+    <span>Camera</span><span id="camera" class="mono">—</span>
+    <span>Runtime error</span><span id="runtime" class="mono">—</span>
+  </div>
+  <div class="note">驗收：先看台北 / 板橋 I3S 是否顯示，再按上海與北京。若底圖持續正常且 WebGL 不掉，代表單一 Cesium engine 值得進一步研究；若公開 I3S 直接載入失敗、或必須靠 ion/token 才能完成核心功能，就淘汰此方案。</div>
+</section>
+<script>
+(async()=>{
+  const $=(id)=>document.getElementById(id);
+  const set=(id,text,kind)=>{const el=$(id);el.textContent=text;el.className=kind||'';};
+  const TAIPEI_I3S='https://www.historygis.udd.gov.taipei/arcgis/rest/services/Hosted/LOD1_2024/SceneServer/layers/0';
+  const NEW_TAIPEI_I3S='https://i3s.nlsc.gov.tw/building/i3s/SceneServer/layers/5';
+
+  if(!window.Cesium){
+    set('runtime','CesiumJS CDN 未載入','bad');
+    return;
+  }
+
+  let viewer;
+  let taipeiProvider=null;
+  let newTaipeiProvider=null;
+
+  try{
+    viewer=new Cesium.Viewer('cesiumContainer',{
+      baseLayerPicker:false,
+      baseLayer:false,
+      terrainProvider:new Cesium.EllipsoidTerrainProvider(),
+      geocoder:false,
+      homeButton:false,
+      sceneModePicker:false,
+      navigationHelpButton:false,
+      animation:false,
+      timeline:false,
+      fullscreenButton:false,
+      selectionIndicator:false,
+      infoBox:false,
+      scene3DOnly:true,
+      shouldAnimate:false,
+      skyBox:false,
+      skyAtmosphere:false,
+    });
+
+    const osmProvider=new Cesium.OpenStreetMapImageryProvider({
+      url:'https://tile.openstreetmap.org/'
+    });
+    viewer.imageryLayers.addImageryProvider(osmProvider);
+    set('osm','直接 OSM tile · no token','good');
+
+    viewer.scene.globe.depthTestAgainstTerrain=false;
+    if(viewer.scene.globe) viewer.scene.globe.showGroundAtmosphere=false;
+
+    const canvas=viewer.scene.canvas;
+    canvas.addEventListener('webglcontextlost',(event)=>{
+      event.preventDefault();
+      set('webgl','CONTEXT LOST','bad');
+    });
+    canvas.addEventListener('webglcontextrestored',()=>set('webgl','context restored','good'));
+
+    window.addEventListener('error',(event)=>set('runtime',event.message||'window error','bad'));
+    window.addEventListener('unhandledrejection',(event)=>set('runtime',String(event.reason?.message||event.reason||'unhandled rejection'),'bad'));
+
+    const cameraText=()=>{
+      const c=viewer.camera.positionCartographic;
+      const lon=Cesium.Math.toDegrees(c.longitude).toFixed(4);
+      const lat=Cesium.Math.toDegrees(c.latitude).toFixed(4);
+      const km=(c.height/1000).toFixed(2);
+      set('camera',`${lon}, ${lat} · ${km} km`,'mono');
+    };
+    viewer.camera.changed.addEventListener(cameraText);
+
+    const fly=(lon,lat,height=18000,heading=0,pitch=-55)=>{
+      viewer.camera.flyTo({
+        destination:Cesium.Cartesian3.fromDegrees(lon,lat,height),
+        orientation:{heading:Cesium.Math.toRadians(heading),pitch:Cesium.Math.toRadians(pitch),roll:0},
+        duration:1.2
+      });
+    };
+    $('taipei').onclick=()=>fly(121.5654,25.0330,12000,345,-52);
+    $('banqiao').onclick=()=>fly(121.4623,25.0123,10000,20,-50);
+    $('shanghai').onclick=()=>fly(121.4737,31.2304,45000,0,-65);
+    $('beijing').onclick=()=>fly(116.4074,39.9042,55000,0,-65);
+    $('amsterdam').onclick=()=>fly(4.9041,52.3676,45000,0,-65);
+
+    fly(121.54,25.03,18000,345,-55);
+    cameraText();
+
+    try{
+      taipeiProvider=await Cesium.I3SDataProvider.fromUrl(TAIPEI_I3S);
+      viewer.scene.primitives.add(taipeiProvider);
+      set('taipeiStatus','loaded direct from SceneServer','good');
+      $('taipei3d').onchange=(e)=>{if(taipeiProvider)taipeiProvider.show=e.target.checked;};
+    }catch(error){
+      console.error('Taipei I3S failed',error);
+      set('taipeiStatus',String(error?.message||error),'bad');
+    }
+
+    try{
+      newTaipeiProvider=await Cesium.I3SDataProvider.fromUrl(NEW_TAIPEI_I3S);
+      viewer.scene.primitives.add(newTaipeiProvider);
+      set('newTaipeiStatus','loaded direct from SceneServer','good');
+      $('newtaipei3d').onchange=(e)=>{if(newTaipeiProvider)newTaipeiProvider.show=e.target.checked;};
+    }catch(error){
+      console.error('New Taipei I3S failed',error);
+      set('newTaipeiStatus',String(error?.message||error),'bad');
+    }
+  }catch(error){
+    console.error(error);
+    set('runtime',String(error?.message||error),'bad');
+  }
+})();
+</script>
+</body>
+</html>

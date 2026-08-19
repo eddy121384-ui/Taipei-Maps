@@ -5,6 +5,7 @@ import GeoJSONLayer from "@arcgis/core/layers/GeoJSONLayer.js";
 import OpenStreetMapLayer from "@arcgis/core/layers/OpenStreetMapLayer.js";
 import SceneLayer from "@arcgis/core/layers/SceneLayer.js";
 import SceneView from "@arcgis/core/views/SceneView.js";
+import GlobalBuildingMap, { type MapCamera } from "./GlobalBuildingMap";
 import { BUILDING_PROVIDERS } from "./providers/buildingProviders";
 
 const AGE_GEOJSON_URL = "/generated/building_age_2001plus.geojson";
@@ -18,6 +19,13 @@ const AGE_BINS = [
   { value: "50+", label: "50+ 年", color: "#d14b4b" },
 ] as const;
 
+const GREATER_TAIPEI_BOUNDS = {
+  west: 121.25,
+  east: 122.05,
+  south: 24.63,
+  north: 25.32,
+};
+
 type Attributes = Record<string, unknown>;
 
 interface IHandle {
@@ -28,6 +36,30 @@ function formatValue(value: unknown) {
   if (value === null || value === undefined || value === "") return "—";
   if (typeof value === "number") return new Intl.NumberFormat("zh-TW").format(value);
   return String(value);
+}
+
+function isInsideGreaterTaipei(center: [number, number]) {
+  const [longitude, latitude] = center;
+  return (
+    longitude >= GREATER_TAIPEI_BOUNDS.west &&
+    longitude <= GREATER_TAIPEI_BOUNDS.east &&
+    latitude >= GREATER_TAIPEI_BOUNDS.south &&
+    latitude <= GREATER_TAIPEI_BOUNDS.north
+  );
+}
+
+function sceneCamera(view: SceneView): MapCamera | null {
+  const center = view.center;
+  const longitude = center?.longitude;
+  const latitude = center?.latitude;
+  if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) return null;
+
+  return {
+    center: [longitude as number, latitude as number],
+    zoom: Number.isFinite(view.zoom) ? view.zoom : 12,
+    pitch: Math.min(view.camera?.tilt ?? 55, 75),
+    bearing: view.camera?.heading ?? 0,
+  };
 }
 
 function createNeutralBuildingRenderer(): any {
@@ -105,6 +137,7 @@ export default function GreaterTaipeiApp() {
   const newTaipeiRef = useRef<SceneLayer | null>(null);
   const cadastralRef = useRef<SceneLayer | null>(null);
   const ageRef = useRef<GeoJSONLayer | null>(null);
+  const globalModeRef = useRef(false);
 
   const [status, setStatus] = useState("載入大台北地圖…");
   const [show3DBuildings, setShow3DBuildings] = useState(true);
@@ -118,6 +151,12 @@ export default function GreaterTaipeiApp() {
   const [selectedAttributes, setSelectedAttributes] = useState<Attributes | null>(null);
   const [selectedLayerLabel, setSelectedLayerLabel] = useState<string | null>(null);
 
+  const [globalMode, setGlobalMode] = useState(false);
+  const [globalReady, setGlobalReady] = useState(false);
+  const [globalRelease, setGlobalRelease] = useState<string | null>(null);
+  const [globalError, setGlobalError] = useState<string | null>(null);
+  const [globalTargetCamera, setGlobalTargetCamera] = useState<MapCamera | null>(null);
+
   const visibleAttributes = useMemo(() => {
     if (!selectedAttributes) return [];
     return Object.entries(selectedAttributes)
@@ -126,6 +165,19 @@ export default function GreaterTaipeiApp() {
   }, [selectedAttributes]);
 
   const statusText = useMemo(() => {
+    if (globalMode) {
+      const parts = [
+        globalError
+          ? "全球 Overture ERR"
+          : globalReady
+            ? `全球 Overture ${globalRelease ?? ""}`
+            : "全球 Overture 載入中…",
+        "Globe",
+        show3DBuildings ? "3D 建築 ON" : "3D 建築 OFF",
+      ];
+      return parts.join(" · ");
+    }
+
     const parts = [status, show3DBuildings ? "3D 建築 ON" : "3D 建築 OFF"];
     if (showAge && ageReady) {
       parts.push(
@@ -135,7 +187,23 @@ export default function GreaterTaipeiApp() {
     if (newTaipeiError) parts.push("新北 3D ERR");
     if (ageError) parts.push("屋齡檔未載入");
     return parts.join(" · ");
-  }, [status, show3DBuildings, showAge, ageReady, ageFeatureCount, newTaipeiError, ageError]);
+  }, [
+    globalMode,
+    globalError,
+    globalReady,
+    globalRelease,
+    status,
+    show3DBuildings,
+    showAge,
+    ageReady,
+    ageFeatureCount,
+    newTaipeiError,
+    ageError,
+  ]);
+
+  useEffect(() => {
+    globalModeRef.current = globalMode;
+  }, [globalMode]);
 
   useEffect(() => {
     if (taipeiRef.current) {
@@ -228,12 +296,25 @@ export default function GreaterTaipeiApp() {
     viewRef.current = view;
 
     let clickHandle: IHandle | null = null;
+    let stationaryHandle: IHandle | null = null;
     let disposed = false;
 
     Promise.all([view.when(), taipeiBuildings.load(), cadastralBuildings.load()])
       .then(() => {
         if (disposed) return;
         setStatus("大台北主視圖已就緒");
+
+        stationaryHandle = view.watch("stationary", (stationary) => {
+          if (!stationary || disposed || globalModeRef.current) return;
+          const camera = sceneCamera(view);
+          if (!camera || isInsideGreaterTaipei(camera.center)) return;
+
+          globalModeRef.current = true;
+          setGlobalTargetCamera(camera);
+          setSelectedAttributes(null);
+          setSelectedLayerLabel(null);
+          setGlobalMode(true);
+        });
 
         clickHandle = view.on("click", async (event) => {
           const response = await view.hitTest(event);
@@ -299,6 +380,7 @@ export default function GreaterTaipeiApp() {
     return () => {
       disposed = true;
       clickHandle?.remove();
+      stationaryHandle?.remove();
       viewRef.current = null;
       taipeiRef.current = null;
       newTaipeiRef.current = null;
@@ -308,7 +390,54 @@ export default function GreaterTaipeiApp() {
     };
   }, []);
 
+  const handoffToLocal = async (camera: MapCamera) => {
+    globalModeRef.current = false;
+    const view = viewRef.current;
+
+    if (view) {
+      try {
+        await view.goTo(
+          {
+            center: camera.center,
+            zoom: camera.zoom,
+            heading: camera.bearing,
+            tilt: Math.min(camera.pitch, 75),
+          },
+          { duration: 0 },
+        );
+      } catch (error: any) {
+        if (error?.name !== "AbortError") {
+          console.error("Global → Greater Taipei camera handoff failed", error);
+        }
+      }
+    }
+
+    setGlobalMode(false);
+    setGlobalTargetCamera(null);
+    setSelectedAttributes(null);
+    setSelectedLayerLabel(null);
+  };
+
+  const handleGlobalCameraChange = (camera: MapCamera) => {
+    if (globalModeRef.current && isInsideGreaterTaipei(camera.center)) {
+      void handoffToLocal(camera);
+    }
+  };
+
   const jumpToBanqiao = async () => {
+    const camera: MapCamera = {
+      center: [121.4623, 25.0123],
+      zoom: 15,
+      pitch: 65,
+      bearing: 20,
+    };
+
+    if (globalModeRef.current) {
+      await handoffToLocal(camera);
+      setStatus("板橋視角已就位");
+      return;
+    }
+
     const view = viewRef.current;
     if (!view) return;
 
@@ -316,7 +445,7 @@ export default function GreaterTaipeiApp() {
     try {
       await view.when();
       await view.goTo(
-        { center: [121.4623, 25.0123], zoom: 15, heading: 20, tilt: 65 },
+        { center: camera.center, zoom: camera.zoom, heading: camera.bearing, tilt: camera.pitch },
         { duration: 1200 },
       );
       setStatus("板橋視角已就位");
@@ -328,7 +457,29 @@ export default function GreaterTaipeiApp() {
 
   return (
     <main className="app-shell">
-      <div ref={mapContainerRef} className="map-view" />
+      <div
+        ref={mapContainerRef}
+        className="map-view"
+        style={{ visibility: globalMode ? "hidden" : "visible" }}
+        aria-hidden={globalMode}
+      />
+
+      <GlobalBuildingMap
+        visible={globalMode}
+        showBuildings={show3DBuildings}
+        targetCamera={globalTargetCamera}
+        onReady={(release) => {
+          setGlobalReady(true);
+          setGlobalRelease(release);
+          setGlobalError(null);
+        }}
+        onError={(message) => setGlobalError(message)}
+        onCameraChange={handleGlobalCameraChange}
+        onInspect={(attributes) => {
+          setSelectedAttributes(attributes);
+          setSelectedLayerLabel("全球 Overture 建築");
+        }}
+      />
 
       <header className="glass top-bar">
         <div>
@@ -359,7 +510,7 @@ export default function GreaterTaipeiApp() {
           <div>
             <strong>3D 建築</strong>
             <span>
-              台北都發局 + 新北 NLSC · 統一中性白模 · 關掉後仍保留所有分析圖層
+              大台北官方白模；離開大台北後 Overture 全球建築在同一畫面自動接手
             </span>
           </div>
           <span className={`layer-state ${show3DBuildings ? "on" : ""}`}>
@@ -369,21 +520,39 @@ export default function GreaterTaipeiApp() {
 
         <button
           className={`layer-card layer-button ${showCadastral ? "active" : ""}`}
-          disabled={!show3DBuildings}
+          disabled={!show3DBuildings || globalMode}
           onClick={() => setShowCadastral((current) => !current)}
         >
           <div>
             <strong>台北產權細節</strong>
             <span>
-              {show3DBuildings
-                ? "臺北市地政局 · 選配細部 3D 屬性"
-                : "3D 建築關閉時暫停顯示"}
+              {globalMode
+                ? "僅大台北本地模式"
+                : show3DBuildings
+                  ? "臺北市地政局 · 選配細部 3D 屬性"
+                  : "3D 建築關閉時暫停顯示"}
             </span>
           </div>
-          <span className={`layer-state ${showCadastral && show3DBuildings ? "on" : ""}`}>
-            {showCadastral && show3DBuildings ? "ON" : "OFF"}
+          <span className={`layer-state ${showCadastral && show3DBuildings && !globalMode ? "on" : ""}`}>
+            {showCadastral && show3DBuildings && !globalMode ? "ON" : "OFF"}
           </span>
         </button>
+
+        <div className={`layer-card ${globalMode ? "active" : ""}`}>
+          <div>
+            <strong>全球 3D fallback</strong>
+            <span>
+              {globalMode
+                ? `Overture ${globalRelease ?? "載入中"} · MapLibre globe`
+                : "AUTO · 離開大台北範圍後自動接手，不開新分頁"}
+            </span>
+          </div>
+          <span className={`layer-state ${globalMode ? "on" : ""}`}>
+            {globalMode ? "ACTIVE" : "AUTO"}
+          </span>
+        </div>
+
+        {globalError ? <p className="warning-text">全球 Overture：{globalError}</p> : null}
 
         <div className="inspector-divider" />
 
@@ -396,21 +565,23 @@ export default function GreaterTaipeiApp() {
 
         <button
           className={`layer-card layer-button age-layer ${showAge ? "active" : ""}`}
-          disabled={!ageReady}
+          disabled={!ageReady || globalMode}
           onClick={() => setShowAge((current) => !current)}
         >
           <div>
             <strong>台北屋齡</strong>
             <span>
-              {ageReady
-                ? `${show3DBuildings ? "3D 建物著色" : "平面 footprint"} · 2001+${ageFeatureCount ? ` · ${ageFeatureCount.toLocaleString("zh-TW")} 棟` : ""}`
-                : ageError
-                  ? "尚未找到 generated building-age GeoJSON"
-                  : "載入屋齡資料…"}
+              {globalMode
+                ? "僅大台北本地模式"
+                : ageReady
+                  ? `${show3DBuildings ? "3D 建物著色" : "平面 footprint"} · 2001+${ageFeatureCount ? ` · ${ageFeatureCount.toLocaleString("zh-TW")} 棟` : ""}`
+                  : ageError
+                    ? "尚未找到 generated building-age GeoJSON"
+                    : "載入屋齡資料…"}
             </span>
           </div>
-          <span className={`layer-state ${showAge ? "on" : ""}`}>
-            {showAge ? "ON" : ageReady ? "OFF" : "WAIT"}
+          <span className={`layer-state ${showAge && !globalMode ? "on" : ""}`}>
+            {showAge && !globalMode ? "ON" : ageReady ? "OFF" : "WAIT"}
           </span>
         </button>
 
@@ -422,7 +593,7 @@ export default function GreaterTaipeiApp() {
           <span className="layer-state">NEXT</span>
         </div>
 
-        {showAge && ageReady && (
+        {showAge && ageReady && !globalMode && (
           <div className="age-legend">
             <div className="legend-heading">
               <strong>屋齡色階</strong>
@@ -458,7 +629,7 @@ export default function GreaterTaipeiApp() {
 
         {!selectedAttributes ? (
           <p className="empty-copy">
-            圖層彼此獨立：關掉 3D 建築不會關掉屋齡、學區、房價或未來的街廓分析。
+            同一張地圖：大台北優先使用官方白模；離開本地 coverage 後自動 fallback 到全球 Overture。分析圖層仍與 3D 幾何分離。
           </p>
         ) : (
           <dl className="attribute-list">
@@ -472,7 +643,7 @@ export default function GreaterTaipeiApp() {
         )}
 
         <div className="source-note">
-          Basemap: OpenStreetMap · Taipei 3D: DUD LOD1_2024 · New Taipei 3D: NLSC layer 5 · Base style: neutral white override · Age: Taipei permit-overlay × use-permit join
+          Basemap: OpenStreetMap · Greater Taipei local 3D: Taipei DUD LOD1_2024 + New Taipei NLSC layer 5 · Global fallback: Overture PMTiles + MapLibre globe · Age: Taipei permit-overlay × use-permit join
         </div>
       </aside>
     </main>

@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Taipei-Maps · ArcGIS single-engine global spike</title>
+  <script type="module" src="https://js.arcgis.com/5.1/"></script>
+  <style>
+    html, body, #viewDiv { width: 100%; height: 100%; margin: 0; }
+    body { font-family: Inter, system-ui, sans-serif; overflow: hidden; }
+    .panel { position: absolute; z-index: 20; top: 14px; left: 14px; width: min(520px, calc(100vw - 28px)); padding: 14px; border: 1px solid #ccd3d9; border-radius: 14px; background: rgba(255,255,255,.96); box-shadow: 0 10px 28px rgba(0,0,0,.14); }
+    h1 { font-size: 18px; margin: 0 0 7px; }
+    .sub { font-size: 12px; line-height: 1.45; color: #5e6872; }
+    .buttons { margin: 9px 0; display: flex; gap: 6px; flex-wrap: wrap; }
+    button { border: 1px solid #c8d0d7; border-radius: 8px; padding: 7px 9px; background: #fff; font-weight: 700; cursor: pointer; }
+    #status { font-size: 12px; line-height: 1.5; font-weight: 700; }
+    .ok { color: #137333; } .err { color: #b42318; }
+  </style>
+</head>
+<body>
+<div id="viewDiv"></div>
+<section class="panel">
+  <h1>ArcGIS single-engine global spike</h1>
+  <div class="sub">目的只有一個：完全不切 MapLibre。用同一個 ArcGIS SceneView 從台北一路拖到海外。OSM 底圖 + 台北 I3S + 新北 I3S；無 token、無 ArcGIS Online basemap。</div>
+  <div class="buttons">
+    <button data-city="taipei">台北</button>
+    <button data-city="banqiao">板橋</button>
+    <button data-city="shanghai">上海</button>
+    <button data-city="beijing">北京</button>
+    <button data-city="amsterdam">阿姆斯特丹</button>
+  </div>
+  <div id="status">Loading ArcGIS SDK…</div>
+</section>
+<script type="module">
+  const status = document.getElementById('status');
+  try {
+    const [ArcGISMap, Basemap, OpenStreetMapLayer, SceneLayer, SceneView] = await $arcgis.import([
+      '@arcgis/core/Map.js',
+      '@arcgis/core/Basemap.js',
+      '@arcgis/core/layers/OpenStreetMapLayer.js',
+      '@arcgis/core/layers/SceneLayer.js',
+      '@arcgis/core/views/SceneView.js'
+    ]);
+
+    const renderer = {
+      type: 'simple',
+      symbol: {
+        type: 'mesh-3d',
+        symbolLayers: [{
+          type: 'fill',
+          material: { color: '#e5e9ee', colorMixMode: 'replace' },
+          edges: { type: 'solid', color: [74,82,92,0.36], size: 0.45 }
+        }]
+      }
+    };
+
+    const taipei = new SceneLayer({
+      url: 'https://www.historygis.udd.gov.taipei/arcgis/rest/services/Hosted/LOD1_2024/SceneServer/layers/0',
+      title: '台北市 3D 建築', popupEnabled: false, renderer
+    });
+    const newTaipei = new SceneLayer({
+      url: 'https://i3s.nlsc.gov.tw/building/i3s/SceneServer/layers/5',
+      title: '新北市 3D 建築', popupEnabled: false, renderer
+    });
+
+    const map = new ArcGISMap({
+      basemap: new Basemap({ baseLayers: [new OpenStreetMapLayer()], title: 'OpenStreetMap' }),
+      layers: [newTaipei, taipei]
+    });
+
+    const view = new SceneView({
+      container: 'viewDiv',
+      map,
+      viewingMode: 'global',
+      qualityProfile: 'high',
+      camera: { position: { longitude: 121.51, latitude: 25.035, z: 3000 }, heading: 345, tilt: 66 }
+    });
+
+    await view.when();
+    status.textContent = 'SceneView READY · waiting for Taipei / New Taipei SceneLayers…';
+    status.className = 'ok';
+
+    const results = await Promise.allSettled([taipei.load(), newTaipei.load()]);
+    const labels = results.map((r, i) => `${i === 0 ? '台北' : '新北'} ${r.status === 'fulfilled' ? 'OK' : 'ERR'}`);
+    status.textContent = `SceneView READY · ${labels.join(' · ')} · 單一 WebGL engine`;
+    status.className = results.some(r => r.status === 'rejected') ? 'err' : 'ok';
+
+    const cameras = {
+      taipei: { center: [121.51,25.035], zoom: 13.8, tilt: 66, heading: 345 },
+      banqiao: { center: [121.4623,25.0123], zoom: 14.8, tilt: 65, heading: 20 },
+      shanghai: { center: [121.4737,31.2304], zoom: 11.5, tilt: 55, heading: 0 },
+      beijing: { center: [116.4074,39.9042], zoom: 11.5, tilt: 55, heading: 0 },
+      amsterdam: { center: [4.9041,52.3676], zoom: 11.5, tilt: 55, heading: 0 }
+    };
+
+    document.querySelectorAll('button[data-city]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const c = cameras[btn.dataset.city];
+        status.textContent = `Moving to ${btn.textContent}…`;
+        try {
+          await view.goTo(c, { duration: 900 });
+          status.textContent = `${btn.textContent} · SceneView alive · longitude ${view.center.longitude?.toFixed?.(4) ?? '—'} · latitude ${view.center.latitude?.toFixed?.(4) ?? '—'}`;
+          status.className = 'ok';
+        } catch (e) {
+          if (e?.name !== 'AbortError') {
+            status.textContent = `${btn.textContent} move ERR · ${e?.message ?? e}`;
+            status.className = 'err';
+          }
+        }
+      });
+    });
+  } catch (e) {
+    status.textContent = `BOOT ERR · ${e?.message ?? e}`;
+    status.className = 'err';
+    console.error(e);
+  }
+</script>
+</body>
+</html>

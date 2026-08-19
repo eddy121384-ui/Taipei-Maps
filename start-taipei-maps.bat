@@ -26,6 +26,26 @@ if not exist node_modules (
     pause
     exit /b 1
   )
+) else if not exist node_modules\maplibre-gl (
+  echo New global-map dependencies detected. Updating dependencies...
+  echo.
+  call npm install
+  if errorlevel 1 (
+    echo.
+    echo [ERROR] npm install failed.
+    pause
+    exit /b 1
+  )
+) else if not exist node_modules\pmtiles (
+  echo New global-map dependencies detected. Updating dependencies...
+  echo.
+  call npm install
+  if errorlevel 1 (
+    echo.
+    echo [ERROR] npm install failed.
+    pause
+    exit /b 1
+  )
 )
 
 set "AGE_GEOJSON=public\generated\building_age_2001plus.geojson"

@@ -4,6 +4,7 @@ import Basemap from "@arcgis/core/Basemap.js";
 import OpenStreetMapLayer from "@arcgis/core/layers/OpenStreetMapLayer.js";
 import SceneLayer from "@arcgis/core/layers/SceneLayer.js";
 import SceneView from "@arcgis/core/views/SceneView.js";
+import GlobalBuildingMap, { type MapCamera } from "./GlobalBuildingMap";
 import { BUILDING_PROVIDERS } from "./providers/buildingProviders";
 
 type Attributes = Record<string, unknown>;
@@ -41,6 +42,17 @@ function createNeutralBuildingRenderer(): any {
   };
 }
 
+function sceneCamera(view: SceneView): MapCamera | null {
+  const center = view.center;
+  if (!center || !Number.isFinite(center.longitude) || !Number.isFinite(center.latitude)) return null;
+  return {
+    center: [center.longitude, center.latitude],
+    zoom: Number.isFinite(view.zoom) ? view.zoom : 12,
+    pitch: Math.min(view.camera?.tilt ?? 55, 75),
+    bearing: view.camera?.heading ?? 0,
+  };
+}
+
 export default function GreaterTaipeiApp() {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const viewRef = useRef<SceneView | null>(null);
@@ -56,6 +68,13 @@ export default function GreaterTaipeiApp() {
   const [selectedAttributes, setSelectedAttributes] = useState<Attributes | null>(null);
   const [selectedLayerLabel, setSelectedLayerLabel] = useState<string | null>(null);
 
+  const [globalMode, setGlobalMode] = useState(false);
+  const [globalReady, setGlobalReady] = useState(false);
+  const [globalRelease, setGlobalRelease] = useState<string | null>(null);
+  const [globalError, setGlobalError] = useState<string | null>(null);
+  const [globalTargetCamera, setGlobalTargetCamera] = useState<MapCamera | null>(null);
+  const [globalCamera, setGlobalCamera] = useState<MapCamera | null>(null);
+
   const visibleAttributes = useMemo(() => {
     if (!selectedAttributes) return [];
     return Object.entries(selectedAttributes)
@@ -64,10 +83,16 @@ export default function GreaterTaipeiApp() {
   }, [selectedAttributes]);
 
   const statusText = useMemo(() => {
+    if (globalMode) {
+      if (globalError) return `全球 Overture ERR · ${globalError}`;
+      if (!globalReady) return "全球 Overture 載入中…";
+      return `全球 Overture ${globalRelease ?? ""} · Globe · 3D ON`;
+    }
+
     const parts = [status, show3DBuildings ? "3D 建築 ON" : "3D 建築 OFF"];
     if (newTaipeiError) parts.push("新北 3D ERR");
     return parts.join(" · ");
-  }, [status, show3DBuildings, newTaipeiError]);
+  }, [globalMode, globalError, globalReady, globalRelease, status, show3DBuildings, newTaipeiError]);
 
   useEffect(() => {
     if (taipeiRef.current) taipeiRef.current.visible = show3DBuildings;
@@ -198,6 +223,16 @@ export default function GreaterTaipeiApp() {
   }, []);
 
   const jumpToBanqiao = async () => {
+    if (globalMode) {
+      setGlobalTargetCamera({
+        center: [121.4623, 25.0123],
+        zoom: 15,
+        pitch: 65,
+        bearing: 20,
+      });
+      return;
+    }
+
     const view = viewRef.current;
     if (!view) return;
 
@@ -215,13 +250,67 @@ export default function GreaterTaipeiApp() {
     }
   };
 
-  const openGlobalBuildings = () => {
-    window.open("/overture-global-spike.html", "_blank", "noopener,noreferrer");
+  const toggleGlobalMode = async () => {
+    if (!globalMode) {
+      const view = viewRef.current;
+      if (!view) return;
+      const camera = sceneCamera(view);
+      if (camera) {
+        setGlobalTargetCamera(camera);
+        setGlobalCamera(camera);
+      }
+      setSelectedAttributes(null);
+      setSelectedLayerLabel(null);
+      setGlobalMode(true);
+      return;
+    }
+
+    const view = viewRef.current;
+    const camera = globalCamera;
+    if (view && camera) {
+      try {
+        await view.goTo(
+          {
+            center: camera.center,
+            zoom: camera.zoom,
+            heading: camera.bearing,
+            tilt: Math.min(camera.pitch, 75),
+          },
+          { duration: 0 },
+        );
+      } catch (error: any) {
+        if (error?.name !== "AbortError") console.error("Global → local camera handoff failed", error);
+      }
+    }
+    setSelectedAttributes(null);
+    setSelectedLayerLabel(null);
+    setGlobalMode(false);
   };
 
   return (
     <main className="app-shell">
-      <div ref={mapContainerRef} className="map-view" />
+      <div
+        ref={mapContainerRef}
+        className="map-view"
+        style={{ visibility: globalMode ? "hidden" : "visible" }}
+        aria-hidden={globalMode}
+      />
+
+      <GlobalBuildingMap
+        visible={globalMode}
+        targetCamera={globalTargetCamera}
+        onReady={(release) => {
+          setGlobalReady(true);
+          setGlobalRelease(release);
+          setGlobalError(null);
+        }}
+        onError={(message) => setGlobalError(message)}
+        onCameraChange={(camera) => setGlobalCamera(camera)}
+        onInspect={(attributes) => {
+          setSelectedAttributes(attributes);
+          setSelectedLayerLabel("全球 Overture 建築");
+        }}
+      />
 
       <header className="glass top-bar">
         <div>
@@ -246,47 +335,55 @@ export default function GreaterTaipeiApp() {
         </div>
 
         <button
-          className={`layer-card layer-button ${show3DBuildings ? "active" : ""}`}
+          className={`layer-card layer-button ${show3DBuildings && !globalMode ? "active" : ""}`}
+          disabled={globalMode}
           onClick={() => setShow3DBuildings((current) => !current)}
         >
           <div>
             <strong>大台北 3D 建築</strong>
             <span>台北都發局 LOD1 + 新北 NLSC layer 5</span>
           </div>
-          <span className={`layer-state ${show3DBuildings ? "on" : ""}`}>
-            {show3DBuildings ? "ON" : "OFF"}
+          <span className={`layer-state ${show3DBuildings && !globalMode ? "on" : ""}`}>
+            {globalMode ? "LOCAL" : show3DBuildings ? "ON" : "OFF"}
           </span>
         </button>
 
         <button
-          className={`layer-card layer-button ${showCadastral ? "active" : ""}`}
-          disabled={!show3DBuildings}
+          className={`layer-card layer-button ${showCadastral && !globalMode ? "active" : ""}`}
+          disabled={!show3DBuildings || globalMode}
           onClick={() => setShowCadastral((current) => !current)}
         >
           <div>
             <strong>台北產權細節</strong>
             <span>臺北市地政局 2023 SceneLayer · 選配</span>
           </div>
-          <span className={`layer-state ${showCadastral && show3DBuildings ? "on" : ""}`}>
-            {showCadastral && show3DBuildings ? "ON" : "OFF"}
+          <span className={`layer-state ${showCadastral && !globalMode ? "on" : ""}`}>
+            {showCadastral && !globalMode ? "ON" : "OFF"}
           </span>
         </button>
 
-        <button className="layer-card layer-button" onClick={openGlobalBuildings}>
+        <button
+          className={`layer-card layer-button ${globalMode ? "active" : ""}`}
+          onClick={() => void toggleGlobalMode()}
+        >
           <div>
             <strong>全球 3D 建築</strong>
-            <span>Overture + MapLibre · 台北 / 東京 / 紐約與全球 fallback</span>
+            <span>Overture + MapLibre · 同頁接手目前位置 · 拉遠為 globe</span>
           </div>
-          <span className="layer-state">OPEN</span>
+          <span className={`layer-state ${globalMode ? "on" : ""}`}>
+            {globalMode ? "ON" : globalReady ? "OFF" : "LOAD"}
+          </span>
         </button>
 
         {newTaipeiError ? <p className="warning-text">{newTaipeiError}</p> : null}
+        {globalError ? <p className="warning-text">全球 Overture：{globalError}</p> : null}
 
         <div className="baseline-note">
           <strong>Baseline 原則</strong>
           <p>
-            大台北保留已驗證的地方政府 3D provider；全球 Overture 能力也保留，但目前仍是
-            MapLibre 獨立視圖。兩個 renderer 尚未假裝成已完成的單一無縫地圖。
+            這是一個持續的地圖畫面，不開新分頁。大台北使用官方 ArcGIS / I3S；全球 fallback
+            目前由 MapLibre / Overture 在同一位置接手相機。101 使用 parts-aware 規則，會隱藏
+            has_parts=true 的母體豆腐殼，改畫 building_part。
           </p>
         </div>
 
@@ -319,7 +416,11 @@ export default function GreaterTaipeiApp() {
               </div>
             ))
           ) : (
-            <p className="empty-text">點選可辨識的台北／新北 3D 建築查看來源屬性。</p>
+            <p className="empty-text">
+              {globalMode
+                ? "點選 Overture 3D 建築查看 tile 屬性。"
+                : "點選可辨識的台北／新北 3D 建築查看來源屬性。"}
+            </p>
           )}
         </div>
       </aside>

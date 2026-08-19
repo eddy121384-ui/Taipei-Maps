@@ -215,6 +215,10 @@ export default function GreaterTaipeiApp() {
     }
   };
 
+  const openGlobalBuildings = () => {
+    window.open("/overture-global-spike.html", "_blank", "noopener,noreferrer");
+  };
+
   return (
     <main className="app-shell">
       <div ref={mapContainerRef} className="map-view" />
@@ -268,13 +272,21 @@ export default function GreaterTaipeiApp() {
           </span>
         </button>
 
+        <button className="layer-card layer-button" onClick={openGlobalBuildings}>
+          <div>
+            <strong>全球 3D 建築</strong>
+            <span>Overture + MapLibre · 台北 / 東京 / 紐約與全球 fallback</span>
+          </div>
+          <span className="layer-state">OPEN</span>
+        </button>
+
         {newTaipeiError ? <p className="warning-text">{newTaipeiError}</p> : null}
 
         <div className="baseline-note">
           <strong>Baseline 原則</strong>
           <p>
-            這個 branch 只收已驗證的 Greater Taipei map shell。屋齡 join、Overture、MapLibre
-            forensics、building identity 等研究先留在研究 branch，不在這裡混進正式骨架。
+            大台北保留已驗證的地方政府 3D provider；全球 Overture 能力也保留，但目前仍是
+            MapLibre 獨立視圖。兩個 renderer 尚未假裝成已完成的單一無縫地圖。
           </p>
         </div>
 

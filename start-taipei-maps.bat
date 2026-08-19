@@ -26,6 +26,26 @@ if not exist node_modules (
     pause
     exit /b 1
   )
+) else if not exist node_modules\maplibre-gl (
+  echo New map dependencies detected. Updating node_modules...
+  echo.
+  call npm install
+  if errorlevel 1 (
+    echo.
+    echo [ERROR] npm install failed.
+    pause
+    exit /b 1
+  )
+) else if not exist node_modules\pmtiles (
+  echo New map dependencies detected. Updating node_modules...
+  echo.
+  call npm install
+  if errorlevel 1 (
+    echo.
+    echo [ERROR] npm install failed.
+    pause
+    exit /b 1
+  )
 )
 
 echo Starting Taipei-Maps baseline...

@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Taipei-Maps · Xinyi age-to-building join pilot</title>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" />
+  <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+  <script src="https://unpkg.com/pmtiles@4.4.1/dist/pmtiles.js"></script>
+  <style>
+    html,body,#map{width:100%;height:100%;margin:0}body{font-family:Inter,system-ui,sans-serif;overflow:hidden}
+    .panel{position:absolute;z-index:5;top:14px;left:14px;width:min(470px,calc(100vw - 28px));max-height:calc(100vh - 28px);overflow:auto;padding:14px;border:1px solid #ccd3d9;border-radius:14px;background:rgba(255,255,255,.96);box-shadow:0 10px 28px rgba(0,0,0,.14)}
+    .eyebrow{font-size:11px;font-weight:800;letter-spacing:.12em;color:#68727d}h1{font-size:20px;margin:5px 0}.sub,.note{font-size:11.5px;color:#5e6872;line-height:1.45}
+    button{border:1px solid #c8d0d7;border-radius:9px;padding:7px 9px;background:#fff;font-weight:700;cursor:pointer;margin:3px 4px 3px 0}.active{background:#25313b;color:#fff}
+    .metrics{display:grid;grid-template-columns:1fr auto;gap:4px 10px;border-top:1px solid #dde2e7;border-bottom:1px solid #dde2e7;padding:9px 0;margin:9px 0;font-size:12px}.metrics span:nth-child(odd){color:#66717b}.metrics span:nth-child(even){font-weight:800;font-variant-numeric:tabular-nums}
+    #status{font-size:12px;font-weight:700;line-height:1.45}.error{color:#b42318}.table{font-size:11px;line-height:1.35}.row{padding:6px 0;border-bottom:1px solid #edf0f2}.row strong{display:block}.badge{display:inline-block;background:#eef2f4;border-radius:999px;padding:2px 6px;margin:2px 3px 0 0}.mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+    .legend{display:flex;gap:7px;flex-wrap:wrap;font-size:10.5px;margin:7px 0}.sw{width:10px;height:10px;border-radius:2px;display:inline-block;margin-right:3px;vertical-align:-1px}
+  </style>
+</head>
+<body>
+<div id="map"></div>
+<section class="panel">
+  <div class="eyebrow">ISSUE #10 · STRICT SPATIAL JOIN PILOT</div>
+  <h1>屋齡地址點，能不能乾淨黏回「一棟房子」？</h1>
+  <div class="sub">信義計畫區小範圍驗證。屋齡來源是 City Dashboard <span class="mono">building_age</span> 地址點；building polygon 暫用 Overture parent <span class="mono">building</span>。本輪只做嚴格 point-in-polygon：不 snap、不 nearest、不猜。</div>
+  <div>
+    <button id="reset" class="active">信義區固定視角</button>
+    <button id="toggle3d" class="active">3D 背景 ON</button>
+    <button id="join">重新 Join</button>
+  </div>
+  <div class="legend">
+    <span><i class="sw" style="background:#73b7ff"></i>0–10</span><span><i class="sw" style="background:#66d4a9"></i>10–20</span><span><i class="sw" style="background:#d4dc63"></i>20–30</span><span><i class="sw" style="background:#f0b45a"></i>30–40</span><span><i class="sw" style="background:#ea7d49"></i>40–50</span><span><i class="sw" style="background:#d14b4b"></i>50+</span><span><i class="sw" style="background:#b13bc2"></i>衝突</span><span><i class="sw" style="background:#9aa2a9"></i>無屋齡</span>
+  </div>
+  <div class="metrics">
+    <span>PMTiles release</span><span id="release">—</span>
+    <span>屋齡 points</span><span id="agePoints">—</span>
+    <span>building polygons</span><span id="buildingCount">—</span>
+    <span>唯一匹配 points</span><span id="matchedPoints">—</span>
+    <span>無匹配 points</span><span id="unmatchedPoints">—</span>
+    <span>多重匹配 points</span><span id="ambiguousPoints">—</span>
+    <span>有屋齡 buildings</span><span id="matchedBuildings">—</span>
+    <span>單一年份 buildings</span><span id="cleanBuildings">—</span>
+    <span>年份衝突 buildings</span><span id="conflictBuildings">—</span>
+    <span>無屋齡 buildings</span><span id="noAgeBuildings">—</span>
+    <span>Join coverage (points)</span><span id="pointCoverage">—</span>
+  </div>
+  <div id="status">Preparing pilot…</div>
+  <div id="rows" class="table"></div>
+  <div class="note"><strong>判讀方式：</strong>「單一年份」不是宣稱官方真實 building ID 已完成，只表示落進同一 Overture parent polygon 的地址點全部同一建造年；「年份衝突」則是我們最該人工檢查的案例。這是 identity methodology 驗證，不是最終資料產品。</div>
+</section>
+<script>
+(async()=>{
+  const $=s=>document.querySelector(s),status=$('#status'),rows=$('#rows');
+  const PILOT=[121.5560,25.0275,121.5730,25.0415];
+  const CENTER=[121.56447,25.03396];
+  const CURRENT_YEAR=new Date().getFullYear();
+  let show3d=true;
+  let ageData=null;
+
+  if(!window.maplibregl||!window.pmtiles){status.textContent='ERROR: MapLibre / PMTiles CDN 未載入';status.className='error';return;}
+
+  try{
+    const r=await fetch('/generated/citydashboard_building_age_xinyi.geojson',{cache:'no-store'});
+    if(!r.ok)throw new Error(`${r.status} ${r.statusText}`);
+    ageData=await r.json();
+  }catch(e){
+    status.textContent=`ERROR: 找不到信義區屋齡 subset。請用 start-xinyi-age-building-join.bat 啟動。 ${e.message||e}`;
+    status.className='error';return;
+  }
+  const ageFeatures=(ageData.features||[]).filter(f=>f?.geometry?.type==='Point');
+  $('#agePoints').textContent=ageFeatures.length.toLocaleString();
+
+  const candidates=[
+    {release:'2026-07-22.0',url:'https://overturemaps-extras-us-west-2.s3.us-west-2.amazonaws.com/tiles/2026-07-22.0/buildings.pmtiles'},
+    {release:'2026-06-17.0',url:'https://overturemaps-extras-us-west-2.s3.us-west-2.amazonaws.com/tiles/2026-06-17.0/buildings.pmtiles'}
+  ];
+  let selected=null,metadata=null;
+  for(const c of candidates){try{const a=new pmtiles.PMTiles(c.url);metadata=await a.getMetadata();await a.getHeader();selected=c;break}catch(e){console.warn(c.release,e)}}
+  if(!selected){status.textContent='ERROR: 找不到可用 Overture buildings PMTiles';status.className='error';return;}
+  const sourceLayers=(metadata?.vector_layers||[]).map(x=>x.id);
+  if(!sourceLayers.includes('building')){status.textContent='ERROR: Overture archive 沒有 building layer';status.className='error';return;}
+  const hasParts=sourceLayers.includes('building_part');
+  $('#release').textContent=selected.release;
+
+  const protocol=new pmtiles.Protocol({metadata:true});maplibregl.addProtocol('pmtiles',protocol.tile);
+  const heightExpr=['case',['>', ['to-number',['get','height'],0],0],['to-number',['get','height'],0],['>', ['to-number',['get','num_floors'],0],0],['*',['to-number',['get','num_floors'],0],3.2],9.6];
+  const noPartsParentFilter=['!', ['==',['get','has_parts'],true]];
+
+  const baseLayers=[
+    {id:'osm',type:'raster',source:'osm'},
+    {id:'building-probe',type:'fill',source:'overture','source-layer':'building',minzoom:14,paint:{'fill-color':'#000000','fill-opacity':0.001}},
+    {id:'b3d',type:'fill-extrusion',source:'overture','source-layer':'building',minzoom:14,filter:noPartsParentFilter,paint:{'fill-extrusion-height':heightExpr,'fill-extrusion-color':'#dfe4e7','fill-extrusion-opacity':.34,'fill-extrusion-vertical-gradient':true}}
+  ];
+  if(hasParts)baseLayers.push({id:'p3d',type:'fill-extrusion',source:'overture','source-layer':'building_part',minzoom:14,paint:{'fill-extrusion-base':['to-number',['get','min_height'],0],'fill-extrusion-height':heightExpr,'fill-extrusion-color':'#c9d2d8','fill-extrusion-opacity':.42,'fill-extrusion-vertical-gradient':true}});
+
+  const map=new maplibregl.Map({container:'map',center:CENTER,zoom:15.15,pitch:54,bearing:-24,maxPitch:75,antialias:true,style:{version:8,sources:{osm:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,attribution:'© OpenStreetMap contributors'},overture:{type:'vector',url:`pmtiles://${selected.url}`,attribution:'© Overture Maps Foundation / source contributors'}},layers:baseLayers}});
+  map.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'top-right');
+
+  function geomBBox(g){
+    let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+    const visit=x=>{if(Array.isArray(x)&&typeof x[0]==='number'&&typeof x[1]==='number'){minX=Math.min(minX,x[0]);minY=Math.min(minY,x[1]);maxX=Math.max(maxX,x[0]);maxY=Math.max(maxY,x[1]);return;}if(Array.isArray(x))for(const y of x)visit(y);};
+    visit(g?.coordinates);return Number.isFinite(minX)?[minX,minY,maxX,maxY]:null;
+  }
+  const intersects=(a,b)=>a&&!(a[2]<b[0]||a[0]>b[2]||a[3]<b[1]||a[1]>b[3]);
+  function pointInRing(p,ring){let inside=false;for(let i=0,j=ring.length-1;i<ring.length;j=i++){const xi=ring[i][0],yi=ring[i][1],xj=ring[j][0],yj=ring[j][1];const hit=((yi>p[1])!==(yj>p[1]))&&(p[0]<(xj-xi)*(p[1]-yi)/((yj-yi)||1e-15)+xi);if(hit)inside=!inside;}return inside;}
+  function pointInPolygon(p,coords){if(!coords?.length||!pointInRing(p,coords[0]))return false;for(let i=1;i<coords.length;i++)if(pointInRing(p,coords[i]))return false;return true;}
+  function pointInGeometry(p,g){if(g?.type==='Polygon')return pointInPolygon(p,g.coordinates);if(g?.type==='MultiPolygon')return g.coordinates.some(poly=>pointInPolygon(p,poly));return false;}
+  function buildingId(f){return String(f?.properties?.id??f?.id??`anon:${JSON.stringify(geomBBox(f.geometry))}`);}
+  function ageColor(age,statusValue){if(statusValue==='conflict')return '#b13bc2';if(statusValue==='none')return '#9aa2a9';if(!Number.isFinite(age))return '#9aa2a9';if(age<10)return '#73b7ff';if(age<20)return '#66d4a9';if(age<30)return '#d4dc63';if(age<40)return '#f0b45a';if(age<50)return '#ea7d49';return '#d14b4b';}
+
+  function dedupeFragments(features){
+    const seen=new Set(),out=[];
+    for(const f of features){const b=geomBBox(f.geometry);if(!intersects(b,PILOT))continue;const id=buildingId(f);const k=`${id}|${b?.map(x=>x.toFixed(6)).join(',')}`;if(seen.has(k))continue;seen.add(k);out.push(f);}return out;
+  }
+
+  function removeJoinLayers(){for(const id of ['joined-outline','joined-fill','age-points'])if(map.getLayer(id))map.removeLayer(id);for(const id of ['joined','ages'])if(map.getSource(id))map.removeSource(id);}
+
+  function runJoin(){
+    if(!map.isStyleLoaded())return;
+    status.className='';status.textContent='Running strict point-in-polygon join…';
+    let fragments=[];
+    try{fragments=dedupeFragments(map.querySourceFeatures('overture',{sourceLayer:'building'}));}catch(e){console.error(e);}
+    if(!fragments.length){status.textContent='目前還沒載到 building polygons；等 tiles idle 後再按「重新 Join」。';return;}
+
+    const buildingMap=new Map();
+    for(const f of fragments){const id=buildingId(f);let rec=buildingMap.get(id);if(!rec){rec={id,fragments:[],props:f.properties||{},points:[],years:new Set()};buildingMap.set(id,rec);}rec.fragments.push(f);}
+
+    let matched=0,unmatched=0,ambiguous=0;
+    const pointOut=[];
+    for(const f of ageFeatures){
+      const p=f.geometry.coordinates,hitIds=new Set();
+      for(const bf of fragments){const bb=geomBBox(bf.geometry);if(p[0]<bb[0]||p[0]>bb[2]||p[1]<bb[1]||p[1]>bb[3])continue;if(pointInGeometry(p,bf.geometry))hitIds.add(buildingId(bf));}
+      let joinStatus='unmatched',joinedId=null;
+      if(hitIds.size===1){joinStatus='matched';joinedId=[...hitIds][0];matched++;const rec=buildingMap.get(joinedId);rec.points.push(f);const y=Number(f.properties?.constr_yr);if(Number.isFinite(y))rec.years.add(y);}
+      else if(hitIds.size===0)unmatched++;
+      else{joinStatus='ambiguous';ambiguous++;}
+      pointOut.push({...f,properties:{...(f.properties||{}),join_status:joinStatus,joined_building_id:joinedId}});
+    }
+
+    let clean=0,conflict=0,withAge=0,noAge=0;
+    const joinedFeatures=[];
+    const conflicts=[];
+    for(const rec of buildingMap.values()){
+      const years=[...rec.years].sort((a,b)=>a-b);let st='none',year=null,currentAge=null;
+      if(years.length===1){st='clean';year=years[0];currentAge=CURRENT_YEAR-year;clean++;withAge++;}
+      else if(years.length>1){st='conflict';conflict++;withAge++;conflicts.push({id:rec.id,years,points:rec.points.length,addresses:rec.points.slice(0,6).map(p=>p.properties?.addr_key).filter(Boolean)});}
+      else noAge++;
+      const color=ageColor(currentAge,st);
+      for(const f of rec.fragments)joinedFeatures.push({...f,properties:{...(f.properties||{}),join_status:st,join_constr_yr:year,join_current_age:currentAge,join_point_count:rec.points.length,join_year_count:years.length,join_color:color}});
+    }
+
+    removeJoinLayers();
+    map.addSource('joined',{type:'geojson',data:{type:'FeatureCollection',features:joinedFeatures}});
+    map.addLayer({id:'joined-fill',type:'fill',source:'joined',paint:{'fill-color':['get','join_color'],'fill-opacity':['case',['==',['get','join_status'],'none'],.14,.72]}});
+    map.addLayer({id:'joined-outline',type:'line',source:'joined',paint:{'line-color':['case',['==',['get','join_status'],'conflict'],'#6d1475','#ffffff'],'line-width':['case',['==',['get','join_status'],'conflict'],2.2,.45],'line-opacity':.8}});
+    map.addSource('ages',{type:'geojson',data:{type:'FeatureCollection',features:pointOut}});
+    map.addLayer({id:'age-points',type:'circle',source:'ages',paint:{'circle-radius':3.2,'circle-color':['match',['get','join_status'],'matched','#24333d','ambiguous','#b13bc2','#ffffff'],'circle-stroke-color':['match',['get','join_status'],'unmatched','#b42318','#25313b'],'circle-stroke-width':1.1,'circle-opacity':.85}});
+
+    $('#buildingCount').textContent=buildingMap.size.toLocaleString();
+    $('#matchedPoints').textContent=matched.toLocaleString();$('#unmatchedPoints').textContent=unmatched.toLocaleString();$('#ambiguousPoints').textContent=ambiguous.toLocaleString();
+    $('#matchedBuildings').textContent=withAge.toLocaleString();$('#cleanBuildings').textContent=clean.toLocaleString();$('#conflictBuildings').textContent=conflict.toLocaleString();$('#noAgeBuildings').textContent=noAge.toLocaleString();
+    $('#pointCoverage').textContent=ageFeatures.length?`${(100*matched/ageFeatures.length).toFixed(1)}%`:'—';
+
+    conflicts.sort((a,b)=>b.points-a.points);
+    rows.innerHTML=conflicts.slice(0,20).map((c,i)=>`<div class="row"><strong>#${i+1} conflict · ${c.points} points · years ${c.years.join(', ')}</strong><div class="mono">${c.id}</div>${c.addresses.map(a=>`<span class="badge">${a}</span>`).join('')}</div>`).join('')||'<div class="row">目前沒有年份衝突 building。</div>';
+    status.textContent=`Join done：${ageFeatures.length.toLocaleString()} age points → ${buildingMap.size.toLocaleString()} Overture buildings；唯一匹配 ${matched.toLocaleString()}，年份衝突 buildings ${conflict.toLocaleString()}。`;
+  }
+
+  function apply3d(){for(const id of ['b3d','p3d'])if(map.getLayer(id))map.setLayoutProperty(id,'visibility',show3d?'visible':'none');$('#toggle3d').textContent=`3D 背景 ${show3d?'ON':'OFF'}`;$('#toggle3d').classList.toggle('active',show3d);}
+
+  map.on('load',()=>{apply3d();status.textContent='Map ready，等 Overture tiles idle 後自動 Join…';});
+  let joinedOnce=false;
+  map.on('idle',()=>{if(!joinedOnce){joinedOnce=true;runJoin();}});
+  $('#join').onclick=runJoin;
+  $('#reset').onclick=()=>map.easeTo({center:CENTER,zoom:15.15,pitch:54,bearing:-24,duration:500});
+  $('#toggle3d').onclick=()=>{show3d=!show3d;apply3d();};
+})();
+</script>
+</body>
+</html>

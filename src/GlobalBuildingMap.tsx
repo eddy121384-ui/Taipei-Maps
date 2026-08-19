@@ -227,9 +227,10 @@ export default function GlobalBuildingMap({
 
         map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
 
-        map.on("style.load", () => {
-          map?.setProjection({ type: "globe" });
-        });
+        // Keep the global fallback on Web Mercator for now. MapLibre 5.24.0 has
+        // an open globe/raster rendering regression that can blank eastern-
+        // hemisphere sources while panning/zooming. This app is an analysis map,
+        // so a stable global basemap matters more than globe presentation.
 
         map.on("load", () => {
           if (cancelled || !map) return;

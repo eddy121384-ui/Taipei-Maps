@@ -73,3 +73,7 @@ npm run build
 - Overture global buildings
 
 The project does not treat any one geometry source as the canonical property identity until that relationship is proven.
+
+## Merge workflow
+
+The active product branch is `agent/3d-taipei-spike` / PR #4. We keep working on the real branch until a coherent milestone is browser-verified, then merge that milestone to `main` (squash merge is fine if the research commit history is noisy). After that, the next milestone branches from the updated `main`. Do not rebuild already-working product behavior solely to create a cleaner-looking PR history.

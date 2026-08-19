@@ -95,7 +95,7 @@ export default function GlobalBuildingMap({
     let cancelled = false;
     let map: maplibregl.Map | null = null;
 
-    const boot = async () => {
+    const addOvertureBuildings = async (activeMap: maplibregl.Map) => {
       try {
         let selected: (typeof OVERTURE_CANDIDATES)[number] | null = null;
         let metadata: any = null;
@@ -116,6 +116,7 @@ export default function GlobalBuildingMap({
           }
         }
 
+        if (cancelled || mapRef.current !== activeMap) return;
         if (!selected) {
           throw new Error(`Overture PMTiles preflight failed: ${failures.join(" | ")}`);
         }
@@ -129,11 +130,6 @@ export default function GlobalBuildingMap({
           throw new Error(`Overture PMTiles has no building source-layer: ${vectorLayers.join(", ")}`);
         }
 
-        if (!protocolRegistered) {
-          maplibregl.addProtocol("pmtiles", protocol.tile);
-          protocolRegistered = true;
-        }
-
         const heightExpr: any = [
           "case",
           [">", ["to-number", ["get", "height"], 0], 0],
@@ -144,35 +140,32 @@ export default function GlobalBuildingMap({
         ];
         const baseExpr: any = ["to-number", ["get", "min_height"], 0];
         const parentWithoutParts: any = ["!=", ["get", "has_parts"], true];
-        const start = targetRef.current ?? {
-          center: [121.51, 25.035] as [number, number],
-          zoom: 11,
-          pitch: 58,
-          bearing: -20,
-        };
 
-        const layers: any[] = [
-          { id: "osm", type: "raster", source: "osm" },
-          {
-            id: "overture-building-3d",
-            type: "fill-extrusion",
-            source: "overtureBuildings",
-            "source-layer": "building",
-            minzoom: 14,
-            ...(hasParts ? { filter: parentWithoutParts } : {}),
-            layout: { visibility: showBuildings ? "visible" : "none" },
-            paint: {
-              "fill-extrusion-base": baseExpr,
-              "fill-extrusion-height": heightExpr,
-              "fill-extrusion-color": "#e2e7eb",
-              "fill-extrusion-opacity": 0.9,
-              "fill-extrusion-vertical-gradient": true,
-            },
+        activeMap.addSource("overtureBuildings", {
+          type: "vector",
+          url: `pmtiles://${selected.url}`,
+          attribution: "© Overture Maps Foundation / source contributors",
+        });
+
+        activeMap.addLayer({
+          id: "overture-building-3d",
+          type: "fill-extrusion",
+          source: "overtureBuildings",
+          "source-layer": "building",
+          minzoom: 14,
+          ...(hasParts ? { filter: parentWithoutParts } : {}),
+          layout: { visibility: showBuildings ? "visible" : "none" },
+          paint: {
+            "fill-extrusion-base": baseExpr,
+            "fill-extrusion-height": heightExpr,
+            "fill-extrusion-color": "#e2e7eb",
+            "fill-extrusion-opacity": 0.9,
+            "fill-extrusion-vertical-gradient": true,
           },
-        ];
+        } as any);
 
         if (hasParts) {
-          layers.push({
+          activeMap.addLayer({
             id: "overture-parts-3d",
             type: "fill-extrusion",
             source: "overtureBuildings",
@@ -186,13 +179,31 @@ export default function GlobalBuildingMap({
               "fill-extrusion-opacity": 0.95,
               "fill-extrusion-vertical-gradient": true,
             },
-          });
+          } as any);
         }
 
-        if (cancelled || !containerRef.current) return;
+        callbacksRef.current.onReady(selected.release);
+      } catch (error: any) {
+        if (!cancelled) callbacksRef.current.onError(error?.message ?? String(error));
+      }
+    };
+
+    const boot = () => {
+      try {
+        if (!protocolRegistered) {
+          maplibregl.addProtocol("pmtiles", protocol.tile);
+          protocolRegistered = true;
+        }
+
+        const start = targetRef.current ?? {
+          center: [121.51, 25.035] as [number, number],
+          zoom: 11,
+          pitch: 58,
+          bearing: -20,
+        };
 
         map = new maplibregl.Map({
-          container: containerRef.current,
+          container: containerRef.current as HTMLDivElement,
           center: start.center,
           zoom: start.zoom,
           pitch: Math.min(start.pitch, 75),
@@ -208,13 +219,8 @@ export default function GlobalBuildingMap({
                 tileSize: 256,
                 attribution: "© OpenStreetMap contributors",
               },
-              overtureBuildings: {
-                type: "vector",
-                url: `pmtiles://${selected.url}`,
-                attribution: "© Overture Maps Foundation / source contributors",
-              },
             },
-            layers,
+            layers: [{ id: "osm", type: "raster", source: "osm" }],
           } as any,
         });
         mapRef.current = map;
@@ -227,8 +233,8 @@ export default function GlobalBuildingMap({
 
         map.on("load", () => {
           if (cancelled || !map) return;
-          callbacksRef.current.onReady(selected.release);
           if (visible) map.resize();
+          void addOvertureBuildings(map);
         });
 
         map.on("moveend", () => {
@@ -241,6 +247,7 @@ export default function GlobalBuildingMap({
           const layerIds = ["overture-parts-3d", "overture-building-3d"].filter((id) =>
             Boolean(map?.getLayer(id)),
           );
+          if (layerIds.length === 0) return;
           const features = map.queryRenderedFeatures(event.point, { layers: layerIds });
           const feature = features[0];
           if (!feature) return;
@@ -259,7 +266,7 @@ export default function GlobalBuildingMap({
       }
     };
 
-    void boot();
+    boot();
 
     return () => {
       cancelled = true;

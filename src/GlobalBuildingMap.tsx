@@ -54,6 +54,19 @@ export default function GlobalBuildingMap({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const targetRef = useRef<MapCamera | null>(targetCamera);
+  const visibleRef = useRef(visible);
+  const callbacksRef = useRef({ onReady, onError, onCameraChange, onInspect });
+
+  useEffect(() => {
+    callbacksRef.current = { onReady, onError, onCameraChange, onInspect };
+  }, [onReady, onError, onCameraChange, onInspect]);
+
+  useEffect(() => {
+    visibleRef.current = visible;
+    const map = mapRef.current;
+    if (!map || !visible) return;
+    requestAnimationFrame(() => map.resize());
+  }, [visible]);
 
   useEffect(() => {
     targetRef.current = targetCamera;
@@ -66,12 +79,6 @@ export default function GlobalBuildingMap({
       bearing: targetCamera.bearing,
     });
   }, [targetCamera]);
-
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !visible) return;
-    requestAnimationFrame(() => map.resize());
-  }, [visible]);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -208,13 +215,13 @@ export default function GlobalBuildingMap({
 
         map.on("load", () => {
           if (cancelled || !map) return;
-          onReady(selected.release);
-          if (visible) map.resize();
+          callbacksRef.current.onReady(selected.release);
+          if (visibleRef.current) map.resize();
         });
 
         map.on("moveend", () => {
           if (!map) return;
-          onCameraChange(currentCamera(map));
+          callbacksRef.current.onCameraChange(currentCamera(map));
         });
 
         map.on("click", (event) => {
@@ -225,7 +232,7 @@ export default function GlobalBuildingMap({
           const features = map.queryRenderedFeatures(event.point, { layers: layerIds });
           const feature = features[0];
           if (!feature) return;
-          onInspect({
+          callbacksRef.current.onInspect({
             ...(feature.properties ?? {}),
             source_layer: feature.sourceLayer ?? "—",
           });
@@ -233,10 +240,10 @@ export default function GlobalBuildingMap({
 
         map.on("error", (event: any) => {
           const message = event?.error?.message;
-          if (message) onError(message);
+          if (message) callbacksRef.current.onError(message);
         });
       } catch (error: any) {
-        if (!cancelled) onError(error?.message ?? String(error));
+        if (!cancelled) callbacksRef.current.onError(error?.message ?? String(error));
       }
     };
 
@@ -247,7 +254,7 @@ export default function GlobalBuildingMap({
       mapRef.current = null;
       map?.remove();
     };
-  }, [onCameraChange, onError, onInspect, onReady, visible]);
+  }, []);
 
   return (
     <div

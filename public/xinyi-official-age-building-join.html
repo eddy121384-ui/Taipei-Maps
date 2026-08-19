@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Taipei-Maps · Official Xinyi age-to-building join</title>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" />
+  <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+  <style>
+    html,body,#map{width:100%;height:100%;margin:0}body{font-family:Inter,system-ui,sans-serif;overflow:hidden}
+    .panel{position:absolute;z-index:5;top:14px;left:14px;width:min(500px,calc(100vw - 28px));max-height:calc(100vh - 28px);overflow:auto;padding:14px;border:1px solid #ccd3d9;border-radius:14px;background:rgba(255,255,255,.96);box-shadow:0 10px 28px rgba(0,0,0,.14)}
+    .eyebrow{font-size:11px;font-weight:800;letter-spacing:.12em;color:#68727d}h1{font-size:20px;margin:5px 0}.sub,.note{font-size:11.5px;color:#5e6872;line-height:1.45}
+    button{border:1px solid #c8d0d7;border-radius:9px;padding:7px 9px;background:#fff;font-weight:700;cursor:pointer;margin:3px 4px 3px 0}.active{background:#25313b;color:#fff}
+    .metrics{display:grid;grid-template-columns:1fr auto;gap:4px 10px;border-top:1px solid #dde2e7;border-bottom:1px solid #dde2e7;padding:9px 0;margin:9px 0;font-size:12px}.metrics span:nth-child(odd){color:#66717b}.metrics span:nth-child(even){font-weight:800;font-variant-numeric:tabular-nums}.good{color:#137333}.bad{color:#b42318}
+    #status{font-size:12px;font-weight:700;line-height:1.45}.error{color:#b42318}.table{font-size:11px;line-height:1.35}.row{padding:6px 0;border-bottom:1px solid #edf0f2}.row strong{display:block}.badge{display:inline-block;background:#eef2f4;border-radius:999px;padding:2px 6px;margin:2px 3px 0 0}.mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}.legend{display:flex;gap:7px;flex-wrap:wrap;font-size:10.5px;margin:7px 0}.sw{width:10px;height:10px;border-radius:2px;display:inline-block;margin-right:3px;vertical-align:-1px}
+  </style>
+</head>
+<body>
+<div id="map"></div>
+<section class="panel">
+  <div class="eyebrow">ISSUE #10 · OFFICIAL POLYGON A/B</div>
+  <h1>同一批屋齡點，換成台北官方 polygon 會怎樣？</h1>
+  <div class="sub">與上一輪完全相同的信義區 bbox、City Dashboard <span class="mono">building_age</span>、strict point-in-polygon 規則。唯一改變：building provider 從 Overture 換成公開 WFS <span class="mono">taipei_vioc:tp_building_height</span>。不 snap、不 nearest、不猜。</div>
+  <div><button id="reset" class="active">信義區固定視角</button><button id="toggle3d" class="active">3D ON</button><button id="join">重新 Join</button></div>
+  <div class="legend"><span><i class="sw" style="background:#73b7ff"></i>0–10</span><span><i class="sw" style="background:#66d4a9"></i>10–20</span><span><i class="sw" style="background:#d4dc63"></i>20–30</span><span><i class="sw" style="background:#f0b45a"></i>30–40</span><span><i class="sw" style="background:#ea7d49"></i>40–50</span><span><i class="sw" style="background:#d14b4b"></i>50+</span><span><i class="sw" style="background:#b13bc2"></i>衝突</span><span><i class="sw" style="background:#9aa2a9"></i>無屋齡</span></div>
+  <div class="metrics">
+    <span>官方 height field</span><span id="heightField">—</span>
+    <span>屋齡 points</span><span id="agePoints">—</span>
+    <span>官方 building polygons</span><span id="buildingCount">—</span>
+    <span>唯一匹配 points</span><span id="matchedPoints">—</span>
+    <span>無匹配 points</span><span id="unmatchedPoints">—</span>
+    <span>多重匹配 points</span><span id="ambiguousPoints">—</span>
+    <span>有屋齡 buildings</span><span id="matchedBuildings">—</span>
+    <span>單一年份 buildings</span><span id="cleanBuildings">—</span>
+    <span>年份衝突 buildings</span><span id="conflictBuildings">—</span>
+    <span>無屋齡 buildings</span><span id="noAgeBuildings">—</span>
+    <span>Join coverage (points)</span><span id="pointCoverage">—</span>
+    <span>Overture baseline</span><span>49.9% / 118 conflicts</span>
+  </div>
+  <div id="status">Loading official pilot data…</div>
+  <div id="rows" class="table"></div>
+  <div class="note"><strong>Acceptance：</strong>如果官方 polygon 的 point coverage 明顯高於 49.9%，而年份衝突顯著低於 118，表示我們已找到比 Overture 更適合台北建築 identity 的底層。若沒有改善，也要照實保留結果。</div>
+</section>
+<script>
+(async()=>{
+  const $=s=>document.querySelector(s),status=$('#status'),rows=$('#rows');
+  const CENTER=[121.56447,25.03396],CURRENT_YEAR=new Date().getFullYear();let show3d=true;
+  if(!window.maplibregl){status.textContent='ERROR: MapLibre CDN 未載入';status.className='error';return;}
+  let ages,buildings;
+  try{
+    const [a,b]=await Promise.all([
+      fetch('/generated/citydashboard_building_age_xinyi.geojson',{cache:'no-store'}),
+      fetch('/generated/citydashboard_tp_building_height_xinyi.geojson',{cache:'no-store'})
+    ]);
+    if(!a.ok||!b.ok)throw new Error(`age ${a.status}, building ${b.status}`);
+    ages=await a.json();buildings=await b.json();
+  }catch(e){status.textContent=`ERROR: pilot GeoJSON 載入失敗。請用 start-xinyi-official-age-building-join.bat 啟動。 ${e.message||e}`;status.className='error';return;}
+
+  const ageFeatures=(ages.features||[]).filter(f=>f?.geometry?.type==='Point');
+  const buildingFeatures=(buildings.features||[]).filter(f=>['Polygon','MultiPolygon'].includes(f?.geometry?.type));
+  $('#agePoints').textContent=ageFeatures.length.toLocaleString();$('#buildingCount').textContent=buildingFeatures.length.toLocaleString();
+
+  function detectHeightField(fs){
+    const keys=new Set();for(const f of fs.slice(0,500))for(const k of Object.keys(f.properties||{}))keys.add(k);
+    const preferred=[...keys].filter(k=>/1_top_high|top_high|roof.*high|height|high/i.test(k));
+    for(const k of preferred){let n=0;for(const f of fs.slice(0,500)){const v=Number(f.properties?.[k]);if(Number.isFinite(v)&&v>0)n++;}if(n>=3)return k;}return null;
+  }
+  const heightField=detectHeightField(buildingFeatures);$('#heightField').textContent=heightField||'未偵測（9.6m fallback）';
+
+  function geomBBox(g){let a=Infinity,b=Infinity,c=-Infinity,d=-Infinity;const walk=x=>{if(Array.isArray(x)&&typeof x[0]==='number'&&typeof x[1]==='number'){a=Math.min(a,x[0]);b=Math.min(b,x[1]);c=Math.max(c,x[0]);d=Math.max(d,x[1]);}else if(Array.isArray(x))for(const y of x)walk(y);};walk(g?.coordinates);return Number.isFinite(a)?[a,b,c,d]:null;}
+  function inRing(p,r){let inside=false;for(let i=0,j=r.length-1;i<r.length;j=i++){const xi=r[i][0],yi=r[i][1],xj=r[j][0],yj=r[j][1];if(((yi>p[1])!==(yj>p[1]))&&(p[0]<(xj-xi)*(p[1]-yi)/((yj-yi)||1e-15)+xi))inside=!inside;}return inside;}
+  function inPoly(p,c){if(!c?.length||!inRing(p,c[0]))return false;for(let i=1;i<c.length;i++)if(inRing(p,c[i]))return false;return true;}
+  function inside(p,g){if(g.type==='Polygon')return inPoly(p,g.coordinates);if(g.type==='MultiPolygon')return g.coordinates.some(inPoly.bind(null,p));return false;}
+  function idOf(f,i){return String(f.id??f.properties?.fid??f.properties?.FID??f.properties?.OBJECTID??f.properties?.objectid??`official-${i}`);}
+  function color(age,st){if(st==='conflict')return '#b13bc2';if(st==='none')return '#9aa2a9';if(!Number.isFinite(age))return '#9aa2a9';if(age<10)return '#73b7ff';if(age<20)return '#66d4a9';if(age<30)return '#d4dc63';if(age<40)return '#f0b45a';if(age<50)return '#ea7d49';return '#d14b4b';}
+
+  const prepared=buildingFeatures.map((f,i)=>({f,id:idOf(f,i),bbox:geomBBox(f.geometry),points:[],years:new Set()}));
+  function join(){
+    status.className='';status.textContent='Running official strict join…';
+    for(const r of prepared){r.points=[];r.years=new Set();}
+    let matched=0,unmatched=0,ambiguous=0;const pointOut=[];
+    for(const pF of ageFeatures){const p=pF.geometry.coordinates,hits=[];for(const r of prepared){const b=r.bbox;if(!b||p[0]<b[0]||p[0]>b[2]||p[1]<b[1]||p[1]>b[3])continue;if(inside(p,r.f.geometry))hits.push(r);}let st='unmatched',bid=null;if(hits.length===1){st='matched';matched++;bid=hits[0].id;hits[0].points.push(pF);const y=Number(pF.properties?.constr_yr);if(Number.isFinite(y))hits[0].years.add(y);}else if(hits.length===0)unmatched++;else{st='ambiguous';ambiguous++;}pointOut.push({...pF,properties:{...(pF.properties||{}),join_status:st,joined_building_id:bid}});}
+
+    let withAge=0,clean=0,conflict=0,noAge=0;const conflicts=[];const out=[];
+    for(const r of prepared){const years=[...r.years].sort((a,b)=>a-b);let st='none',year=null,age=null;if(years.length===1){st='clean';year=years[0];age=CURRENT_YEAR-year;withAge++;clean++;}else if(years.length>1){st='conflict';withAge++;conflict++;conflicts.push({id:r.id,years,points:r.points});}else noAge++;
+      let h=heightField?Number(r.f.properties?.[heightField]):NaN;if(!Number.isFinite(h)||h<=0)h=9.6;
+      out.push({...r.f,properties:{...(r.f.properties||{}),_building_id:r.id,_join_status:st,_constr_yr:year,_current_age:age,_render_height:h,_color:color(age,st),_age_point_count:r.points.length}});
+    }
+    $('#matchedPoints').textContent=matched.toLocaleString();$('#unmatchedPoints').textContent=unmatched.toLocaleString();$('#ambiguousPoints').textContent=ambiguous.toLocaleString();$('#matchedBuildings').textContent=withAge.toLocaleString();$('#cleanBuildings').textContent=clean.toLocaleString();$('#conflictBuildings').textContent=conflict.toLocaleString();$('#noAgeBuildings').textContent=noAge.toLocaleString();const cov=ageFeatures.length?100*matched/ageFeatures.length:0;$('#pointCoverage').textContent=`${cov.toFixed(1)}%`;
+    const covEl=$('#pointCoverage');covEl.className=cov>49.9?'good':cov<49.9?'bad':'';const confEl=$('#conflictBuildings');confEl.className=conflict<118?'good':conflict>118?'bad':'';
+
+    for(const id of ['joined-fill','age-point-layer'])if(map.getLayer(id))map.removeLayer(id);for(const id of ['joined','agepts'])if(map.getSource(id))map.removeSource(id);
+    map.addSource('joined',{type:'geojson',data:{type:'FeatureCollection',features:out}});map.addLayer({id:'joined-fill',type:'fill-extrusion',source:'joined',paint:{'fill-extrusion-height':['get','_render_height'],'fill-extrusion-color':['get','_color'],'fill-extrusion-opacity':.58,'fill-extrusion-vertical-gradient':true}});
+    map.addSource('agepts',{type:'geojson',data:{type:'FeatureCollection',features:pointOut}});map.addLayer({id:'age-point-layer',type:'circle',source:'agepts',paint:{'circle-radius':2.6,'circle-color':['match',['get','join_status'],'matched','#202a33','ambiguous','#b13bc2','#ffffff'],'circle-stroke-color':['match',['get','join_status'],'unmatched','#d14b4b','#202a33'],'circle-stroke-width':1.2,'circle-opacity':.9}});
+    map.setLayoutProperty('joined-fill','visibility',show3d?'visible':'none');
+    rows.innerHTML=conflicts.sort((a,b)=>b.points.length-a.points.length).slice(0,12).map((x,i)=>`<div class="row"><strong>#${i+1} conflict · ${x.points.length} points · years ${x.years.join(', ')}</strong><div class="mono">${x.id}</div>${x.points.slice(0,8).map(p=>`<span class="badge">${p.properties?.addr_key||'—'}</span>`).join('')}</div>`).join('')||'<div class="row"><strong>沒有年份衝突 building。</strong></div>';
+    status.textContent=`Official join done：${ageFeatures.length.toLocaleString()} age points → ${buildingFeatures.length.toLocaleString()} official polygons；唯一匹配 ${matched.toLocaleString()}，coverage ${cov.toFixed(1)}%，年份衝突 ${conflict}。`;
+  }
+
+  const map=new maplibregl.Map({container:'map',center:CENTER,zoom:15.15,pitch:54,bearing:-24,maxPitch:75,antialias:true,style:{version:8,sources:{osm:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,attribution:'© OpenStreetMap contributors'}},layers:[{id:'osm',type:'raster',source:'osm'}]}});map.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'top-right');
+  map.on('load',join);$('#join').onclick=join;$('#reset').onclick=()=>map.easeTo({center:CENTER,zoom:15.15,pitch:54,bearing:-24,duration:500});$('#toggle3d').onclick=()=>{show3d=!show3d;$('#toggle3d').textContent=`3D ${show3d?'ON':'OFF'}`;$('#toggle3d').classList.toggle('active',show3d);if(map.getLayer('joined-fill'))map.setLayoutProperty('joined-fill','visibility',show3d?'visible':'none');};
+})();
+</script>
+</body>
+</html>

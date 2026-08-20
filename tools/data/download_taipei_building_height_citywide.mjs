@@ -13,6 +13,7 @@ const OUT_DIR = path.resolve("public/generated");
 const OUT_PATH = path.join(OUT_DIR, "taipei_building_height_citywide.geojson");
 const TMP_PATH = `${OUT_PATH}.tmp`;
 const PAGE_SIZE = 5000;
+const HEIGHT_CONSISTENCY_TOLERANCE_M = 0.05;
 
 function makeUrl(base, params) {
   const url = new URL(base);
@@ -107,6 +108,9 @@ async function buildFromEndpoint(endpoint) {
   let first = true;
   let maxDerivedHeight = 0;
   let maxRawTopElevation = -Infinity;
+  let consistencyComparable = 0;
+  let consistencyMismatch = 0;
+  let maxConsistencyDiff = 0;
 
   try {
     while (true) {
@@ -127,6 +131,13 @@ async function buildFromEndpoint(endpoint) {
         sourceCounts.set(derived.source, (sourceCounts.get(derived.source) ?? 0) + 1);
         maxDerivedHeight = Math.max(maxDerivedHeight, derived.height_m);
         if (derived.top_elev_m != null) maxRawTopElevation = Math.max(maxRawTopElevation, derived.top_elev_m);
+        if (derived.surveyed_vs_delta_diff_m != null) {
+          consistencyComparable += 1;
+          maxConsistencyDiff = Math.max(maxConsistencyDiff, derived.surveyed_vs_delta_diff_m);
+          if (derived.surveyed_vs_delta_diff_m > HEIGHT_CONSISTENCY_TOLERANCE_M) {
+            consistencyMismatch += 1;
+          }
+        }
 
         await writeChunk(stream, `${first ? "" : ","}${JSON.stringify(feature)}`);
         first = false;
@@ -156,9 +167,13 @@ async function buildFromEndpoint(endpoint) {
   console.log(`Unique WFS features: ${seen.size.toLocaleString()}`);
   console.log(`Polygon features: ${polygonCount.toLocaleString()}`);
   console.log("Height derivation:");
-  for (const source of ["top_minus_entrance", "1_bd_high", "floors_x3.2", "fallback_9.6m"]) {
+  for (const source of ["1_bud_high", "top_minus_entrance", "floors_x3.2", "fallback_9.6m"]) {
     console.log(`  ${source}: ${(sourceCounts.get(source) ?? 0).toLocaleString()}`);
   }
+  console.log("Surveyed-height consistency check:");
+  console.log(`  comparable 1_bud_high vs top-ent rows: ${consistencyComparable.toLocaleString()}`);
+  console.log(`  mismatches > ${HEIGHT_CONSISTENCY_TOLERANCE_M.toFixed(2)} m: ${consistencyMismatch.toLocaleString()}`);
+  console.log(`  max absolute difference: ${maxConsistencyDiff.toFixed(3)} m`);
   console.log(`Highest derived physical height: ${maxDerivedHeight.toFixed(1)} m`);
   console.log(`Highest raw 1_top_high elevation: ${Number.isFinite(maxRawTopElevation) ? `${maxRawTopElevation.toFixed(1)} m` : "n/a"}`);
   console.log(`Slim citywide GeoJSON size: ${(info.size / 1024 / 1024).toFixed(1)} MiB`);

@@ -1,5 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { deriveBuildingHeight } from "./taipei_building_height_semantics.mjs";
 
 const ENDPOINTS = [
   "https://citydashboard.taipei/geo_server/taipei_vioc/ows",
@@ -13,7 +14,6 @@ const OUT_PATH = path.join(OUT_DIR, "taipei_building_height_sample.geojson");
 // This is intentionally a rectangular benchmark area, not an administrative-boundary product cut.
 const BBOX = "121.5200,25.0050,121.6350,25.0750,EPSG:4326";
 const PAGE_SIZE = 5000;
-const HEIGHT_FIELDS = ["1_top_high", "1_bd_high"];
 
 function makeUrl(base, params) {
   const url = new URL(base);
@@ -78,27 +78,16 @@ async function getPage(base, startIndex) {
 function slimFeature(feature) {
   if (!["Polygon", "MultiPolygon"].includes(feature?.geometry?.type)) return null;
 
-  const properties = feature.properties ?? {};
-  let height = NaN;
-  let heightSource = "fallback_9.6m";
-  for (const field of HEIGHT_FIELDS) {
-    const value = Number(properties[field]);
-    if (Number.isFinite(value) && value > 0) {
-      height = value;
-      heightSource = field;
-      break;
-    }
-  }
-  if (!Number.isFinite(height) || height <= 0) height = 9.6;
-
+  const derived = deriveBuildingHeight(feature.properties ?? {});
   return {
     type: "Feature",
-    id: feature.id,
+    ...(feature.id !== undefined ? { id: feature.id } : {}),
     geometry: feature.geometry,
     properties: {
-      height_m: Number(height.toFixed(3)),
-      height_source: heightSource,
+      height_m: derived.height_m,
+      height_source: derived.source,
     },
+    _derived: derived,
   };
 }
 
@@ -133,15 +122,30 @@ for (const endpoint of ENDPOINTS) {
       if (pageNumber > 500) throw new Error("paging guard tripped after 500 pages");
     }
 
-    const features = [...byId.values()].map(slimFeature).filter(Boolean);
+    const sourceCounts = new Map();
+    let maxDerivedHeight = 0;
+    let maxRawTopElevation = -Infinity;
+    const features = [...byId.values()].map(slimFeature).filter(Boolean).map((feature) => {
+      const derived = feature._derived;
+      sourceCounts.set(derived.source, (sourceCounts.get(derived.source) ?? 0) + 1);
+      maxDerivedHeight = Math.max(maxDerivedHeight, derived.height_m);
+      if (derived.top_elev_m != null) maxRawTopElevation = Math.max(maxRawTopElevation, derived.top_elev_m);
+      delete feature._derived;
+      return feature;
+    });
+
     const out = { type: "FeatureCollection", features };
     const body = JSON.stringify(out);
     await writeFile(OUT_PATH, body);
 
-    const fallbackCount = features.filter((f) => f.properties.height_source === "fallback_9.6m").length;
     console.log(`Wrote: ${OUT_PATH}`);
     console.log(`Polygon features: ${features.length.toLocaleString()}`);
-    console.log(`Fallback heights: ${fallbackCount.toLocaleString()}`);
+    console.log("Height derivation:");
+    for (const source of ["top_minus_entrance", "1_bd_high", "floors_x3.2", "fallback_9.6m"]) {
+      console.log(`  ${source}: ${(sourceCounts.get(source) ?? 0).toLocaleString()}`);
+    }
+    console.log(`Highest derived physical height: ${maxDerivedHeight.toFixed(1)} m`);
+    console.log(`Highest raw 1_top_high elevation: ${Number.isFinite(maxRawTopElevation) ? `${maxRawTopElevation.toFixed(1)} m` : "n/a"}`);
     console.log(`Slim GeoJSON size: ${(Buffer.byteLength(body) / 1024 / 1024).toFixed(1)} MiB`);
     process.exit(0);
   } catch (error) {

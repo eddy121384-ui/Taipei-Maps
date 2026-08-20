@@ -3,6 +3,7 @@
 /public/generated/taipei_building_height_*.geojson
 /public/generated/taipei_building_height_*.pmtiles
 /public/generated/taipei_building_height_*.json
+/public/generated/taipei_building_height_*.tsv.gz
 
 # Downloaded local build tooling / portable runtimes
 /.cache/

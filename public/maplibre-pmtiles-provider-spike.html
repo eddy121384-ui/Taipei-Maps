@@ -3,48 +3,49 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Taipei-Maps · PMTiles provider spike</title>
+  <title>Taipei-Maps · PMTiles + terrain validation</title>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" />
   <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
   <script src="https://unpkg.com/pmtiles@4.4.1/dist/pmtiles.js"></script>
   <style>
     html,body,#map{width:100%;height:100%;margin:0}body{font-family:Inter,system-ui,sans-serif;overflow:hidden}#map{background:#eef1f4}
-    .panel{position:absolute;z-index:5;top:14px;left:14px;width:min(500px,calc(100vw - 28px));max-height:calc(100vh - 28px);overflow:auto;padding:14px;border:1px solid #ccd3d9;border-radius:14px;background:rgba(255,255,255,.96);box-shadow:0 10px 28px rgba(0,0,0,.14)}
+    .panel{position:absolute;z-index:5;top:14px;left:14px;width:min(520px,calc(100vw - 28px));max-height:calc(100vh - 28px);overflow:auto;padding:14px;border:1px solid #ccd3d9;border-radius:14px;background:rgba(255,255,255,.96);box-shadow:0 10px 28px rgba(0,0,0,.14)}
     .eyebrow{font-size:11px;font-weight:800;letter-spacing:.12em;color:#68727d}h1{font-size:20px;margin:5px 0}.sub,.note{font-size:11.5px;color:#5e6872;line-height:1.45}
     .controls{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}button{border:1px solid #c8d0d7;border-radius:9px;padding:7px 9px;background:#fff;font-weight:700;cursor:pointer}.active{background:#25313b;color:#fff}
     .metrics{display:grid;grid-template-columns:1fr auto;gap:4px 10px;border-top:1px solid #dde2e7;border-bottom:1px solid #dde2e7;padding:9px 0;margin:9px 0;font-size:12px}.metrics span:nth-child(odd){color:#66717b}.metrics span:nth-child(even){font-weight:800;font-variant-numeric:tabular-nums}
-    #status{font-size:12px;font-weight:700;line-height:1.45}.error{color:#b42318}.good{color:#137333}.mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+    #status{font-size:12px;font-weight:700;line-height:1.45}.error{color:#b42318}.good{color:#137333}
   </style>
 </head>
 <body>
 <div id="map"></div>
 <section class="panel">
-  <div id="eyebrow" class="eyebrow">ISSUE #31 · PMTILES PROVIDER SPIKE</div>
-  <h1 id="title">台北官方建築：PMTiles 疊在 Overture 上</h1>
-  <div class="sub">同一張 MapLibre / 同一個 WebGL canvas。Overture 仍是全球 baseline；台北官方 WFS 先離線轉成 PMTiles，再用 HTTP byte-range 按視野讀取。</div>
+  <div id="eyebrow" class="eyebrow">ISSUE #31 · PMTILES + TERRAIN VALIDATION</div>
+  <h1 id="title">台北官方建築：修正高度語意 + 真實地形</h1>
+  <div class="sub">單一 MapLibre / 單一 WebGL canvas。Overture 保留全球 baseline；台北官方建築改用實際建物高度，Mapterhorn DEM 提供真實地形。</div>
   <div class="controls">
-    <button class="city active" data-city="daan">大安</button><button class="city" data-city="songshan">松山</button><button class="city" data-city="xinyi">信義</button><button class="city" data-city="neihu">內湖</button><button class="city" data-city="beitou">北投</button><button class="city" data-city="wenshan">文山</button><button class="city" data-city="banqiao">板橋</button><button class="city" data-city="shanghai">上海</button><button class="city" data-city="tokyo">東京</button>
+    <button class="city active" data-city="daan">大安</button><button class="city" data-city="songshan">松山</button><button class="city" data-city="xinyi">信義</button><button class="city" data-city="neihu">內湖</button><button class="city" data-city="beitou">北投</button><button class="city" data-city="yangmingshan">陽明山</button><button class="city" data-city="wenshan">文山</button><button class="city" data-city="banqiao">板橋</button><button class="city" data-city="shanghai">上海</button><button class="city" data-city="tokyo">東京</button>
   </div>
   <div class="controls">
-    <button id="toggleLocal" class="active">Local PMTiles ON</button><button id="toggle3d" class="active">3D ON</button>
+    <button id="toggleLocal" class="active">Local PMTiles ON</button><button id="toggle3d" class="active">3D ON</button><button id="toggleTerrain" class="active">Terrain ON</button>
   </div>
   <div class="metrics">
     <span>Map engine</span><span>MapLibre only</span>
     <span>Validation mode</span><span id="mode">—</span>
+    <span>Terrain</span><span id="terrainState">Mapterhorn DEM ON</span>
     <span>Overture release</span><span id="release">—</span>
     <span>Local source-layer</span><span id="localLayer">—</span>
     <span>Local archive size</span><span id="localSize">—</span>
     <span>Visible fragments</span><span id="visibleCount">—</span>
     <span>Last move → idle</span><span id="lastIdle">—</span>
   </div>
-  <div id="status">Booting PMTiles provider spike…</div>
+  <div id="status">Booting terrain-aware provider validation…</div>
   <div id="note" class="note"></div>
 </section>
 <script>
 (async()=>{
   const $=s=>document.querySelector(s),status=$('#status');
-  const releaseEl=$('#release'),localLayerEl=$('#localLayer'),localSizeEl=$('#localSize'),visibleCountEl=$('#visibleCount'),lastIdleEl=$('#lastIdle'),modeEl=$('#mode');
-  const toggleLocalBtn=$('#toggleLocal'),toggle3dBtn=$('#toggle3d');
+  const releaseEl=$('#release'),localLayerEl=$('#localLayer'),localSizeEl=$('#localSize'),visibleCountEl=$('#visibleCount'),lastIdleEl=$('#lastIdle'),modeEl=$('#mode'),terrainStateEl=$('#terrainState');
+  const toggleLocalBtn=$('#toggleLocal'),toggle3dBtn=$('#toggle3d'),toggleTerrainBtn=$('#toggleTerrain');
   if(!window.maplibregl||!window.pmtiles){status.textContent='ERROR: MapLibre / PMTiles CDN 未載入';status.className='error';return;}
 
   const params=new URLSearchParams(location.search);
@@ -52,19 +53,19 @@
   const localFilename=citywide?'taipei_building_height_citywide.pmtiles':'taipei_building_height_sample.pmtiles';
   const buildScript=citywide?'build-taipei-building-height-pmtiles-citywide.bat':'build-taipei-building-height-pmtiles-sample.bat';
   modeEl.textContent=citywide?'CITYWIDE':'3-district sample';
-  $('#eyebrow').textContent=`ISSUE #31 · ${citywide?'CITYWIDE':'SAMPLE'} PMTILES VALIDATION`;
-  $('#title').textContent=citywide?'台北官方建築：全市 PMTiles 疊在 Overture 上':'台北官方建築：PMTiles 疊在 Overture 上';
+  $('#eyebrow').textContent=`ISSUE #31 · ${citywide?'CITYWIDE':'SAMPLE'} PMTILES + TERRAIN VALIDATION`;
   $('#note').textContent=citywide
-    ?'這是全台北 citywide validation。請特別測內湖、北投、文山等邊緣行政區，再切到板橋／上海／東京確認 Overture 全球 baseline 完整保留。'
-    :'這仍是三區尺度 benchmark。離開大安／松山／信義樣本範圍時 local 可能不存在，驗收重點是 Overture 仍正常。';
+    ?'驗收重點：陽明山／北投／文山的房子應貼著山體且高度合理；切 Terrain OFF 可直接對照。板橋／上海／東京仍須保留 Overture 全球 baseline。'
+    :'三區 sample 主要驗證高度語意；山區請改跑 citywide build。';
 
   const cities={
     daan:{center:[121.5434,25.0268],zoom:15.15,pitch:58,bearing:-24},
     songshan:{center:[121.5608,25.0525],zoom:15.15,pitch:58,bearing:18},
     xinyi:{center:[121.5645,25.0340],zoom:15.25,pitch:58,bearing:-26},
-    neihu:{center:[121.5777,25.0797],zoom:15.0,pitch:58,bearing:18},
-    beitou:{center:[121.5030,25.1324],zoom:15.0,pitch:58,bearing:-16},
-    wenshan:{center:[121.5700,24.9896],zoom:15.0,pitch:58,bearing:14},
+    neihu:{center:[121.5777,25.0797],zoom:15.0,pitch:60,bearing:18},
+    beitou:{center:[121.5030,25.1324],zoom:15.0,pitch:62,bearing:-16},
+    yangmingshan:{center:[121.5485,25.1555],zoom:14.25,pitch:68,bearing:20},
+    wenshan:{center:[121.5700,24.9896],zoom:15.0,pitch:62,bearing:14},
     banqiao:{center:[121.4623,25.0123],zoom:15.15,pitch:58,bearing:20},
     shanghai:{center:[121.4737,31.2304],zoom:15.0,pitch:56,bearing:-18},
     tokyo:{center:[139.6986,35.6938],zoom:15.15,pitch:58,bearing:18}
@@ -73,27 +74,20 @@
     {release:'2026-07-22.0',url:'https://overturemaps-extras-us-west-2.s3.us-west-2.amazonaws.com/tiles/2026-07-22.0/buildings.pmtiles'},
     {release:'2026-06-17.0',url:'https://overturemaps-extras-us-west-2.s3.us-west-2.amazonaws.com/tiles/2026-06-17.0/buildings.pmtiles'}
   ];
+  const terrainTileJson='https://tiles.mapterhorn.com/tilejson.json';
   const localUrl=new URL(`/generated/${localFilename}`,location.href).href;
 
   status.textContent='Preflighting Overture + local PMTiles…';
   let overture=null,overtureMetadata=null;
   for(const candidate of overtureCandidates){
-    try{
-      const archive=new pmtiles.PMTiles(candidate.url);
-      const [,metadata]=await Promise.all([archive.getHeader(),archive.getMetadata()]);
-      overture=candidate;overtureMetadata=metadata;break;
-    }catch(e){console.warn('Overture preflight failed',candidate.release,e);}
+    try{const archive=new pmtiles.PMTiles(candidate.url);const [,metadata]=await Promise.all([archive.getHeader(),archive.getMetadata()]);overture=candidate;overtureMetadata=metadata;break;}catch(e){console.warn('Overture preflight failed',candidate.release,e);}
   }
   if(!overture){status.textContent='ERROR: Overture PMTiles preflight failed';status.className='error';return;}
 
   let localMetadata=null;
   try{
-    const localArchive=new pmtiles.PMTiles(localUrl);
-    const [,metadata]=await Promise.all([localArchive.getHeader(),localArchive.getMetadata()]);
-    localMetadata=metadata;
-    const head=await fetch(localUrl,{method:'HEAD',cache:'no-store'});
-    const size=Number(head.headers.get('content-length'));
-    localSizeEl.textContent=Number.isFinite(size)?`${(size/1024/1024).toFixed(2)} MiB`:'—';
+    const localArchive=new pmtiles.PMTiles(localUrl);const [,metadata]=await Promise.all([localArchive.getHeader(),localArchive.getMetadata()]);localMetadata=metadata;
+    const head=await fetch(localUrl,{method:'HEAD',cache:'no-store'});const size=Number(head.headers.get('content-length'));localSizeEl.textContent=Number.isFinite(size)?`${(size/1024/1024).toFixed(2)} MiB`:'—';
   }catch(e){status.textContent=`ERROR: local PMTiles 未載入。請先執行 ${buildScript}。 ${e?.message||e}`;status.className='error';return;}
 
   const overtureLayers=(overtureMetadata?.vector_layers||[]).map(x=>x?.id).filter(Boolean);
@@ -107,8 +101,10 @@
   const protocol=new pmtiles.Protocol({metadata:true});maplibregl.addProtocol('pmtiles',protocol.tile);
   const overtureHeight=['case',['>', ['to-number',['get','height'],0],0],['to-number',['get','height'],0],['>', ['to-number',['get','num_floors'],0],0],['*',['to-number',['get','num_floors'],0],3.2],9.6];
   const overtureBase=['to-number',['get','min_height'],0];
-
-  const layers=[{id:'osm',type:'raster',source:'osm'}];
+  const layers=[
+    {id:'osm',type:'raster',source:'osm'},
+    {id:'terrain-hillshade',type:'hillshade',source:'hillshadeSource',paint:{'hillshade-shadow-color':'#665b4e','hillshade-highlight-color':'rgba(255,255,255,.55)','hillshade-exaggeration':.22}}
+  ];
   if(hasParts){
     layers.push({id:'overture-building-3d',type:'fill-extrusion',source:'overtureBuildings','source-layer':'building',minzoom:14,filter:['!=',['get','has_parts'],true],paint:{'fill-extrusion-base':overtureBase,'fill-extrusion-height':overtureHeight,'fill-extrusion-color':'#e2e7eb','fill-extrusion-opacity':.88,'fill-extrusion-vertical-gradient':true}});
     layers.push({id:'overture-parts-3d',type:'fill-extrusion',source:'overtureBuildings','source-layer':'building_part',minzoom:14,paint:{'fill-extrusion-base':overtureBase,'fill-extrusion-height':overtureHeight,'fill-extrusion-color':'#cbd7df','fill-extrusion-opacity':.92,'fill-extrusion-vertical-gradient':true}});
@@ -119,33 +115,40 @@
   layers.push({id:'local-official-flat',type:'fill',source:'localOfficial','source-layer':localSourceLayer,minzoom:13,layout:{visibility:'none'},paint:{'fill-color':'#f7f8f9','fill-opacity':.9,'fill-outline-color':'rgba(70,80,90,.3)'}});
 
   const map=new maplibregl.Map({
-    container:'map',center:cities.daan.center,zoom:cities.daan.zoom,pitch:cities.daan.pitch,bearing:cities.daan.bearing,maxPitch:75,antialias:true,
+    container:'map',center:cities.daan.center,zoom:cities.daan.zoom,pitch:cities.daan.pitch,bearing:cities.daan.bearing,maxPitch:85,maxZoom:18,antialias:true,
     style:{version:8,sources:{
-      osm:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,attribution:'© OpenStreetMap contributors'},
+      osm:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,attribution:'© OpenStreetMap contributors',maxzoom:19},
+      terrainSource:{type:'raster-dem',url:terrainTileJson},
+      hillshadeSource:{type:'raster-dem',url:terrainTileJson},
       overtureBuildings:{type:'vector',url:`pmtiles://${overture.url}`,attribution:'© Overture Maps Foundation / source contributors'},
       localOfficial:{type:'vector',url:`pmtiles://${localUrl}`,attribution:'Taipei City Government City Dashboard public WFS'}
-    },layers}
+    },layers,terrain:{source:'terrainSource',exaggeration:1}}
   });
   map.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'top-right');
   map.addControl(new maplibregl.ScaleControl({maxWidth:120,unit:'metric'}),'bottom-right');
 
-  let localOn=true,show3d=true,moveStartedAt=null;
+  let localOn=true,show3d=true,terrainOn=true,moveStartedAt=null;
   const setVis=(id,on)=>map.getLayer(id)&&map.setLayoutProperty(id,'visibility',on?'visible':'none');
   function syncLayers(){
     if(!map.isStyleLoaded())return;
     setVis('overture-building-3d',show3d);if(hasParts)setVis('overture-parts-3d',show3d);
-    setVis('local-official-3d',localOn&&show3d);setVis('local-official-flat',localOn&&!show3d);
+    setVis('local-official-3d',localOn&&show3d);setVis('local-official-flat',localOn&&!show3d);setVis('terrain-hillshade',terrainOn);
     toggleLocalBtn.textContent=`Local PMTiles ${localOn?'ON':'OFF'}`;toggleLocalBtn.classList.toggle('active',localOn);
     toggle3dBtn.textContent=`3D ${show3d?'ON':'OFF'}`;toggle3dBtn.classList.toggle('active',show3d);
+    toggleTerrainBtn.textContent=`Terrain ${terrainOn?'ON':'OFF'}`;toggleTerrainBtn.classList.toggle('active',terrainOn);
+    terrainStateEl.textContent=terrainOn?'Mapterhorn DEM ON':'flat map';
   }
+  function setTerrain(on){terrainOn=on;map.setTerrain(terrainOn?{source:'terrainSource',exaggeration:1}:null);syncLayers();}
   function refreshStats(){if(!map.isStyleLoaded())return;const ids=['overture-building-3d','overture-parts-3d','local-official-3d','local-official-flat'].filter(id=>map.getLayer(id));try{visibleCountEl.textContent=map.queryRenderedFeatures({layers:ids}).length.toLocaleString();}catch{visibleCountEl.textContent='—';}}
 
-  map.on('load',()=>{syncLayers();status.textContent=`READY · ${citywide?'citywide':'sample'} Taipei PMTiles + Overture global baseline`;status.className='good';});
+  map.on('load',()=>{syncLayers();status.textContent=`READY · corrected physical heights + ${citywide?'citywide':'sample'} PMTiles + terrain`;status.className='good';});
   map.on('movestart',()=>{moveStartedAt=performance.now();});
   map.on('moveend',()=>{document.querySelectorAll('button.city').forEach(b=>b.classList.remove('active'));});
   map.on('idle',()=>{if(moveStartedAt!=null){lastIdleEl.textContent=`${Math.round(performance.now()-moveStartedAt)} ms`;moveStartedAt=null;}refreshStats();});
-  map.on('error',e=>{const msg=e?.error?.message||String(e?.error||'unknown');console.error(e);status.textContent=`Map error: ${msg}`;status.className='error';});
-  toggleLocalBtn.onclick=()=>{localOn=!localOn;syncLayers();refreshStats();};toggle3dBtn.onclick=()=>{show3d=!show3d;syncLayers();refreshStats();};
+  map.on('error',e=>{console.error('Map error',e?.error||e);});
+  toggleLocalBtn.onclick=()=>{localOn=!localOn;syncLayers();refreshStats();};
+  toggle3dBtn.onclick=()=>{show3d=!show3d;syncLayers();refreshStats();};
+  toggleTerrainBtn.onclick=()=>setTerrain(!terrainOn);
   document.querySelectorAll('button.city').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('button.city').forEach(b=>b.classList.remove('active'));btn.classList.add('active');map.easeTo({...cities[btn.dataset.city],duration:700});}));
 })();
 </script>

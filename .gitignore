@@ -2,6 +2,7 @@
 /public/generated/citydashboard_tp_building_height_*.geojson
 /public/generated/taipei_building_height_*.geojson
 /public/generated/taipei_building_height_*.pmtiles
+/public/generated/taipei_building_height_*.json
 
 # Downloaded local build tooling / portable runtimes
 /.cache/

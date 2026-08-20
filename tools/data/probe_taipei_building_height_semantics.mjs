@@ -23,7 +23,7 @@ const TARGETS = [
   },
 ];
 
-const FIELDS = ["1_top_high", "1_entr_heig", "1_bd_high", "1_floor"];
+const FIELDS = ["1_top_high", "1_ent_heig", "1_bud_high", "1_floor"];
 
 function makeUrl(base, params) {
   const url = new URL(base);
@@ -80,15 +80,17 @@ function stats(features, key) {
 function row(feature) {
   const p = feature?.properties ?? {};
   const top = numeric(p["1_top_high"]);
-  const entrance = numeric(p["1_entr_heig"]);
+  const entrance = numeric(p["1_ent_heig"]);
+  const surveyed = numeric(p["1_bud_high"]);
   const floor = numeric(p["1_floor"]);
   return {
     id: feature?.id ?? null,
     top_raw: p["1_top_high"],
-    entrance_raw: p["1_entr_heig"],
-    bd_high_raw: p["1_bd_high"],
+    entrance_raw: p["1_ent_heig"],
+    bud_high_raw: p["1_bud_high"],
     floor_raw: p["1_floor"],
     top_minus_entrance: top !== null && entrance !== null ? Number((top - entrance).toFixed(3)) : null,
+    surveyed_height: surveyed,
     floors_x3_2: floor !== null ? Number((floor * 3.2).toFixed(3)) : null,
   };
 }
@@ -108,7 +110,7 @@ if (!endpointUsed) throw new Error(`No usable WFS endpoint. Last error: ${lastEr
 
 console.log("Taipei-Maps Issue #31 - raw building-height semantics probe");
 console.log(`Endpoint: ${endpointUsed}`);
-console.log("Purpose: inspect official WFS values before changing production height semantics.\n");
+console.log("Purpose: validate actual live WFS height keys before rebuilding citywide PMTiles.\n");
 
 for (const target of TARGETS) {
   const features = await fetchFeatures(endpointUsed, target.bbox);
@@ -129,4 +131,4 @@ for (const target of TARGETS) {
 
 console.log("============================================================");
 console.log("PROBE COMPLETE");
-console.log("Send this output back before replacing floors_x3.2 with DEM-derived ground elevation.");
+console.log("If entrance/building-height fields are populated and sensible, rebuild citywide PMTiles with the corrected semantics.");

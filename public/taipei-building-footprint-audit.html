@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Taipei building footprint identity audit</title>
+  <style>
+    :root { color-scheme: light; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+    body { margin: 0; background: #f3f4f6; color: #17202a; }
+    main { max-width: 980px; margin: 32px auto; padding: 0 20px 48px; }
+    h1 { font-family: system-ui, sans-serif; margin-bottom: 8px; }
+    .lede { font-family: system-ui, sans-serif; color: #53606d; margin-bottom: 24px; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+    .card { background: white; border: 1px solid #d9dee5; border-radius: 12px; padding: 14px; }
+    .label { color: #66717d; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+    .value { font-size: 24px; font-weight: 700; margin-top: 5px; }
+    progress { width: 100%; height: 18px; margin: 20px 0 6px; }
+    pre { white-space: pre-wrap; word-break: break-word; background: #101419; color: #dce5ee; padding: 16px; border-radius: 12px; min-height: 220px; }
+    button { border: 1px solid #aeb7c2; background: white; border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+    .pass { color: #08783f; }
+    .warn { color: #a65b00; }
+    .fail { color: #b42318; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Issue #31 — z16 footprint identity audit</h1>
+  <div class="lede">Decode every z16 audit tile, deduplicate official WFS source IDs, and compare them with the 373,532-feature source inventory.</div>
+  <div class="cards">
+    <div class="card"><div class="label">Expected source IDs</div><div class="value" id="expected">—</div></div>
+    <div class="card"><div class="label">Unique IDs seen in z16</div><div class="value" id="seen">—</div></div>
+    <div class="card"><div class="label">Missing IDs</div><div class="value" id="missing">—</div></div>
+    <div class="card"><div class="label">Retention</div><div class="value" id="retention">—</div></div>
+  </div>
+  <progress id="progress" max="1" value="0"></progress>
+  <div id="status">Preparing audit…</div>
+  <p><button id="copy" disabled>Copy report</button></p>
+  <pre id="report">Loading audit dependencies…</pre>
+</main>
+<script type="module">
+  import { PMTiles } from "https://esm.sh/pmtiles@4.4.1";
+  import { VectorTile } from "https://esm.sh/@mapbox/vector-tile@2.0.4";
+  import Pbf from "https://esm.sh/pbf@4.0.1";
+
+  const Z = 16;
+  const ARCHIVE_URL = "/generated/taipei_building_height_footprint_audit.pmtiles";
+  const EXPECTED_URL = "/generated/taipei_building_height_footprint_expected.json";
+  const LAYER = "building_height_audit";
+  const expectedEl = document.getElementById("expected");
+  const seenEl = document.getElementById("seen");
+  const missingEl = document.getElementById("missing");
+  const retentionEl = document.getElementById("retention");
+  const statusEl = document.getElementById("status");
+  const progressEl = document.getElementById("progress");
+  const reportEl = document.getElementById("report");
+  const copyButton = document.getElementById("copy");
+
+  const fmt = (value) => Number(value).toLocaleString();
+
+  function tileX(lon, z) {
+    const n = 2 ** z;
+    return Math.max(0, Math.min(n - 1, Math.floor(((lon + 180) / 360) * n)));
+  }
+
+  function tileY(lat, z) {
+    const n = 2 ** z;
+    const clamped = Math.max(-85.05112878, Math.min(85.05112878, lat));
+    const rad = clamped * Math.PI / 180;
+    const value = (1 - Math.asinh(Math.tan(rad)) / Math.PI) / 2 * n;
+    return Math.max(0, Math.min(n - 1, Math.floor(value)));
+  }
+
+  function spatialClusters(records, limit = 12) {
+    const cells = new Map();
+    for (const [, lon, lat] of records) {
+      if (!Number.isFinite(lon) || !Number.isFinite(lat)) continue;
+      const west = Math.floor(lon * 100) / 100;
+      const south = Math.floor(lat * 100) / 100;
+      const key = `${west.toFixed(2)},${south.toFixed(2)}`;
+      cells.set(key, (cells.get(key) ?? 0) + 1);
+    }
+    return [...cells.entries()].sort((a, b) => b[1] - a[1]).slice(0, limit);
+  }
+
+  async function run() {
+    const expectedResponse = await fetch(EXPECTED_URL, { cache: "no-store" });
+    if (!expectedResponse.ok) throw new Error(`Expected-ID index HTTP ${expectedResponse.status}`);
+    const expectedIndex = await expectedResponse.json();
+    const records = expectedIndex.records ?? [];
+    const expectedIds = new Set(records.map(([id]) => Number(id)));
+    expectedEl.textContent = fmt(expectedIds.size);
+
+    let minLon = Infinity, minLat = Infinity, maxLon = -Infinity, maxLat = -Infinity;
+    for (const [, lon, lat] of records) {
+      if (!Number.isFinite(lon) || !Number.isFinite(lat)) continue;
+      minLon = Math.min(minLon, lon); minLat = Math.min(minLat, lat);
+      maxLon = Math.max(maxLon, lon); maxLat = Math.max(maxLat, lat);
+    }
+    if (![minLon, minLat, maxLon, maxLat].every(Number.isFinite)) throw new Error("Expected index has no usable geometry centers.");
+
+    const x0 = Math.max(0, tileX(minLon, Z) - 1);
+    const x1 = tileX(maxLon, Z) + 1;
+    const y0 = Math.max(0, tileY(maxLat, Z) - 1);
+    const y1 = tileY(minLat, Z) + 1;
+    const jobs = [];
+    for (let x = x0; x <= x1; x += 1) for (let y = y0; y <= y1; y += 1) jobs.push([x, y]);
+
+    const archive = new PMTiles(ARCHIVE_URL);
+    const header = await archive.getHeader();
+    const seenIds = new Set();
+    let totalFeatureRefs = 0;
+    let tilesWithData = 0;
+    let decodeErrors = 0;
+    let cursor = 0;
+    progressEl.max = jobs.length;
+    statusEl.textContent = `Scanning ${fmt(jobs.length)} candidate z16 tiles…`;
+
+    async function worker() {
+      while (true) {
+        const index = cursor++;
+        if (index >= jobs.length) return;
+        const [x, y] = jobs[index];
+        try {
+          const response = await archive.getZxy(Z, x, y);
+          if (response?.data) {
+            tilesWithData += 1;
+            const tile = new VectorTile(new Pbf(response.data));
+            const layer = tile.layers[LAYER];
+            if (layer) {
+              totalFeatureRefs += layer.length;
+              for (let i = 0; i < layer.length; i += 1) {
+                const id = Number(layer.feature(i).properties.source_id);
+                if (Number.isSafeInteger(id)) seenIds.add(id);
+              }
+            }
+          }
+        } catch (error) {
+          decodeErrors += 1;
+          console.error(`z16/${x}/${y}`, error);
+        }
+        progressEl.value = index + 1;
+        if ((index + 1) % 50 === 0 || index + 1 === jobs.length) {
+          statusEl.textContent = `Scanned ${fmt(index + 1)} / ${fmt(jobs.length)} candidate tiles; unique IDs so far: ${fmt(seenIds.size)}`;
+        }
+      }
+    }
+
+    await Promise.all(Array.from({ length: 12 }, () => worker()));
+
+    const missingRecords = records.filter(([id]) => !seenIds.has(Number(id)));
+    const unexpected = [...seenIds].filter((id) => !expectedIds.has(id));
+    const retention = expectedIds.size ? seenIds.size / expectedIds.size : 0;
+    seenEl.textContent = fmt(seenIds.size);
+    missingEl.textContent = fmt(missingRecords.length);
+    retentionEl.textContent = `${(retention * 100).toFixed(4)}%`;
+    retentionEl.className = `value ${missingRecords.length <= 2 ? "pass" : missingRecords.length <= 100 ? "warn" : "fail"}`;
+
+    const clusters = spatialClusters(missingRecords);
+    const firstMissing = missingRecords.slice(0, 50).map(([id, lon, lat]) => `${id}@${lon ?? "?"},${lat ?? "?"}`);
+    const report = [
+      "Taipei-Maps Issue #31 — z16 footprint identity audit",
+      `PMTiles archive: ${ARCHIVE_URL}`,
+      `Header zoom range: ${header.minZoom}..${header.maxZoom}`,
+      `Candidate z16 tiles scanned: ${fmt(jobs.length)}`,
+      `Tiles with data: ${fmt(tilesWithData)}`,
+      `Total z16 feature refs: ${fmt(totalFeatureRefs)}`,
+      `Expected unique WFS source IDs: ${fmt(expectedIds.size)}`,
+      `Unique source IDs seen in z16: ${fmt(seenIds.size)}`,
+      `Missing source IDs: ${fmt(missingRecords.length)}`,
+      `Retention: ${(retention * 100).toFixed(6)}%`,
+      `Unexpected source IDs: ${fmt(unexpected.length)}`,
+      `Tile/decode errors: ${fmt(decodeErrors)}`,
+      "",
+      "Top missing-ID spatial cells (0.01° SW corner):",
+      ...(clusters.length ? clusters.map(([cell, count]) => `  ${cell}: ${fmt(count)}`) : ["  none"]),
+      "",
+      "First missing IDs (id@approx-center):",
+      ...(firstMissing.length ? firstMissing.map((row) => `  ${row}`) : ["  none"]),
+    ].join("\n");
+
+    reportEl.textContent = report;
+    statusEl.textContent = missingRecords.length <= 2
+      ? "PASS candidate: z16 identity retention is effectively complete; inspect any listed geometry failures."
+      : "Audit complete: missing identities remain; use the cluster list and IDs to isolate the loss mechanism.";
+    copyButton.disabled = false;
+    copyButton.onclick = () => navigator.clipboard.writeText(report);
+  }
+
+  run().catch((error) => {
+    console.error(error);
+    statusEl.textContent = "AUDIT FAILED";
+    reportEl.textContent = `${error?.stack ?? error}`;
+  });
+</script>
+</body>
+</html>

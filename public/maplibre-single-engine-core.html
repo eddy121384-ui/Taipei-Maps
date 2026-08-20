@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Taipei-Maps · MapLibre local-over-global stack</title>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" />
+  <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+  <script src="https://unpkg.com/pmtiles@4.4.1/dist/pmtiles.js"></script>
+  <style>
+    html,body,#map{width:100%;height:100%;margin:0}body{font-family:Inter,system-ui,sans-serif;overflow:hidden}#map{background:#eef1f4}
+    .panel{position:absolute;z-index:5;top:14px;left:14px;width:min(470px,calc(100vw - 28px));max-height:calc(100vh - 28px);overflow:auto;padding:14px;border:1px solid #ccd3d9;border-radius:14px;background:rgba(255,255,255,.96);box-shadow:0 10px 28px rgba(0,0,0,.14)}
+    .eyebrow{font-size:11px;font-weight:800;letter-spacing:.12em;color:#68727d}h1{font-size:20px;margin:5px 0}.sub,.note{font-size:11.5px;color:#5e6872;line-height:1.45}
+    .controls{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}button{border:1px solid #c8d0d7;border-radius:9px;padding:7px 9px;background:#fff;font-weight:700;cursor:pointer}.active{background:#25313b;color:#fff}
+    .metrics{display:grid;grid-template-columns:1fr auto;gap:4px 10px;border-top:1px solid #dde2e7;border-bottom:1px solid #dde2e7;padding:9px 0;margin:9px 0;font-size:12px}.metrics span:nth-child(odd){color:#66717b}.metrics span:nth-child(even){font-weight:800;font-variant-numeric:tabular-nums}
+    #status{font-size:12px;font-weight:700;line-height:1.45}.error{color:#b42318}.good{color:#137333}.mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+  </style>
+</head>
+<body>
+<div id="map"></div>
+<section class="panel">
+  <div class="eyebrow">ISSUE #27 · SINGLE ENGINE PROVIDER STACK</div>
+  <h1>MapLibre：local provider 疊在全球 Overture 上</h1>
+  <div class="sub">只有一張 MapLibre、一個 WebGL canvas。Overture 全球白模永遠保留；進入目前已驗證的信義區官方資料範圍時，只把 local 官方建築疊在上層，不再把全球 layer 整批關掉。</div>
+  <div class="controls">
+    <button class="city active" data-city="xinyi">信義區</button><button class="city" data-city="banqiao">板橋</button><button class="city" data-city="shanghai">上海</button><button class="city" data-city="tokyo">東京</button><button class="city" data-city="nyc">紐約</button>
+  </div>
+  <div class="controls">
+    <button id="autoProvider" class="active">Local 優先 AUTO</button><button id="showBoth">Local 強制顯示</button><button id="toggle3d" class="active">3D ON</button>
+  </div>
+  <div class="metrics">
+    <span>Map engine</span><span>MapLibre only</span>
+    <span>Overture release</span><span id="release">—</span>
+    <span>Overture source layers</span><span id="sourceLayers">—</span>
+    <span>官方 local features</span><span id="localCount">—</span>
+    <span>官方 height field</span><span id="heightField">—</span>
+    <span>目前 provider</span><span id="provider">—</span>
+    <span>Visible fragments</span><span id="visibleCount">—</span>
+    <span>Last move → idle</span><span id="lastIdle">—</span>
+  </div>
+  <div id="status">Booting single-engine stack…</div>
+  <div class="note">這不是最終台北 citywide layer：目前 local provider 只用已驗證的信義區 <span class="mono">tp_building_height</span> WFS sample。目的只有一個：先證明「全球 Overture 永遠存在 + local authoritative overlay」可以在同一個 MapLibre renderer 裡順暢運作。</div>
+</section>
+<script>
+(async()=>{
+  const $=s=>document.querySelector(s),status=$('#status');
+  const releaseEl=$('#release'),sourceLayersEl=$('#sourceLayers'),localCountEl=$('#localCount'),heightFieldEl=$('#heightField'),providerEl=$('#provider'),visibleCountEl=$('#visibleCount'),lastIdleEl=$('#lastIdle');
+  const autoProviderBtn=$('#autoProvider'),showBothBtn=$('#showBoth'),toggle3dBtn=$('#toggle3d');
+  if(!window.maplibregl||!window.pmtiles){status.textContent='ERROR: MapLibre / PMTiles CDN 未載入';status.className='error';return;}
+
+  const XINYI_BBOX={west:121.5560,south:25.0275,east:121.5730,north:25.0415};
+  const cities={
+    xinyi:{center:[121.56447,25.03396],zoom:15.35,pitch:58,bearing:-26},
+    banqiao:{center:[121.4623,25.0123],zoom:15.2,pitch:58,bearing:20},
+    shanghai:{center:[121.4737,31.2304],zoom:15.0,pitch:56,bearing:-18},
+    tokyo:{center:[139.6986,35.6938],zoom:15.15,pitch:58,bearing:18},
+    nyc:{center:[-73.9855,40.7580],zoom:15.15,pitch:60,bearing:-28}
+  };
+  const candidates=[
+    {release:'2026-07-22.0',url:'https://overturemaps-extras-us-west-2.s3.us-west-2.amazonaws.com/tiles/2026-07-22.0/buildings.pmtiles'},
+    {release:'2026-06-17.0',url:'https://overturemaps-extras-us-west-2.s3.us-west-2.amazonaws.com/tiles/2026-06-17.0/buildings.pmtiles'}
+  ];
+
+  status.textContent='Preflighting Overture PMTiles…';
+  let selected=null,metadata=null;const failures=[];
+  for(const c of candidates){try{const archive=new pmtiles.PMTiles(c.url);const [,m]=await Promise.all([archive.getHeader(),archive.getMetadata()]);selected=c;metadata=m;break;}catch(e){failures.push(`${c.release}: ${e?.message||e}`);}}
+  if(!selected){status.textContent='ERROR: Overture PMTiles preflight failed · '+failures.join(' | ');status.className='error';return;}
+  const layerIds=(metadata?.vector_layers||[]).map(x=>x?.id).filter(Boolean),hasBuilding=layerIds.includes('building'),hasParts=layerIds.includes('building_part');
+  if(!hasBuilding){status.textContent='ERROR: Overture archive 沒有 building source-layer';status.className='error';return;}
+  releaseEl.textContent=selected.release;sourceLayersEl.textContent=layerIds.join(', ');
+
+  let localGeojson=null;
+  try{
+    const r=await fetch('/generated/citydashboard_tp_building_height_xinyi.geojson',{cache:'no-store'});if(!r.ok)throw new Error(`HTTP ${r.status}`);localGeojson=await r.json();
+  }catch(e){status.textContent=`ERROR: local 官方 GeoJSON 未載入。請用 start-maplibre-local-global-stack.bat 啟動。 ${e?.message||e}`;status.className='error';return;}
+  const localFeatures=(localGeojson.features||[]).filter(f=>['Polygon','MultiPolygon'].includes(f?.geometry?.type));localCountEl.textContent=localFeatures.length.toLocaleString();
+  function detectHeightField(fs){const keys=new Set();for(const f of fs.slice(0,500))for(const k of Object.keys(f.properties||{}))keys.add(k);const preferred=[...keys].filter(k=>/1_top_high|top_high|roof.*high|height|high/i.test(k));for(const k of preferred){let n=0;for(const f of fs.slice(0,500)){const v=Number(f.properties?.[k]);if(Number.isFinite(v)&&v>0)n++;}if(n>=3)return k;}return null;}
+  const heightField=detectHeightField(localFeatures);heightFieldEl.textContent=heightField||'未偵測（9.6m fallback）';
+  for(const f of localFeatures){let h=heightField?Number(f.properties?.[heightField]):NaN;if(!Number.isFinite(h)||h<=0)h=9.6;f.properties={...(f.properties||{}),_render_height:h};}
+  localGeojson={type:'FeatureCollection',features:localFeatures};
+
+  const protocol=new pmtiles.Protocol({metadata:true});maplibregl.addProtocol('pmtiles',protocol.tile);
+  const heightExpr=['case',['>', ['to-number',['get','height'],0],0],['to-number',['get','height'],0],['>', ['to-number',['get','num_floors'],0],0],['*',['to-number',['get','num_floors'],0],3.2],9.6];
+  const baseExpr=['to-number',['get','min_height'],0];
+  const layers=[{id:'osm',type:'raster',source:'osm'}];
+  if(hasParts){layers.push({id:'overture-building-3d',type:'fill-extrusion',source:'overtureBuildings','source-layer':'building',minzoom:14,filter:['!=',['get','has_parts'],true],paint:{'fill-extrusion-base':baseExpr,'fill-extrusion-height':heightExpr,'fill-extrusion-color':'#e2e7eb','fill-extrusion-opacity':.9,'fill-extrusion-vertical-gradient':true}});layers.push({id:'overture-parts-3d',type:'fill-extrusion',source:'overtureBuildings','source-layer':'building_part',minzoom:14,paint:{'fill-extrusion-base':baseExpr,'fill-extrusion-height':heightExpr,'fill-extrusion-color':'#cbd7df','fill-extrusion-opacity':.95,'fill-extrusion-vertical-gradient':true}});}else{layers.push({id:'overture-building-3d',type:'fill-extrusion',source:'overtureBuildings','source-layer':'building',minzoom:14,paint:{'fill-extrusion-base':baseExpr,'fill-extrusion-height':heightExpr,'fill-extrusion-color':'#e2e7eb','fill-extrusion-opacity':.9,'fill-extrusion-vertical-gradient':true}});}
+  layers.push({id:'local-official-3d',type:'fill-extrusion',source:'localOfficial',minzoom:13,paint:{'fill-extrusion-base':0,'fill-extrusion-height':['get','_render_height'],'fill-extrusion-color':'#f4f6f7','fill-extrusion-opacity':.98,'fill-extrusion-vertical-gradient':true}});
+  layers.push({id:'local-official-flat',type:'fill',source:'localOfficial',minzoom:13,layout:{visibility:'none'},paint:{'fill-color':'#f4f6f7','fill-opacity':.9,'fill-outline-color':'rgba(70,80,90,.3)'}});
+
+  const map=new maplibregl.Map({container:'map',center:cities.xinyi.center,zoom:cities.xinyi.zoom,pitch:cities.xinyi.pitch,bearing:cities.xinyi.bearing,maxPitch:75,antialias:true,style:{version:8,sources:{osm:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,attribution:'© OpenStreetMap contributors'},overtureBuildings:{type:'vector',url:`pmtiles://${selected.url}`,attribution:'© Overture Maps Foundation / source contributors'},localOfficial:{type:'geojson',data:localGeojson}},layers}});
+  map.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'top-right');map.addControl(new maplibregl.ScaleControl({maxWidth:120,unit:'metric'}),'bottom-right');
+
+  let autoProvider=true,show3d=true,moveStartedAt=null;
+  const insideXinyi=()=>{const c=map.getCenter();return c.lng>=XINYI_BBOX.west&&c.lng<=XINYI_BBOX.east&&c.lat>=XINYI_BBOX.south&&c.lat<=XINYI_BBOX.north;};
+  const setVis=(id,on)=>map.getLayer(id)&&map.setLayoutProperty(id,'visibility',on?'visible':'none');
+  function syncProvider(){
+    if(!map.isStyleLoaded())return;
+    const localInRange=insideXinyi();
+    const localVisible=localInRange||!autoProvider;
+
+    // Global geometry is the baseline and must never disappear just because a
+    // higher-confidence local provider is available for a small area.
+    setVis('overture-building-3d',show3d);
+    if(hasParts)setVis('overture-parts-3d',show3d);
+
+    // Local geometry is an overlay. In AUTO it appears only inside its known
+    // coverage; force mode is kept as a debugging aid.
+    setVis('local-official-3d',show3d&&localVisible);
+    setVis('local-official-flat',!show3d&&localVisible);
+
+    providerEl.textContent=localInRange?'Overture global + 台北官方 overlay':'Overture global';
+    providerEl.className=localInRange?'good':'';
+    autoProviderBtn.textContent=`Local 優先 ${autoProvider?'AUTO':'OFF'}`;
+    autoProviderBtn.classList.toggle('active',autoProvider);
+    showBothBtn.classList.toggle('active',!autoProvider);
+    toggle3dBtn.textContent=`3D ${show3d?'ON':'OFF'}`;
+    toggle3dBtn.classList.toggle('active',show3d);
+  }
+  function refreshStats(){if(!map.isStyleLoaded())return;const ids=['overture-building-3d','overture-parts-3d','local-official-3d','local-official-flat'].filter(id=>map.getLayer(id));try{visibleCountEl.textContent=map.queryRenderedFeatures({layers:ids}).length.toLocaleString();}catch{visibleCountEl.textContent='—';}}
+
+  map.on('load',()=>{syncProvider();status.textContent='READY · single MapLibre engine · Overture baseline 永遠保留，local 只做 overlay';status.className='good';});
+  map.on('movestart',()=>{moveStartedAt=performance.now();});
+  map.on('moveend',()=>{syncProvider();document.querySelectorAll('button.city').forEach(b=>b.classList.remove('active'));});
+  map.on('idle',()=>{if(moveStartedAt!=null){lastIdleEl.textContent=`${Math.round(performance.now()-moveStartedAt)} ms`;moveStartedAt=null;}refreshStats();});
+  map.on('error',e=>{const msg=e?.error?.message||String(e?.error||'unknown');console.error(e);status.textContent=`Map error: ${msg}`;status.className='error';});
+
+  autoProviderBtn.onclick=()=>{autoProvider=true;syncProvider();refreshStats();};showBothBtn.onclick=()=>{autoProvider=false;syncProvider();refreshStats();};toggle3dBtn.onclick=()=>{show3d=!show3d;syncProvider();refreshStats();};
+  document.querySelectorAll('button.city').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('button.city').forEach(b=>b.classList.remove('active'));btn.classList.add('active');const c=cities[btn.dataset.city];map.easeTo({...c,duration:700});}));
+})();
+</script>
+</body>
+</html>

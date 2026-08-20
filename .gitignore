@@ -1,2 +1,7 @@
 # Runtime-generated Taipei official building-height data
 /public/generated/citydashboard_tp_building_height_*.geojson
+/public/generated/taipei_building_height_*.geojson
+/public/generated/taipei_building_height_*.pmtiles
+
+# Downloaded local build tooling
+/.cache/planetiler/

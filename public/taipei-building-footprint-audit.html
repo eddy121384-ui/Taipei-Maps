@@ -25,7 +25,7 @@
 <body>
 <main>
   <h1>Issue #31 — z16 footprint identity scale sweep</h1>
-  <div class="lede">Planetiler is capped at z16. This audit scans z16 once and compares a centroid control with the original polygons plus 2× and 4× diagnostic geometry scaling.</div>
+  <div class="lede">Memory-safe audit: centroid, original polygons, 2× polygons, and 4× polygons live in four separate PMTiles archives. The browser scans the same z16 tile window for each archive.</div>
   <div class="cards">
     <div class="card"><div class="label">Expected source IDs</div><div class="value" id="expected">—</div></div>
     <div class="card"><div class="label">Centroid control</div><div class="value" id="centroid">—</div></div>
@@ -44,13 +44,12 @@
   import Pbf from "https://esm.sh/pbf@4.0.1";
 
   const Z = 16;
-  const ARCHIVE_URL = "/generated/taipei_building_height_footprint_audit.pmtiles";
   const EXPECTED_URL = "/generated/taipei_building_height_footprint_expected.json";
-  const LAYERS = [
-    ["centroid", "audit_centroid", "Centroid control"],
-    ["poly1", "audit_polygon_1x", "Polygon 1x"],
-    ["poly2", "audit_polygon_2x", "Polygon 2x"],
-    ["poly4", "audit_polygon_4x", "Polygon 4x"],
+  const VARIANTS = [
+    { key: "centroid", label: "Centroid control", url: "/generated/taipei_building_height_footprint_audit_centroid.pmtiles", layer: "building_height_audit_centroid" },
+    { key: "poly1", label: "Polygon 1x", url: "/generated/taipei_building_height_footprint_audit_1x.pmtiles", layer: "building_height_audit" },
+    { key: "poly2", label: "Polygon 2x", url: "/generated/taipei_building_height_footprint_audit_2x.pmtiles", layer: "building_height_audit" },
+    { key: "poly4", label: "Polygon 4x", url: "/generated/taipei_building_height_footprint_audit_4x.pmtiles", layer: "building_height_audit" },
   ];
 
   const expectedEl = document.getElementById("expected");
@@ -109,6 +108,51 @@
     return [...cells.entries()].sort((a, b) => b[1] - a[1]).slice(0, limit);
   }
 
+  async function scanArchive(variant, jobs, progressBase) {
+    const archive = new PMTiles(variant.url);
+    const header = await archive.getHeader();
+    const seenIds = new Set();
+    let totalFeatureRefs = 0;
+    let tilesWithData = 0;
+    let decodeErrors = 0;
+    let cursor = 0;
+
+    statusEl.textContent = `${variant.label}: scanning ${fmt(jobs.length)} candidate z16 tiles…`;
+
+    async function worker() {
+      while (true) {
+        const index = cursor++;
+        if (index >= jobs.length) return;
+        const [x, y] = jobs[index];
+        try {
+          const response = await archive.getZxy(Z, x, y);
+          if (response?.data) {
+            const tile = new VectorTile(new Pbf(response.data));
+            const layer = tile.layers[variant.layer];
+            if (layer) {
+              tilesWithData += 1;
+              totalFeatureRefs += layer.length;
+              for (let i = 0; i < layer.length; i += 1) {
+                const id = Number(layer.feature(i).properties.source_id);
+                if (Number.isSafeInteger(id)) seenIds.add(id);
+              }
+            }
+          }
+        } catch (error) {
+          decodeErrors += 1;
+          console.error(`${variant.key} z16/${x}/${y}`, error);
+        }
+        progressEl.value = progressBase + index + 1;
+        if ((index + 1) % 100 === 0 || index + 1 === jobs.length) {
+          statusEl.textContent = `${variant.label}: scanned ${fmt(index + 1)} / ${fmt(jobs.length)}; unique IDs=${fmt(seenIds.size)}`;
+        }
+      }
+    }
+
+    await Promise.all(Array.from({ length: 12 }, () => worker()));
+    return { ...variant, header, seenIds, totalFeatureRefs, tilesWithData, decodeErrors };
+  }
+
   async function run() {
     const expectedResponse = await fetch(EXPECTED_URL, { cache: "no-store" });
     if (!expectedResponse.ok) throw new Error(`Expected-ID index HTTP ${expectedResponse.status}`);
@@ -132,81 +176,46 @@
     const jobs = [];
     for (let x = x0; x <= x1; x += 1) for (let y = y0; y <= y1; y += 1) jobs.push([x, y]);
 
-    const archive = new PMTiles(ARCHIVE_URL);
-    const header = await archive.getHeader();
-    const results = new Map(LAYERS.map(([key, layer, label]) => [key, {
-      key, layer, label, seenIds: new Set(), totalFeatureRefs: 0, tilesWithData: 0,
-    }]));
+    progressEl.max = jobs.length * VARIANTS.length;
+    progressEl.value = 0;
+    const results = new Map();
 
-    let decodeErrors = 0;
-    let cursor = 0;
-    progressEl.max = jobs.length;
-    statusEl.textContent = `Scanning ${fmt(jobs.length)} candidate z16 tiles…`;
-
-    async function worker() {
-      while (true) {
-        const index = cursor++;
-        if (index >= jobs.length) return;
-        const [x, y] = jobs[index];
-        try {
-          const response = await archive.getZxy(Z, x, y);
-          if (response?.data) {
-            const tile = new VectorTile(new Pbf(response.data));
-            for (const [key, layerName] of LAYERS) {
-              const result = results.get(key);
-              const layer = tile.layers[layerName];
-              if (!layer) continue;
-              result.tilesWithData += 1;
-              result.totalFeatureRefs += layer.length;
-              for (let i = 0; i < layer.length; i += 1) {
-                const id = Number(layer.feature(i).properties.source_id);
-                if (Number.isSafeInteger(id)) result.seenIds.add(id);
-              }
-            }
-          }
-        } catch (error) {
-          decodeErrors += 1;
-          console.error(`z16/${x}/${y}`, error);
-        }
-        progressEl.value = index + 1;
-        if ((index + 1) % 100 === 0 || index + 1 === jobs.length) {
-          statusEl.textContent = `Scanned ${fmt(index + 1)} / ${fmt(jobs.length)} tiles; 1x unique=${fmt(results.get("poly1").seenIds.size)}; 4x unique=${fmt(results.get("poly4").seenIds.size)}`;
-        }
-      }
+    for (let i = 0; i < VARIANTS.length; i += 1) {
+      const variant = VARIANTS[i];
+      const result = await scanArchive(variant, jobs, i * jobs.length);
+      results.set(variant.key, result);
+      const retention = expectedIds.size ? result.seenIds.size / expectedIds.size : 0;
+      const el = document.getElementById(variant.key);
+      el.textContent = `${(retention * 100).toFixed(3)}%`;
+      el.className = `value ${retention >= 0.9999 ? "pass" : retention >= 0.95 ? "warn" : "fail"}`;
     }
 
-    await Promise.all(Array.from({ length: 16 }, () => worker()));
-
     const lines = [
-      "Taipei-Maps Issue #31 — z16 footprint identity scale sweep",
-      `PMTiles archive: ${ARCHIVE_URL}`,
-      `Header zoom range: ${header.minZoom}..${header.maxZoom}`,
-      `Candidate z16 tiles scanned: ${fmt(jobs.length)}`,
+      "Taipei-Maps Issue #31 — z16 footprint identity scale sweep (memory-safe separate archives)",
+      `Candidate z16 tiles per archive: ${fmt(jobs.length)}`,
       `Expected unique WFS source IDs: ${fmt(expectedIds.size)}`,
-      `Tile/decode errors: ${fmt(decodeErrors)}`,
       "",
     ];
 
-    for (const [key, , label] of LAYERS) {
-      const result = results.get(key);
+    for (const variant of VARIANTS) {
+      const result = results.get(variant.key);
       const retention = expectedIds.size ? result.seenIds.size / expectedIds.size : 0;
       const missingRecords = records.filter(([id]) => !result.seenIds.has(Number(id)));
       const unexpected = [...result.seenIds].filter((id) => !expectedIds.has(id));
-      const el = document.getElementById(key);
-      el.textContent = `${(retention * 100).toFixed(3)}%`;
-      el.className = `value ${retention >= 0.9999 ? "pass" : retention >= 0.95 ? "warn" : "fail"}`;
-
       lines.push(
-        `=== ${label} ===`,
+        `=== ${variant.label} ===`,
+        `Archive: ${variant.url}`,
+        `Header zoom range: ${result.header.minZoom}..${result.header.maxZoom}`,
         `Tiles with data: ${fmt(result.tilesWithData)}`,
         `Total feature refs: ${fmt(result.totalFeatureRefs)}`,
         `Unique source IDs seen: ${fmt(result.seenIds.size)}`,
         `Missing source IDs: ${fmt(missingRecords.length)}`,
         `Retention: ${(retention * 100).toFixed(6)}%`,
         `Unexpected source IDs: ${fmt(unexpected.length)}`,
+        `Tile/decode errors: ${fmt(result.decodeErrors)}`,
       );
 
-      if (key !== "centroid") {
+      if (variant.key !== "centroid") {
         const seenRecords = records.filter(([id]) => result.seenIds.has(Number(id)));
         const seenStats = sizeStats(seenRecords);
         const missingStats = sizeStats(missingRecords);
@@ -226,7 +235,7 @@
     if (centroidRetention < 0.999) {
       diagnosis = "Centroid control is incomplete: loss occurs before or during source-feature processing, not only polygon quantization.";
     } else if (r4 > r1 + 0.10 || r2 > r1 + 0.05) {
-      diagnosis = "Polygon retention rises materially with geometry scale while centroid control is complete: loss is strongly size-sensitive in polygon tile rendering/snap.";
+      diagnosis = "Centroid control is complete and polygon retention rises materially with scale: loss is strongly size-sensitive in polygon tile rendering/snap.";
     } else {
       diagnosis = "Centroid control is complete but polygon scaling barely helps: investigate polygon validity/reassembly rather than simple small-footprint quantization.";
     }
@@ -246,11 +255,10 @@
       ...(firstMissing.length ? firstMissing.map((row) => `  ${row}`) : ["  none"]),
     );
 
-    const report = lines.join("\n");
-    reportEl.textContent = report;
+    reportEl.textContent = lines.join("\n");
     statusEl.textContent = diagnosis;
     copyButton.disabled = false;
-    copyButton.onclick = () => navigator.clipboard.writeText(report);
+    copyButton.onclick = () => navigator.clipboard.writeText(reportEl.textContent);
   }
 
   run().catch((error) => {

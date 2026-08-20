@@ -9,6 +9,14 @@ function finiteNumber(value) {
   return Number.isFinite(number) ? number : null;
 }
 
+function firstFinite(properties, keys) {
+  for (const key of keys) {
+    const value = finiteNumber(properties[key]);
+    if (value !== null) return value;
+  }
+  return null;
+}
+
 function plausibleHeight(value) {
   return (
     Number.isFinite(value) &&
@@ -22,31 +30,30 @@ function rounded(value) {
 }
 
 /**
- * Conservative physical-height derivation for Taipei City Dashboard
- * `tp_building_height` while Issue #31 validates field semantics.
+ * Physical-height derivation for Taipei City Dashboard `tp_building_height`.
  *
- * Evidence already established:
- * - `1_top_high` reaches >1,000 m in mountain areas, so it must not be used
- *   directly as a building extrusion height from a zero-elevation plane.
- * - Current full-city data populates `1_floor` broadly enough to provide a
- *   safe visual fallback.
+ * Raw-field probe on 2026-08-20 established the actual WFS keys:
+ * - roof elevation: `1_top_high`
+ * - entrance/ground elevation: `1_ent_heig`
+ * - surveyed building height: `1_bud_high`
+ * - floor count: `1_floor`
  *
- * Working hypotheses that MUST remain probe-gated:
- * - if `1_entr_heig` is a usable ground/entrance elevation, top minus entrance
- *   may represent physical height;
- * - if `1_bd_high` is populated as a physical height, it may be preferable.
+ * Older spike code accidentally queried `1_entr_heig` / `1_bd_high`, which do
+ * not exist in the live WFS and forced almost every building to floors × 3.2 m.
+ * Keep those misspelled aliases only as defensive backwards compatibility for
+ * any locally cached experimental data.
  *
- * Fallback order is intentionally conservative:
- * 1. plausible roof-elevation minus entrance-elevation delta
- * 2. plausible `1_bd_high`
+ * Derivation order:
+ * 1. plausible roof elevation - entrance elevation
+ * 2. plausible surveyed `1_bud_high`
  * 3. floors × 3.2 m
  * 4. generic 9.6 m
  */
 export function deriveBuildingHeight(properties = {}) {
-  const topElevation = finiteNumber(properties["1_top_high"]);
-  const entranceElevation = finiteNumber(properties["1_entr_heig"]);
-  const surveyedBuildingHeight = finiteNumber(properties["1_bd_high"]);
-  const floors = finiteNumber(properties["1_floor"]);
+  const topElevation = firstFinite(properties, ["1_top_high", "屋頂高程"]);
+  const entranceElevation = firstFinite(properties, ["1_ent_heig", "出入口高程", "1_entr_heig"]);
+  const surveyedBuildingHeight = firstFinite(properties, ["1_bud_high", "1_bd_high"]);
+  const floors = firstFinite(properties, ["1_floor"]);
 
   if (topElevation != null && entranceElevation != null) {
     const delta = topElevation - entranceElevation;
@@ -63,7 +70,7 @@ export function deriveBuildingHeight(properties = {}) {
   if (plausibleHeight(surveyedBuildingHeight)) {
     return {
       height_m: rounded(surveyedBuildingHeight),
-      source: "1_bd_high",
+      source: "1_bud_high",
       top_elev_m: rounded(topElevation),
       ground_elev_m: rounded(entranceElevation),
     };

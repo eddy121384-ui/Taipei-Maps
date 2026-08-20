@@ -13,7 +13,7 @@ function parseSourceId(value) {
   return Number.isSafeInteger(number) ? number : null;
 }
 
-function geometryCenter(geometry) {
+function geometryMetrics(geometry) {
   const coordinates = geometry?.coordinates;
   if (!Array.isArray(coordinates)) return null;
 
@@ -43,15 +43,27 @@ function geometryCenter(geometry) {
   }
 
   if (![minLon, minLat, maxLon, maxLat].every(Number.isFinite)) return null;
-  return [
-    Number(((minLon + maxLon) / 2).toFixed(6)),
-    Number(((minLat + maxLat) / 2).toFixed(6)),
-  ];
+
+  const centerLon = (minLon + maxLon) / 2;
+  const centerLat = (minLat + maxLat) / 2;
+  const latRad = centerLat * Math.PI / 180;
+  const metersPerDegLat = 111_320;
+  const metersPerDegLon = 111_320 * Math.cos(latRad);
+  const widthM = Math.max(0, (maxLon - minLon) * metersPerDegLon);
+  const heightM = Math.max(0, (maxLat - minLat) * metersPerDegLat);
+
+  return {
+    centerLon: Number(centerLon.toFixed(6)),
+    centerLat: Number(centerLat.toFixed(6)),
+    widthM: Number(widthM.toFixed(3)),
+    heightM: Number(heightM.toFixed(3)),
+    bboxAreaM2: Number((widthM * heightM).toFixed(3)),
+  };
 }
 
 await mkdir(GENERATED_DIR, { recursive: true });
 
-console.log("Taipei-Maps Issue #31 - prepare z16 footprint identity audit");
+console.log("Taipei-Maps Issue #31 - prepare z16/z17/z18 footprint identity audit");
 console.log(`Reading existing citywide source: ${INPUT_PATH}`);
 const raw = await readFile(INPUT_PATH, "utf8");
 const collection = JSON.parse(raw);
@@ -63,7 +75,7 @@ if (collection?.type !== "FeatureCollection" || !Array.isArray(collection.featur
 const expected = [];
 const seenIds = new Set();
 let invalidIds = 0;
-let missingCenters = 0;
+let missingMetrics = 0;
 
 for (const feature of collection.features) {
   const sourceId = parseSourceId(feature.id);
@@ -73,12 +85,19 @@ for (const feature of collection.features) {
   }
   seenIds.add(sourceId);
 
-  const center = geometryCenter(feature.geometry);
-  if (!center) missingCenters += 1;
-  expected.push([sourceId, center?.[0] ?? null, center?.[1] ?? null]);
+  const metrics = geometryMetrics(feature.geometry);
+  if (!metrics) missingMetrics += 1;
+  expected.push([
+    sourceId,
+    metrics?.centerLon ?? null,
+    metrics?.centerLat ?? null,
+    metrics?.widthM ?? null,
+    metrics?.heightM ?? null,
+    metrics?.bboxAreaM2 ?? null,
+  ]);
 
   // Keep the audit source intentionally tiny in attribute space: only the
-  // identity we need to trace through z16 MVT generation.
+  // identity we need to trace through MVT generation.
   feature.properties = { source_id: sourceId };
 }
 
@@ -89,7 +108,7 @@ if (invalidIds > 0) {
 const auditBody = JSON.stringify(collection);
 const expectedBody = JSON.stringify({
   source_count: expected.length,
-  missing_centers: missingCenters,
+  missing_metrics: missingMetrics,
   records: expected,
 });
 
@@ -99,7 +118,7 @@ await writeFile(EXPECTED_INDEX_PATH, expectedBody);
 const auditStat = await stat(AUDIT_GEOJSON_PATH);
 const indexStat = await stat(EXPECTED_INDEX_PATH);
 console.log(`Expected unique source IDs: ${expected.length.toLocaleString()}`);
-console.log(`Records without a geometry center: ${missingCenters.toLocaleString()}`);
+console.log(`Records without geometry metrics: ${missingMetrics.toLocaleString()}`);
 console.log(`Audit GeoJSON: ${(auditStat.size / 1024 / 1024).toFixed(1)} MiB`);
 console.log(`Expected-ID index: ${(indexStat.size / 1024 / 1024).toFixed(1)} MiB`);
 console.log("Audit preparation complete.");

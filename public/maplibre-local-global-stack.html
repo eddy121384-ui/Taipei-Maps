@@ -21,12 +21,12 @@
 <section class="panel">
   <div class="eyebrow">ISSUE #27 · SINGLE ENGINE PROVIDER STACK</div>
   <h1>MapLibre：local provider 疊在全球 Overture 上</h1>
-  <div class="sub">只有一張 MapLibre、一個 WebGL canvas。全球永遠由 Overture buildings.pmtiles 提供白模；進入目前已驗證的信義區官方資料範圍時，只切換「建築 layer」，不切換 map engine。</div>
+  <div class="sub">只有一張 MapLibre、一個 WebGL canvas。Overture 全球白模永遠保留；進入目前已驗證的信義區官方資料範圍時，只把 local 官方建築疊在上層，不再把全球 layer 整批關掉。</div>
   <div class="controls">
     <button class="city active" data-city="xinyi">信義區</button><button class="city" data-city="banqiao">板橋</button><button class="city" data-city="shanghai">上海</button><button class="city" data-city="tokyo">東京</button><button class="city" data-city="nyc">紐約</button>
   </div>
   <div class="controls">
-    <button id="autoProvider" class="active">Local 優先 AUTO</button><button id="showBoth">兩層同時顯示</button><button id="toggle3d" class="active">3D ON</button>
+    <button id="autoProvider" class="active">Local 優先 AUTO</button><button id="showBoth">Local 強制顯示</button><button id="toggle3d" class="active">3D ON</button>
   </div>
   <div class="metrics">
     <span>Map engine</span><span>MapLibre only</span>
@@ -39,7 +39,7 @@
     <span>Last move → idle</span><span id="lastIdle">—</span>
   </div>
   <div id="status">Booting single-engine stack…</div>
-  <div class="note">這不是最終台北 citywide layer：目前 local provider 只用已驗證的信義區 <span class="mono">tp_building_height</span> WFS sample。目的只有一個：先證明「local authoritative geometry > global Overture fallback」可以在同一個 MapLibre renderer 裡順暢切換。</div>
+  <div class="note">這不是最終台北 citywide layer：目前 local provider 只用已驗證的信義區 <span class="mono">tp_building_height</span> WFS sample。目的只有一個：先證明「全球 Overture 永遠存在 + local authoritative overlay」可以在同一個 MapLibre renderer 裡順暢運作。</div>
 </section>
 <script>
 (async()=>{
@@ -93,10 +93,32 @@
   let autoProvider=true,show3d=true,moveStartedAt=null;
   const insideXinyi=()=>{const c=map.getCenter();return c.lng>=XINYI_BBOX.west&&c.lng<=XINYI_BBOX.east&&c.lat>=XINYI_BBOX.south&&c.lat<=XINYI_BBOX.north;};
   const setVis=(id,on)=>map.getLayer(id)&&map.setLayoutProperty(id,'visibility',on?'visible':'none');
-  function syncProvider(){if(!map.isStyleLoaded())return;const localPreferred=autoProvider&&insideXinyi();const overtureVisible=!localPreferred;setVis('overture-building-3d',show3d&&overtureVisible);if(hasParts)setVis('overture-parts-3d',show3d&&overtureVisible);setVis('local-official-3d',show3d&&(localPreferred||!autoProvider));setVis('local-official-flat',!show3d&&(localPreferred||!autoProvider));providerEl.textContent=localPreferred?'台北官方 tp_building_height':'Overture global';providerEl.className=localPreferred?'good':'';autoProviderBtn.textContent=`Local 優先 ${autoProvider?'AUTO':'OFF'}`;autoProviderBtn.classList.toggle('active',autoProvider);showBothBtn.classList.toggle('active',!autoProvider);toggle3dBtn.textContent=`3D ${show3d?'ON':'OFF'}`;toggle3dBtn.classList.toggle('active',show3d);}
+  function syncProvider(){
+    if(!map.isStyleLoaded())return;
+    const localInRange=insideXinyi();
+    const localVisible=localInRange||!autoProvider;
+
+    // Global geometry is the baseline and must never disappear just because a
+    // higher-confidence local provider is available for a small area.
+    setVis('overture-building-3d',show3d);
+    if(hasParts)setVis('overture-parts-3d',show3d);
+
+    // Local geometry is an overlay. In AUTO it appears only inside its known
+    // coverage; force mode is kept as a debugging aid.
+    setVis('local-official-3d',show3d&&localVisible);
+    setVis('local-official-flat',!show3d&&localVisible);
+
+    providerEl.textContent=localInRange?'Overture global + 台北官方 overlay':'Overture global';
+    providerEl.className=localInRange?'good':'';
+    autoProviderBtn.textContent=`Local 優先 ${autoProvider?'AUTO':'OFF'}`;
+    autoProviderBtn.classList.toggle('active',autoProvider);
+    showBothBtn.classList.toggle('active',!autoProvider);
+    toggle3dBtn.textContent=`3D ${show3d?'ON':'OFF'}`;
+    toggle3dBtn.classList.toggle('active',show3d);
+  }
   function refreshStats(){if(!map.isStyleLoaded())return;const ids=['overture-building-3d','overture-parts-3d','local-official-3d','local-official-flat'].filter(id=>map.getLayer(id));try{visibleCountEl.textContent=map.queryRenderedFeatures({layers:ids}).length.toLocaleString();}catch{visibleCountEl.textContent='—';}}
 
-  map.on('load',()=>{syncProvider();status.textContent='READY · single MapLibre engine · local layer 可直接覆蓋 global fallback';status.className='good';});
+  map.on('load',()=>{syncProvider();status.textContent='READY · single MapLibre engine · Overture baseline 永遠保留，local 只做 overlay';status.className='good';});
   map.on('movestart',()=>{moveStartedAt=performance.now();});
   map.on('moveend',()=>{syncProvider();document.querySelectorAll('button.city').forEach(b=>b.classList.remove('active'));});
   map.on('idle',()=>{if(moveStartedAt!=null){lastIdleEl.textContent=`${Math.round(performance.now()-moveStartedAt)} ms`;moveStartedAt=null;}refreshStats();});

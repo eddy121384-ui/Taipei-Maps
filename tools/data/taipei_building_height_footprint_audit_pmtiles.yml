@@ -1,7 +1,7 @@
-schema_name: Taipei Official Building Footprint Audit z16
-schema_description: Temporary source-id-preserving z16 audit archive for Issue #31 footprint retention validation.
+schema_name: Taipei Official Building Footprint Audit z16-z18
+schema_description: Temporary source-id-preserving z16-z18 audit archive for Issue #31 footprint retention validation.
 attribution: Taipei City Government City Dashboard public WFS
-version: 0.1
+version: 0.2
 is_overlay: true
 
 sources:
@@ -16,7 +16,7 @@ layers:
       - source: taipei_buildings_audit
         geometry: polygon
         min_zoom: 16
-        max_zoom: 16
+        max_zoom: 18
         min_size: 0
         min_size_at_max_zoom: 0
         tolerance: 0

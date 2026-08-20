@@ -1,7 +1,7 @@
-schema_name: Taipei Official Building Footprint Audit z16 scale sweep
-schema_description: Temporary source-id-preserving z16 audit archive with centroid, 1x, 2x, and 4x geometry controls for Issue #31.
+schema_name: Taipei Official Building Footprint Polygon Audit z16
+schema_description: Temporary source-id-preserving z16 polygon-only audit archive for Issue #31.
 attribution: Taipei City Government City Dashboard public WFS
-version: 0.3
+version: 0.4
 is_overlay: true
 
 sources:
@@ -9,54 +9,11 @@ sources:
     type: geojson
     local_path: public/generated/taipei_building_height_footprint_audit.geojson
     projection: EPSG:4326
-  taipei_buildings_audit_x2:
-    type: geojson
-    local_path: public/generated/taipei_building_height_footprint_audit_x2.geojson
-    projection: EPSG:4326
-  taipei_buildings_audit_x4:
-    type: geojson
-    local_path: public/generated/taipei_building_height_footprint_audit_x4.geojson
-    projection: EPSG:4326
 
 layers:
-  - id: audit_centroid
+  - id: building_height_audit
     features:
       - source: taipei_buildings_audit
-        geometry: polygon_centroid
-        min_zoom: 16
-        max_zoom: 16
-        attributes:
-          - key: source_id
-
-  - id: audit_polygon_1x
-    features:
-      - source: taipei_buildings_audit
-        geometry: polygon
-        min_zoom: 16
-        max_zoom: 16
-        min_size: 0
-        min_size_at_max_zoom: 0
-        tolerance: 0
-        tolerance_at_max_zoom: 0
-        attributes:
-          - key: source_id
-
-  - id: audit_polygon_2x
-    features:
-      - source: taipei_buildings_audit_x2
-        geometry: polygon
-        min_zoom: 16
-        max_zoom: 16
-        min_size: 0
-        min_size_at_max_zoom: 0
-        tolerance: 0
-        tolerance_at_max_zoom: 0
-        attributes:
-          - key: source_id
-
-  - id: audit_polygon_4x
-    features:
-      - source: taipei_buildings_audit_x4
         geometry: polygon
         min_zoom: 16
         max_zoom: 16

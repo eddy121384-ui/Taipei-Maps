@@ -3,6 +3,8 @@ export const MAX_PLAUSIBLE_BUILDING_HEIGHT_M = 600;
 export const MIN_PLAUSIBLE_BUILDING_HEIGHT_M = 1.2;
 
 function finiteNumber(value) {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "string" && value.trim() === "") return null;
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
 }
@@ -20,15 +22,23 @@ function rounded(value) {
 }
 
 /**
- * Taipei City Dashboard `tp_building_height` exposes surveyed vertical values.
- * `1_top_high` can exceed 1000 m in mountain areas, so it is an absolute roof
- * elevation rather than a physical building height. `1_entr_heig` is the
- * entrance/ground elevation. The physically meaningful extrusion height is
- * therefore roof elevation minus entrance elevation when both are usable.
+ * Conservative physical-height derivation for Taipei City Dashboard
+ * `tp_building_height` while Issue #31 validates field semantics.
+ *
+ * Evidence already established:
+ * - `1_top_high` reaches >1,000 m in mountain areas, so it must not be used
+ *   directly as a building extrusion height from a zero-elevation plane.
+ * - Current full-city data populates `1_floor` broadly enough to provide a
+ *   safe visual fallback.
+ *
+ * Working hypotheses that MUST remain probe-gated:
+ * - if `1_entr_heig` is a usable ground/entrance elevation, top minus entrance
+ *   may represent physical height;
+ * - if `1_bd_high` is populated as a physical height, it may be preferable.
  *
  * Fallback order is intentionally conservative:
- * 1. roof elevation - entrance elevation
- * 2. `1_bd_high` when it is already a plausible physical height
+ * 1. plausible roof-elevation minus entrance-elevation delta
+ * 2. plausible `1_bd_high`
  * 3. floors × 3.2 m
  * 4. generic 9.6 m
  */

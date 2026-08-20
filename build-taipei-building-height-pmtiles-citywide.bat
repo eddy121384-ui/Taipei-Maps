@@ -3,6 +3,7 @@ setlocal
 cd /d "%~dp0"
 
 echo Taipei-Maps Issue #31 - build CITYWIDE Taipei official building-height PMTiles
+echo Preservation mode: z16, no small-footprint cutoff, no geometry simplification.
 echo.
 
 where node >nul 2>nul
@@ -79,8 +80,8 @@ if not exist .cache\planetiler\planetiler.jar (
 )
 
 echo.
-echo [4/4] Building CITYWIDE PMTiles with Planetiler...
-"%JAVA_CMD%" -Xmx2g -jar .cache\planetiler\planetiler.jar generate-custom --schema=tools\data\taipei_building_height_citywide_pmtiles.yml --output=public\generated\taipei_building_height_citywide.pmtiles --force
+echo [4/4] Building CITYWIDE PMTiles with Planetiler preservation settings...
+"%JAVA_CMD%" -Xmx2g -jar .cache\planetiler\planetiler.jar generate-custom --schema=tools\data\taipei_building_height_citywide_pmtiles.yml --output=public\generated\taipei_building_height_citywide.pmtiles --maxzoom=16 --render_maxzoom=16 --min_feature_size=0 --min_feature_size_at_max_zoom=0 --simplify_tolerance=0 --simplify_tolerance_at_max_zoom=0 --force
 if errorlevel 1 (
   echo.
   echo [ERROR] Planetiler citywide build failed.
@@ -91,6 +92,7 @@ if errorlevel 1 (
 
 echo.
 echo Build complete.
+echo  Preservation target: retain small Taipei building footprints through z16.
 powershell -NoProfile -Command "$g=Get-Item 'public\generated\taipei_building_height_citywide.geojson'; $p=Get-Item 'public\generated\taipei_building_height_citywide.pmtiles'; Write-Host ('  Slim GeoJSON : {0:N1} MiB' -f ($g.Length/1MB)); Write-Host ('  PMTiles      : {0:N2} MiB' -f ($p.Length/1MB))"
 echo.
 echo Launching CITYWIDE PMTiles browser validation...

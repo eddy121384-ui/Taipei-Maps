@@ -26,11 +26,15 @@
     <button class="city active" data-city="daan">大安</button><button class="city" data-city="songshan">松山</button><button class="city" data-city="xinyi">信義</button><button class="city" data-city="neihu">內湖</button><button class="city" data-city="beitou">北投</button><button class="city" data-city="yangmingshan">陽明山</button><button class="city" data-city="wenshan">文山</button><button class="city" data-city="banqiao">板橋</button><button class="city" data-city="shanghai">上海</button><button class="city" data-city="tokyo">東京</button>
   </div>
   <div class="controls">
+    <button id="basemapMap" class="active">🗺 地圖</button><button id="basemapPhoto">🛰 航照</button>
+  </div>
+  <div class="controls">
     <button id="toggleLocal" class="active">Local PMTiles ON</button><button id="toggle3d" class="active">3D ON</button><button id="toggleTerrain" class="active">Terrain ON</button>
   </div>
   <div class="metrics">
     <span>Map engine</span><span>MapLibre only</span>
     <span>Validation mode</span><span id="mode">—</span>
+    <span>Basemap</span><span id="basemapState">OSM map</span>
     <span>Terrain</span><span id="terrainState">Mapterhorn DEM ON</span>
     <span>Overture release</span><span id="release">—</span>
     <span>Local source-layer</span><span id="localLayer">—</span>
@@ -44,8 +48,8 @@
 <script>
 (async()=>{
   const $=s=>document.querySelector(s),status=$('#status');
-  const releaseEl=$('#release'),localLayerEl=$('#localLayer'),localSizeEl=$('#localSize'),visibleCountEl=$('#visibleCount'),lastIdleEl=$('#lastIdle'),modeEl=$('#mode'),terrainStateEl=$('#terrainState');
-  const toggleLocalBtn=$('#toggleLocal'),toggle3dBtn=$('#toggle3d'),toggleTerrainBtn=$('#toggleTerrain');
+  const releaseEl=$('#release'),localLayerEl=$('#localLayer'),localSizeEl=$('#localSize'),visibleCountEl=$('#visibleCount'),lastIdleEl=$('#lastIdle'),modeEl=$('#mode'),terrainStateEl=$('#terrainState'),basemapStateEl=$('#basemapState');
+  const basemapMapBtn=$('#basemapMap'),basemapPhotoBtn=$('#basemapPhoto'),toggleLocalBtn=$('#toggleLocal'),toggle3dBtn=$('#toggle3d'),toggleTerrainBtn=$('#toggleTerrain');
   if(!window.maplibregl||!window.pmtiles){status.textContent='ERROR: MapLibre / PMTiles CDN 未載入';status.className='error';return;}
 
   const params=new URLSearchParams(location.search);
@@ -55,7 +59,7 @@
   modeEl.textContent=citywide?'CITYWIDE':'3-district sample';
   $('#eyebrow').textContent=`ISSUE #31 · ${citywide?'CITYWIDE':'SAMPLE'} PMTILES + TERRAIN VALIDATION`;
   $('#note').textContent=citywide
-    ?'驗收重點：陽明山／北投／文山的房子應貼著山體且高度合理；切 Terrain OFF 可直接對照。低視角應呈現淡藍天空、亮色地平線與遠山霧化。板橋／上海／東京仍須保留 Overture 全球 baseline。'
+    ?'驗收重點：陽明山／北投／文山的房子應貼著山體且高度合理；切 Terrain OFF 可直接對照。地圖／航照可切換，航照使用內政部國土測繪中心 PHOTO2；台灣範圍外仍由 OSM 當底圖。板橋／上海／東京仍須保留 Overture 全球 baseline。'
     :'三區 sample 主要驗證高度語意；山區請改跑 citywide build。';
 
   const cities={
@@ -75,6 +79,7 @@
     {release:'2026-06-17.0',url:'https://overturemaps-extras-us-west-2.s3.us-west-2.amazonaws.com/tiles/2026-06-17.0/buildings.pmtiles'}
   ];
   const terrainTileJson='https://tiles.mapterhorn.com/tilejson.json';
+  const nlscPhotoTile='https://wmts.nlsc.gov.tw/wmts/PHOTO2/default/GoogleMapsCompatible/{z}/{y}/{x}';
   const localUrl=new URL(`/generated/${localFilename}`,location.href).href;
 
   status.textContent='Preflighting Overture + local PMTiles…';
@@ -103,6 +108,7 @@
   const overtureBase=['to-number',['get','min_height'],0];
   const layers=[
     {id:'osm',type:'raster',source:'osm'},
+    {id:'nlsc-photo',type:'raster',source:'nlscPhoto',layout:{visibility:'none'}},
     {id:'terrain-hillshade',type:'hillshade',source:'terrainSource',paint:{'hillshade-shadow-color':'#665b4e','hillshade-highlight-color':'rgba(255,255,255,.55)','hillshade-exaggeration':.22}}
   ];
   if(hasParts){
@@ -129,6 +135,7 @@
       },
       sources:{
         osm:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,attribution:'© OpenStreetMap contributors',maxzoom:19},
+        nlscPhoto:{type:'raster',tiles:[nlscPhotoTile],tileSize:256,attribution:'© 內政部國土測繪中心 NLSC',maxzoom:19,bounds:[118.0,21.5,122.5,26.5]},
         terrainSource:{type:'raster-dem',url:terrainTileJson},
         overtureBuildings:{type:'vector',url:`pmtiles://${overture.url}`,attribution:'© Overture Maps Foundation / source contributors'},
         localOfficial:{type:'vector',url:`pmtiles://${localUrl}`,attribution:'Taipei City Government City Dashboard public WFS'}
@@ -140,12 +147,15 @@
   map.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'top-right');
   map.addControl(new maplibregl.ScaleControl({maxWidth:120,unit:'metric'}),'bottom-right');
 
-  let localOn=true,show3d=true,terrainOn=true,moveStartedAt=null;
+  let localOn=true,show3d=true,terrainOn=true,photoOn=false,moveStartedAt=null;
   const setVis=(id,on)=>map.getLayer(id)&&map.setLayoutProperty(id,'visibility',on?'visible':'none');
   function syncLayers(){
     if(!map.isStyleLoaded())return;
+    setVis('nlsc-photo',photoOn);
     setVis('overture-building-3d',show3d);if(hasParts)setVis('overture-parts-3d',show3d);
     setVis('local-official-3d',localOn&&show3d);setVis('local-official-flat',localOn&&!show3d);setVis('terrain-hillshade',terrainOn);
+    basemapMapBtn.classList.toggle('active',!photoOn);basemapPhotoBtn.classList.toggle('active',photoOn);
+    basemapStateEl.textContent=photoOn?'NLSC PHOTO2 orthophoto':'OSM map';
     toggleLocalBtn.textContent=`Local PMTiles ${localOn?'ON':'OFF'}`;toggleLocalBtn.classList.toggle('active',localOn);
     toggle3dBtn.textContent=`3D ${show3d?'ON':'OFF'}`;toggle3dBtn.classList.toggle('active',show3d);
     toggleTerrainBtn.textContent=`Terrain ${terrainOn?'ON':'OFF'}`;toggleTerrainBtn.classList.toggle('active',terrainOn);
@@ -154,11 +164,13 @@
   function setTerrain(on){terrainOn=on;map.setTerrain(terrainOn?{source:'terrainSource',exaggeration:1}:null);syncLayers();}
   function refreshStats(){if(!map.isStyleLoaded())return;const ids=['overture-building-3d','overture-parts-3d','local-official-3d','local-official-flat'].filter(id=>map.getLayer(id));try{visibleCountEl.textContent=map.queryRenderedFeatures({layers:ids}).length.toLocaleString();}catch{visibleCountEl.textContent='—';}}
 
-  map.on('load',()=>{syncLayers();status.textContent=`READY · corrected physical heights + ${citywide?'citywide':'sample'} PMTiles + terrain + atmospheric sky`;status.className='good';});
+  map.on('load',()=>{syncLayers();status.textContent=`READY · corrected physical heights + ${citywide?'citywide':'sample'} PMTiles + terrain + atmospheric sky + NLSC orthophoto toggle`;status.className='good';});
   map.on('movestart',()=>{moveStartedAt=performance.now();});
   map.on('moveend',()=>{document.querySelectorAll('button.city').forEach(b=>b.classList.remove('active'));});
   map.on('idle',()=>{if(moveStartedAt!=null){lastIdleEl.textContent=`${Math.round(performance.now()-moveStartedAt)} ms`;moveStartedAt=null;}refreshStats();});
   map.on('error',e=>{console.error('Map error',e?.error||e);});
+  basemapMapBtn.onclick=()=>{photoOn=false;syncLayers();};
+  basemapPhotoBtn.onclick=()=>{photoOn=true;syncLayers();};
   toggleLocalBtn.onclick=()=>{localOn=!localOn;syncLayers();refreshStats();};
   toggle3dBtn.onclick=()=>{show3d=!show3d;syncLayers();refreshStats();};
   toggleTerrainBtn.onclick=()=>setTerrain(!terrainOn);

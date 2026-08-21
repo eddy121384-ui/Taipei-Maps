@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#9fd5f6" />
+  <title>Taipei-Maps · Mobile Preview</title>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" />
+  <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+  <script src="https://unpkg.com/pmtiles@4.4.1/dist/pmtiles.js"></script>
+  <style>
+    html,body,#map{width:100%;height:100%;margin:0}body{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow:hidden;background:#9fd5f6}#map{position:absolute;inset:0}
+    .hud{position:absolute;z-index:5;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));padding:10px;border:1px solid rgba(255,255,255,.65);border-radius:16px;background:rgba(255,255,255,.90);box-shadow:0 8px 28px rgba(0,0,0,.18);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+    .title{font-size:13px;font-weight:800;margin-bottom:8px;color:#24303a}.controls{display:flex;gap:7px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}.controls::-webkit-scrollbar{display:none}button{flex:0 0 auto;border:1px solid #c7d0d8;border-radius:12px;padding:9px 11px;background:#fff;font-size:13px;font-weight:800;color:#26323c}.active{background:#26323c;color:#fff;border-color:#26323c}.status{margin-top:8px;font-size:11px;line-height:1.35;color:#5e6872}.good{color:#137333;font-weight:700}.error{color:#b42318;font-weight:700}
+    .maplibregl-ctrl-top-right{top:env(safe-area-inset-top)}
+  </style>
+</head>
+<body>
+<div id="map"></div>
+<section class="hud">
+  <div class="title">Taipei-Maps · 手機預覽</div>
+  <div class="controls">
+    <button id="mapBtn" class="active">🗺 地圖</button>
+    <button id="photoBtn">🛰 航照</button>
+    <button id="threeBtn" class="active">🏙 3D</button>
+    <button id="terrainBtn" class="active">⛰ 地形</button>
+    <button class="place" data-place="daan">大安</button>
+    <button class="place" data-place="xinyi">信義</button>
+    <button class="place" data-place="yangmingshan">陽明山</button>
+  </div>
+  <div id="status" class="status">Loading Overture + terrain…</div>
+</section>
+<script>
+(async()=>{
+  const status=document.querySelector('#status');
+  if(!window.maplibregl||!window.pmtiles){status.textContent='MapLibre / PMTiles CDN 載入失敗';status.className='status error';return;}
+
+  const places={
+    daan:{center:[121.5434,25.0268],zoom:15.0,pitch:57,bearing:-24},
+    xinyi:{center:[121.5645,25.0340],zoom:15.15,pitch:58,bearing:-26},
+    yangmingshan:{center:[121.5485,25.1555],zoom:14.15,pitch:66,bearing:20}
+  };
+  const overtureCandidates=[
+    {release:'2026-07-22.0',url:'https://overturemaps-extras-us-west-2.s3.us-west-2.amazonaws.com/tiles/2026-07-22.0/buildings.pmtiles'},
+    {release:'2026-06-17.0',url:'https://overturemaps-extras-us-west-2.s3.us-west-2.amazonaws.com/tiles/2026-06-17.0/buildings.pmtiles'}
+  ];
+  let overture=null,metadata=null;
+  for(const candidate of overtureCandidates){
+    try{const archive=new pmtiles.PMTiles(candidate.url);const [,m]=await Promise.all([archive.getHeader(),archive.getMetadata()]);overture=candidate;metadata=m;break;}catch(e){console.warn(e);}
+  }
+  if(!overture){status.textContent='Overture 建築資料載入失敗';status.className='status error';return;}
+
+  const layers=(metadata?.vector_layers||[]).map(x=>x?.id).filter(Boolean);
+  const hasParts=layers.includes('building_part');
+  const protocol=new pmtiles.Protocol({metadata:true});maplibregl.addProtocol('pmtiles',protocol.tile);
+  const height=['case',['>', ['to-number',['get','height'],0],0],['to-number',['get','height'],0],['>', ['to-number',['get','num_floors'],0],0],['*',['to-number',['get','num_floors'],0],3.2],9.6];
+  const base=['to-number',['get','min_height'],0];
+  const mapLayers=[
+    {id:'osm',type:'raster',source:'osm'},
+    {id:'nlsc-photo',type:'raster',source:'nlscPhoto',layout:{visibility:'none'}},
+    {id:'hillshade',type:'hillshade',source:'terrain',paint:{'hillshade-shadow-color':'#665b4e','hillshade-highlight-color':'rgba(255,255,255,.55)','hillshade-exaggeration':.22}},
+    {id:'building',type:'fill-extrusion',source:'overture','source-layer':'building',minzoom:14,paint:{'fill-extrusion-base':base,'fill-extrusion-height':height,'fill-extrusion-color':'#e2e7eb','fill-extrusion-opacity':.88,'fill-extrusion-vertical-gradient':true}}
+  ];
+  if(hasParts)mapLayers.push({id:'building-part',type:'fill-extrusion',source:'overture','source-layer':'building_part',minzoom:14,paint:{'fill-extrusion-base':base,'fill-extrusion-height':height,'fill-extrusion-color':'#cbd7df','fill-extrusion-opacity':.92,'fill-extrusion-vertical-gradient':true}});
+
+  const map=new maplibregl.Map({
+    container:'map',...places.daan,maxPitch:85,maxZoom:18,antialias:true,
+    style:{version:8,sky:{'sky-color':'#9fd5f6','horizon-color':'#eef7fb','fog-color':'#dfeaf0','sky-horizon-blend':.68,'horizon-fog-blend':.64,'fog-ground-blend':.56,'atmosphere-blend':.92},sources:{
+      osm:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,attribution:'© OpenStreetMap contributors',maxzoom:19},
+      nlscPhoto:{type:'raster',tiles:['https://wmts.nlsc.gov.tw/wmts/PHOTO2/default/GoogleMapsCompatible/{z}/{y}/{x}'],tileSize:256,attribution:'© 內政部國土測繪中心 NLSC',maxzoom:19,bounds:[118,21.5,122.5,26.5]},
+      terrain:{type:'raster-dem',url:'https://tiles.mapterhorn.com/tilejson.json'},
+      overture:{type:'vector',url:`pmtiles://${overture.url}`,attribution:'© Overture Maps Foundation / source contributors'}
+    },layers:mapLayers,terrain:{source:'terrain',exaggeration:1}}
+  });
+  map.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'top-right');
+
+  let photo=false,show3d=true,terrain=true;
+  const mapBtn=document.querySelector('#mapBtn'),photoBtn=document.querySelector('#photoBtn'),threeBtn=document.querySelector('#threeBtn'),terrainBtn=document.querySelector('#terrainBtn');
+  const vis=(id,on)=>map.getLayer(id)&&map.setLayoutProperty(id,'visibility',on?'visible':'none');
+  const paint=(id,p,v)=>map.getLayer(id)&&map.setPaintProperty(id,p,v);
+  function sync(){
+    if(!map.isStyleLoaded())return;
+    vis('nlsc-photo',photo);vis('building',show3d);if(hasParts)vis('building-part',show3d);vis('hillshade',terrain);
+    paint('building','fill-extrusion-opacity',photo?.50:.88);if(hasParts)paint('building-part','fill-extrusion-opacity',photo?.55:.92);paint('hillshade','hillshade-exaggeration',photo?.10:.22);
+    mapBtn.classList.toggle('active',!photo);photoBtn.classList.toggle('active',photo);threeBtn.classList.toggle('active',show3d);terrainBtn.classList.toggle('active',terrain);
+    status.textContent=`READY · ${photo?'NLSC 航照':'OSM 地圖'} · ${show3d?'3D':'2D'} · ${terrain?'地形 ON':'地形 OFF'} · Overture ${overture.release}`;status.className='status good';
+  }
+  map.on('load',sync);
+  map.on('error',e=>console.error('Map error',e?.error||e));
+  mapBtn.onclick=()=>{photo=false;sync()};photoBtn.onclick=()=>{photo=true;sync()};threeBtn.onclick=()=>{show3d=!show3d;sync()};terrainBtn.onclick=()=>{terrain=!terrain;map.setTerrain(terrain?{source:'terrain',exaggeration:1}:null);sync()};
+  document.querySelectorAll('.place').forEach(btn=>btn.onclick=()=>map.easeTo({...places[btn.dataset.place],duration:650}));
+})();
+</script>
+</body>
+</html>

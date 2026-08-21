@@ -59,7 +59,7 @@
   modeEl.textContent=citywide?'CITYWIDE':'3-district sample';
   $('#eyebrow').textContent=`ISSUE #31 · ${citywide?'CITYWIDE':'SAMPLE'} PMTILES + TERRAIN VALIDATION`;
   $('#note').textContent=citywide
-    ?'驗收重點：陽明山／北投／文山的房子應貼著山體且高度合理；切 Terrain OFF 可直接對照。地圖／航照可切換，航照使用內政部國土測繪中心 PHOTO2；台灣範圍外仍由 OSM 當底圖。板橋／上海／東京仍須保留 Overture 全球 baseline。'
+    ?'驗收重點：陽明山／北投／文山的房子應貼著山體且高度合理；切 Terrain OFF 可直接對照。地圖／航照可切換，航照使用內政部國土測繪中心 PHOTO2，並自動降低 3D 建築與 hillshade 強度以保留航照細節；台灣範圍外仍由 OSM 當底圖。板橋／上海／東京仍須保留 Overture 全球 baseline。'
     :'三區 sample 主要驗證高度語意；山區請改跑 citywide build。';
 
   const cities={
@@ -149,13 +149,22 @@
 
   let localOn=true,show3d=true,terrainOn=true,photoOn=false,moveStartedAt=null;
   const setVis=(id,on)=>map.getLayer(id)&&map.setLayoutProperty(id,'visibility',on?'visible':'none');
+  const setPaint=(id,property,value)=>map.getLayer(id)&&map.setPaintProperty(id,property,value);
   function syncLayers(){
     if(!map.isStyleLoaded())return;
     setVis('nlsc-photo',photoOn);
     setVis('overture-building-3d',show3d);if(hasParts)setVis('overture-parts-3d',show3d);
     setVis('local-official-3d',localOn&&show3d);setVis('local-official-flat',localOn&&!show3d);setVis('terrain-hillshade',terrainOn);
+
+    // In orthophoto mode, geometry becomes a translucent analytical overlay so imagery stays readable.
+    setPaint('overture-building-3d','fill-extrusion-opacity',photoOn?.50:.88);
+    if(hasParts)setPaint('overture-parts-3d','fill-extrusion-opacity',photoOn?.55:.92);
+    setPaint('local-official-3d','fill-extrusion-opacity',photoOn?.58:.98);
+    setPaint('local-official-flat','fill-opacity',photoOn?.48:.90);
+    setPaint('terrain-hillshade','hillshade-exaggeration',photoOn?.10:.22);
+
     basemapMapBtn.classList.toggle('active',!photoOn);basemapPhotoBtn.classList.toggle('active',photoOn);
-    basemapStateEl.textContent=photoOn?'NLSC PHOTO2 orthophoto':'OSM map';
+    basemapStateEl.textContent=photoOn?'NLSC PHOTO2 orthophoto · translucent 3D':'OSM map · solid 3D';
     toggleLocalBtn.textContent=`Local PMTiles ${localOn?'ON':'OFF'}`;toggleLocalBtn.classList.toggle('active',localOn);
     toggle3dBtn.textContent=`3D ${show3d?'ON':'OFF'}`;toggle3dBtn.classList.toggle('active',show3d);
     toggleTerrainBtn.textContent=`Terrain ${terrainOn?'ON':'OFF'}`;toggleTerrainBtn.classList.toggle('active',terrainOn);

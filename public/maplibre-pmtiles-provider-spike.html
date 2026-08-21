@@ -103,7 +103,7 @@
   const overtureBase=['to-number',['get','min_height'],0];
   const layers=[
     {id:'osm',type:'raster',source:'osm'},
-    {id:'terrain-hillshade',type:'hillshade',source:'hillshadeSource',paint:{'hillshade-shadow-color':'#665b4e','hillshade-highlight-color':'rgba(255,255,255,.55)','hillshade-exaggeration':.22}}
+    {id:'terrain-hillshade',type:'hillshade',source:'terrainSource',paint:{'hillshade-shadow-color':'#665b4e','hillshade-highlight-color':'rgba(255,255,255,.55)','hillshade-exaggeration':.22}}
   ];
   if(hasParts){
     layers.push({id:'overture-building-3d',type:'fill-extrusion',source:'overtureBuildings','source-layer':'building',minzoom:14,filter:['!=',['get','has_parts'],true],paint:{'fill-extrusion-base':overtureBase,'fill-extrusion-height':overtureHeight,'fill-extrusion-color':'#e2e7eb','fill-extrusion-opacity':.88,'fill-extrusion-vertical-gradient':true}});
@@ -130,7 +130,6 @@
       sources:{
         osm:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,attribution:'© OpenStreetMap contributors',maxzoom:19},
         terrainSource:{type:'raster-dem',url:terrainTileJson},
-        hillshadeSource:{type:'raster-dem',url:terrainTileJson},
         overtureBuildings:{type:'vector',url:`pmtiles://${overture.url}`,attribution:'© Overture Maps Foundation / source contributors'},
         localOfficial:{type:'vector',url:`pmtiles://${localUrl}`,attribution:'Taipei City Government City Dashboard public WFS'}
       },

@@ -8,7 +8,7 @@
   <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
   <script src="https://unpkg.com/pmtiles@4.4.1/dist/pmtiles.js"></script>
   <style>
-    html,body,#map{width:100%;height:100%;margin:0}body{font-family:Inter,system-ui,sans-serif;overflow:hidden}#map{background:#eef1f4}
+    html,body,#map{width:100%;height:100%;margin:0}body{font-family:Inter,system-ui,sans-serif;overflow:hidden}#map{background:#9fd5f6}
     .panel{position:absolute;z-index:5;top:14px;left:14px;width:min(520px,calc(100vw - 28px));max-height:calc(100vh - 28px);overflow:auto;padding:14px;border:1px solid #ccd3d9;border-radius:14px;background:rgba(255,255,255,.96);box-shadow:0 10px 28px rgba(0,0,0,.14)}
     .eyebrow{font-size:11px;font-weight:800;letter-spacing:.12em;color:#68727d}h1{font-size:20px;margin:5px 0}.sub,.note{font-size:11.5px;color:#5e6872;line-height:1.45}
     .controls{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}button{border:1px solid #c8d0d7;border-radius:9px;padding:7px 9px;background:#fff;font-weight:700;cursor:pointer}.active{background:#25313b;color:#fff}
@@ -21,7 +21,7 @@
 <section class="panel">
   <div id="eyebrow" class="eyebrow">ISSUE #31 · PMTILES + TERRAIN VALIDATION</div>
   <h1 id="title">台北官方建築：修正高度語意 + 真實地形</h1>
-  <div class="sub">單一 MapLibre / 單一 WebGL canvas。Overture 保留全球 baseline；台北官方建築改用實際建物高度，Mapterhorn DEM 提供真實地形。</div>
+  <div class="sub">單一 MapLibre / 單一 WebGL canvas。Overture 保留全球 baseline；台北官方建築改用實際建物高度，Mapterhorn DEM 提供真實地形，低視角加入大氣天空與地平線霧化。</div>
   <div class="controls">
     <button class="city active" data-city="daan">大安</button><button class="city" data-city="songshan">松山</button><button class="city" data-city="xinyi">信義</button><button class="city" data-city="neihu">內湖</button><button class="city" data-city="beitou">北投</button><button class="city" data-city="yangmingshan">陽明山</button><button class="city" data-city="wenshan">文山</button><button class="city" data-city="banqiao">板橋</button><button class="city" data-city="shanghai">上海</button><button class="city" data-city="tokyo">東京</button>
   </div>
@@ -55,7 +55,7 @@
   modeEl.textContent=citywide?'CITYWIDE':'3-district sample';
   $('#eyebrow').textContent=`ISSUE #31 · ${citywide?'CITYWIDE':'SAMPLE'} PMTILES + TERRAIN VALIDATION`;
   $('#note').textContent=citywide
-    ?'驗收重點：陽明山／北投／文山的房子應貼著山體且高度合理；切 Terrain OFF 可直接對照。板橋／上海／東京仍須保留 Overture 全球 baseline。'
+    ?'驗收重點：陽明山／北投／文山的房子應貼著山體且高度合理；切 Terrain OFF 可直接對照。低視角應呈現淡藍天空、亮色地平線與遠山霧化。板橋／上海／東京仍須保留 Overture 全球 baseline。'
     :'三區 sample 主要驗證高度語意；山區請改跑 citywide build。';
 
   const cities={
@@ -116,13 +116,27 @@
 
   const map=new maplibregl.Map({
     container:'map',center:cities.daan.center,zoom:cities.daan.zoom,pitch:cities.daan.pitch,bearing:cities.daan.bearing,maxPitch:85,maxZoom:18,antialias:true,
-    style:{version:8,sources:{
-      osm:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,attribution:'© OpenStreetMap contributors',maxzoom:19},
-      terrainSource:{type:'raster-dem',url:terrainTileJson},
-      hillshadeSource:{type:'raster-dem',url:terrainTileJson},
-      overtureBuildings:{type:'vector',url:`pmtiles://${overture.url}`,attribution:'© Overture Maps Foundation / source contributors'},
-      localOfficial:{type:'vector',url:`pmtiles://${localUrl}`,attribution:'Taipei City Government City Dashboard public WFS'}
-    },layers,terrain:{source:'terrainSource',exaggeration:1}}
+    style:{
+      version:8,
+      sky:{
+        'sky-color':'#9fd5f6',
+        'horizon-color':'#eef7fb',
+        'fog-color':'#dfeaf0',
+        'sky-horizon-blend':.68,
+        'horizon-fog-blend':.64,
+        'fog-ground-blend':.56,
+        'atmosphere-blend':.92
+      },
+      sources:{
+        osm:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,attribution:'© OpenStreetMap contributors',maxzoom:19},
+        terrainSource:{type:'raster-dem',url:terrainTileJson},
+        hillshadeSource:{type:'raster-dem',url:terrainTileJson},
+        overtureBuildings:{type:'vector',url:`pmtiles://${overture.url}`,attribution:'© Overture Maps Foundation / source contributors'},
+        localOfficial:{type:'vector',url:`pmtiles://${localUrl}`,attribution:'Taipei City Government City Dashboard public WFS'}
+      },
+      layers,
+      terrain:{source:'terrainSource',exaggeration:1}
+    }
   });
   map.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'top-right');
   map.addControl(new maplibregl.ScaleControl({maxWidth:120,unit:'metric'}),'bottom-right');
@@ -141,7 +155,7 @@
   function setTerrain(on){terrainOn=on;map.setTerrain(terrainOn?{source:'terrainSource',exaggeration:1}:null);syncLayers();}
   function refreshStats(){if(!map.isStyleLoaded())return;const ids=['overture-building-3d','overture-parts-3d','local-official-3d','local-official-flat'].filter(id=>map.getLayer(id));try{visibleCountEl.textContent=map.queryRenderedFeatures({layers:ids}).length.toLocaleString();}catch{visibleCountEl.textContent='—';}}
 
-  map.on('load',()=>{syncLayers();status.textContent=`READY · corrected physical heights + ${citywide?'citywide':'sample'} PMTiles + terrain`;status.className='good';});
+  map.on('load',()=>{syncLayers();status.textContent=`READY · corrected physical heights + ${citywide?'citywide':'sample'} PMTiles + terrain + atmospheric sky`;status.className='good';});
   map.on('movestart',()=>{moveStartedAt=performance.now();});
   map.on('moveend',()=>{document.querySelectorAll('button.city').forEach(b=>b.classList.remove('active'));});
   map.on('idle',()=>{if(moveStartedAt!=null){lastIdleEl.textContent=`${Math.round(performance.now()-moveStartedAt)} ms`;moveStartedAt=null;}refreshStats();});

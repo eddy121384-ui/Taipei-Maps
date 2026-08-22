@@ -28,6 +28,7 @@
     <button class="place" data-place="daan">大安</button>
     <button class="place" data-place="xinyi">信義</button>
     <button class="place" data-place="yangmingshan">陽明山</button>
+    <button class="place" data-place="tokyo">東京</button>
   </div>
   <div id="status" class="status">Loading shared map core…</div>
 </section>
@@ -48,11 +49,14 @@
   const mapBtn=document.querySelector('#mapBtn'),photoBtn=document.querySelector('#photoBtn'),threeBtn=document.querySelector('#threeBtn'),terrainBtn=document.querySelector('#terrainBtn');
   function sync(){
     if(!map.isStyleLoaded())return;
-    core.applyCoreVisualState(map,{photo,show3d,terrain,hasParts:overture.hasParts});
+    const provider=core.applyCoreVisualState(map,{photo,show3d,terrain,hasParts:overture.hasParts});
     mapBtn.classList.toggle('active',!photo);photoBtn.classList.toggle('active',photo);threeBtn.classList.toggle('active',show3d);terrainBtn.classList.toggle('active',terrain);
-    status.textContent=`READY · shared core · ${photo?'NLSC 航照':'OSM 地圖'} · ${show3d?'3D':'2D'} · ${terrain?'地形 ON':'地形 OFF'} · Overture ${overture.candidate.release}`;status.className='status good';
+    const basemap=photo?(provider?.label||'官方航照無覆蓋 · OSM fallback'):'OSM 地圖';
+    status.textContent=`READY · ${basemap} · ${show3d?'3D':'2D'} · ${terrain?'地形 ON':'地形 OFF'} · Overture ${overture.candidate.release}`;status.className='status good';
   }
   map.on('load',sync);
+  map.on('moveend',()=>{if(photo)sync();});
+  map.on('taipei-maps-imagerychange',()=>{if(photo)sync();});
   map.on('error',e=>console.error('Map error',e?.error||e));
   mapBtn.onclick=()=>{photo=false;sync()};
   photoBtn.onclick=()=>{photo=true;sync()};

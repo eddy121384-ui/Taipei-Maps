@@ -125,10 +125,54 @@
     return PALETTE[Math.abs(hash)%PALETTE.length];
   }
 
+  function labelFor(school){
+    const raw=String(school||'').trim();
+    if(!raw.includes('共同學區'))return raw;
+    const schools=raw.replace(/共同學區.*$/,'').replace(/[、，,]+$/,'').replace(/、/g,'・');
+    return `${schools}\n共同學區`;
+  }
+
+  function roughCenter(feature){
+    let minLng=Infinity,maxLng=-Infinity,minLat=Infinity,maxLat=-Infinity;
+    const walk=node=>{
+      if(!Array.isArray(node))return;
+      if(node.length>=2&&Number.isFinite(Number(node[0]))&&Number.isFinite(Number(node[1]))){
+        const lng=Number(node[0]),lat=Number(node[1]);
+        minLng=Math.min(minLng,lng);maxLng=Math.max(maxLng,lng);minLat=Math.min(minLat,lat);maxLat=Math.max(maxLat,lat);return;
+      }
+      for(const child of node)walk(child);
+    };
+    walk(feature?.geometry?.coordinates);
+    return Number.isFinite(minLng)?[(minLng+maxLng)/2,(minLat+maxLat)/2]:null;
+  }
+
+  function chooseLabelAnchors(features){
+    const groups=new Map();
+    for(const feature of features){
+      const school=feature.properties?.school||'';
+      const center=roughCenter(feature);
+      if(!center)continue;
+      if(!groups.has(school))groups.set(school,[]);
+      groups.get(school).push({feature,center});
+    }
+    for(const items of groups.values()){
+      const target=items.reduce((a,item)=>[a[0]+item.center[0],a[1]+item.center[1]],[0,0]).map(v=>v/items.length);
+      let best=items[0],bestD=Infinity;
+      for(const item of items){
+        const dx=item.center[0]-target[0],dy=item.center[1]-target[1],d=dx*dx+dy*dy;
+        if(d<bestD){best=item;bestD=d;}
+      }
+      best.feature.properties.showLabel=true;
+    }
+    return groups.size;
+  }
+
   function popupHtml(p){
     const safe=s=>String(s||'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
     const level=p.level==='junior'?'國中':'國小';
-    return `<div style="font:13px/1.5 system-ui,-apple-system,sans-serif;min-width:190px"><strong>${safe(p.school)}</strong><br><span>${level}學區</span><br><span style="color:#66717b">${safe(p.district)}區 ${safe(p.village)}里 ${safe(p.neighbor)}鄰</span>${String(p.school).includes('共同學區')?'<br><span style="color:#8a5d14">共同學區：可對應多校，仍須依當年度入學規定確認。</span>':''}<br><span style="font-size:11px;color:#7a848d">115學年度 · 臺北市教育局里鄰學區 + 臺北市民政局鄰界</span></div>`;
+    const shared=String(p.school).includes('共同學區');
+    const location=`${safe(p.district)}區・${safe(p.village)}里・第${safe(p.neighbor)}鄰`;
+    return `<div style="font:13px/1.5 system-ui,-apple-system,sans-serif;min-width:210px;max-width:260px"><div style="font-size:15px;font-weight:800;color:#24303a">${safe(p.school)}</div><div style="display:inline-block;margin:5px 0 7px;padding:2px 7px;border-radius:999px;background:#edf3f7;color:#384955;font-size:11px;font-weight:700">${level}學區</div><div style="color:#5f6b75">${location}</div>${shared?'<div style="margin-top:7px;padding:6px 8px;border-radius:8px;background:#fff6df;color:#7b591d">共同學區：可對應多校，請再依當年度入學規定確認。</div>':''}<div style="margin-top:7px;font-size:10.5px;color:#7a848d">115學年度・臺北市教育局里鄰學區＋臺北市民政局鄰界</div></div>`;
   }
 
   class SchoolDistrictLayer{
@@ -142,11 +186,11 @@
       if(this.map.getSource(SOURCE_ID))return;
       this.map.addSource(SOURCE_ID,{type:'geojson',data:EMPTY});
       const before=this.map.getLayer('building')?'building':undefined;
-      this.map.addLayer({id:FILL_ID,type:'fill',source:SOURCE_ID,layout:{visibility:'none'},paint:{'fill-color':['get','color'],'fill-opacity':.29}},before);
-      this.map.addLayer({id:LINE_ID,type:'line',source:SOURCE_ID,layout:{visibility:'none'},paint:{'line-color':'rgba(255,255,255,.78)','line-width':['interpolate',['linear'],['zoom'],13,.5,16,1.5]}},before);
-      this.map.addLayer({id:LABEL_ID,type:'symbol',source:SOURCE_ID,minzoom:14.2,layout:{visibility:'none','text-field':['get','school'],'text-size':11,'text-max-width':8,'text-allow-overlap':false},paint:{'text-color':'#26323c','text-halo-color':'rgba(255,255,255,.92)','text-halo-width':1.2}});
+      this.map.addLayer({id:FILL_ID,type:'fill',source:SOURCE_ID,layout:{visibility:'none'},paint:{'fill-color':['get','color'],'fill-opacity':.25}},before);
+      this.map.addLayer({id:LINE_ID,type:'line',source:SOURCE_ID,layout:{visibility:'none'},paint:{'line-color':'rgba(36,48,58,.34)','line-width':['interpolate',['linear'],['zoom'],13,.35,16,.9,18,1.25]}},before);
+      this.map.addLayer({id:LABEL_ID,type:'symbol',source:SOURCE_ID,minzoom:14.35,filter:['==',['get','showLabel'],true],layout:{visibility:'none','text-field':['get','label'],'text-size':['interpolate',['linear'],['zoom'],14.35,11,16,12.5,18,13.5],'text-line-height':1.05,'text-max-width':9,'text-padding':22,'text-allow-overlap':false,'text-ignore-placement':false},paint:{'text-color':'#26323c','text-halo-color':'rgba(255,255,255,.94)','text-halo-width':1.35}});
       this.map.on('moveend',this.boundMove);
-      this.map.on('click',FILL_ID,e=>{const f=e.features?.[0];if(!f)return;new maplibregl.Popup({maxWidth:'280px'}).setLngLat(e.lngLat).setHTML(popupHtml(f.properties||{})).addTo(this.map);});
+      this.map.on('click',FILL_ID,e=>{const f=e.features?.[0];if(!f)return;new maplibregl.Popup({maxWidth:'290px'}).setLngLat(e.lngLat).setHTML(popupHtml(f.properties||{})).addTo(this.map);});
       this.map.on('mouseenter',FILL_ID,()=>{this.map.getCanvas().style.cursor='pointer';});
       this.map.on('mouseleave',FILL_ID,()=>{this.map.getCanvas().style.cursor='';});
       this.syncVisibility();
@@ -160,10 +204,6 @@
 
     async refresh(force=false){
       if(!this.enabled||!this.map.isStyleLoaded())return;
-      const c=this.map.getCenter();
-      const d=cleanDistrict(c.lng>121.50&&c.lng<121.62&&c.lat>24.95&&c.lat<25.10?(c.lng<121.552?'大安':'信義'):'');
-      // Geometry is queried by viewport, but the normalized assignment table in this first exact pilot is
-      // intentionally restricted to 大安/信義 until the rest of 115學年度 data is normalized.
       if(this.map.getZoom()<13.2){this.clear();this.emit('zoom','再放大一點即可顯示里鄰級學區邊界');return;}
       const b=this.map.getBounds();
       const key=[this.level,b.getWest().toFixed(3),b.getSouth().toFixed(3),b.getEast().toFixed(3),b.getNorth().toFixed(3)].join(':');
@@ -185,10 +225,11 @@
           if(!PILOT_DISTRICTS.has(district))continue;
           const school=assignment(this.level,district,village,neighbor);
           if(!school){unmatched++;continue;}
-          features.push({...f,properties:{...p,district,village,neighbor,school,level:this.level,color:colorFor(school)}});
+          features.push({...f,properties:{...p,district,village,neighbor,school,label:labelFor(school),showLabel:false,level:this.level,color:colorFor(school),key:`${district}|${village}|${neighbor}`}});
         }
+        const catchments=chooseLabelAnchors(features);
         const src=this.map.getSource(SOURCE_ID);if(src)src.setData({type:'FeatureCollection',features});
-        this.emit('ready',`${this.level==='junior'?'國中':'國小'}學區 · ${features.length} 個鄰界區塊 · 大安/信義 115學年度 exact pilot`,{count:features.length,unmatched});
+        this.emit('ready',`${this.level==='junior'?'國中':'國小'}學區 · ${catchments} 個學區 · ${features.length} 個鄰界 · 大安/信義 115學年度`,{count:features.length,catchments,unmatched});
       }catch(e){
         if(e?.name==='AbortError')return;console.warn('School district layer failed',e);this.clear();this.emit('error',`學區邊界暫時載入失敗 · ${e?.message||e}`);
       }

@@ -2,8 +2,13 @@
   const SOURCE_ID='school-location';
   const POINT_ID='school-location-point';
   const LABEL_ID='school-location-label';
+  const CATCHMENT_FILL_ID='school-catchment-fill';
   const EMPTY={type:'FeatureCollection',features:[]};
   const TWIN_CITY_BOUNDS={west:121.20,south:24.78,east:121.90,north:25.35};
+  // Keep this fallback palette aligned with school-district-layer.js. The preferred marker color is
+  // always sampled from the rendered catchment polygon under the school point, so shared catchments
+  // inherit the exact same group color. This palette is only a fail-safe while polygons are loading.
+  const PALETTE=['#8e6bbf','#4f8ecb','#50a987','#d08b48','#c85f71','#798f3f','#4b9ca8','#b56eae','#7c79c5','#be7a52','#5e9a68','#a1794f'];
 
   function inTwinCity(lng,lat){
     return lng>=TWIN_CITY_BOUNDS.west&&lng<=TWIN_CITY_BOUNDS.east&&lat>=TWIN_CITY_BOUNDS.south&&lat<=TWIN_CITY_BOUNDS.north;
@@ -33,6 +38,22 @@
       .trim();
   }
 
+  function schoolColorKey(name){
+    let key=shortName(name)
+      .replace(/國民小學|國民中學|國小|國中/g,'')
+      .replace(/^[·・\s]+|[·・\s]+$/g,'')
+      .trim();
+    // Known official-name aliases used by the 115學年度 catchment table.
+    if(/國立臺北教育大學附設實驗/.test(key))key='國北教大附小';
+    return key||shortName(name)||String(name||'');
+  }
+
+  function colorFor(label){
+    let hash=0;
+    for(const ch of String(label||''))hash=((hash<<5)-hash)+ch.charCodeAt(0)|0;
+    return PALETTE[Math.abs(hash)%PALETTE.length];
+  }
+
   function normalizeRecord(record,index){
     if(!record||typeof record!=='object')return null;
     const name=String(firstValue(record,['name','NAME','Name','markname','markName','facilityName','設施名稱','名稱'])||'').trim();
@@ -44,7 +65,8 @@
     if(!Number.isFinite(lng)||!Number.isFinite(lat)||!inTwinCity(lng,lat))return null;
     const address=String(firstValue(record,['address','ADDRESS','addr','ADDR','fullAddress','門牌','地址'])||'').trim();
     const id=String(firstValue(record,['id','ID','objectid','OBJECTID','uid','UID'])||`${name}-${lng.toFixed(6)}-${lat.toFixed(6)}-${index}`);
-    return {type:'Feature',id,geometry:{type:'Point',coordinates:[lng,lat]},properties:{id,name:name||'未命名學校',short_name:shortName(name)||name,level,address,source:'NLSC COM_009'}};
+    const colorKey=schoolColorKey(name);
+    return {type:'Feature',id,geometry:{type:'Point',coordinates:[lng,lat]},properties:{id,name:name||'未命名學校',short_name:shortName(name)||name,level,address,source:'NLSC COM_009',color_key:colorKey,district_color:colorFor(colorKey)}};
   }
 
   function flattenResponse(payload){
@@ -69,9 +91,9 @@
   }
 
   function popupHtml(p){
-    const safe=s=>String(s||'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+    const safe=s=>String(s||'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[ch]));
     const level=p.level==='junior'?'國中':'國小';
-    return `<div style="font:13px/1.5 system-ui,-apple-system,sans-serif;min-width:180px"><strong>${safe(p.name)}</strong><br><span>${level} · 學校位置</span>${p.address?`<br><span style="color:#66717b">${safe(p.address)}</span>`:''}<br><span style="font-size:11px;color:#7a848d">位置資料：NLSC 文教設施</span></div>`;
+    return `<div style="font:13px/1.5 system-ui,-apple-system,sans-serif;min-width:180px"><strong>${safe(p.name)}</strong><br><span>${level} · 學校位置</span>${p.address?`<br><span style="color:#66717b">${safe(p.address)}</span>`:''}<br><span style="font-size:11px;color:#7a848d">校點色彩跟隨目前學區 · 位置資料：NLSC 文教設施</span></div>`;
   }
 
   class SchoolLocationLayer{
@@ -85,6 +107,7 @@
       this.lastKey='';
       this.features=[];
       this.boundMove=()=>this.schedule();
+      this.boundIdle=()=>this.syncDistrictColors();
     }
 
     init(){
@@ -96,9 +119,9 @@
         filter:['==',['get','level'],this.level],
         layout:{visibility:'none'},
         paint:{
-          'circle-radius':['interpolate',['linear'],['zoom'],13,4.5,15,6,17,7.5],
-          'circle-color':'#24303a','circle-opacity':.96,
-          'circle-stroke-color':'#ffffff','circle-stroke-width':2
+          'circle-radius':['interpolate',['linear'],['zoom'],13,4.5,15,6.25,17,7.75],
+          'circle-color':['coalesce',['get','district_color'],'#24303a'],'circle-opacity':.98,
+          'circle-stroke-color':'rgba(255,255,255,.98)','circle-stroke-width':['interpolate',['linear'],['zoom'],13,1.8,16,2.4]
         }
       },before);
       this.map.addLayer({
@@ -108,6 +131,7 @@
         paint:{'text-color':'#24303a','text-halo-color':'rgba(255,255,255,.96)','text-halo-width':1.3}
       });
       this.map.on('moveend',this.boundMove);
+      this.map.on('idle',this.boundIdle);
       this.map.on('click',POINT_ID,e=>{const f=e.features?.[0];if(!f)return;new maplibregl.Popup({maxWidth:'280px'}).setLngLat(f.geometry.coordinates.slice()).setHTML(popupHtml(f.properties||{})).addTo(this.map);});
       this.map.on('mouseenter',POINT_ID,()=>{this.map.getCanvas().style.cursor='pointer';});
       this.map.on('mouseleave',POINT_ID,()=>{this.map.getCanvas().style.cursor='';});
@@ -135,6 +159,28 @@
 
     queryRadius(){const z=this.map.getZoom();return z>=15?3200:z>=13?4500:5000;}
 
+    syncDistrictColors(){
+      if(!this.enabled||!this.features.length||!this.map.isStyleLoaded()||!this.map.getLayer(CATCHMENT_FILL_ID))return;
+      let changed=false;
+      for(const feature of this.features){
+        const coord=feature.geometry?.coordinates;
+        if(!coord)continue;
+        const screen=this.map.project(coord);
+        if(screen.x<0||screen.y<0||screen.x>this.map.getCanvas().clientWidth||screen.y>this.map.getCanvas().clientHeight)continue;
+        const hit=this.map.queryRenderedFeatures(screen,{layers:[CATCHMENT_FILL_ID]})?.[0];
+        const catchmentColor=hit?.properties?.color;
+        if(catchmentColor&&feature.properties.district_color!==catchmentColor){
+          feature.properties.district_color=catchmentColor;
+          feature.properties.catchment_school=hit?.properties?.school||'';
+          changed=true;
+        }
+      }
+      if(changed){
+        const source=this.map.getSource(SOURCE_ID);
+        if(source)source.setData({type:'FeatureCollection',features:this.features});
+      }
+    }
+
     async refresh(force=false){
       if(!this.enabled||!this.map.isStyleLoaded())return;
       const c=this.map.getCenter();
@@ -154,7 +200,10 @@
         const records=flattenResponse(payload);
         this.features=dedupe(records.map(normalizeRecord).filter(Boolean).filter(f=>f.properties.level===this.level));
         const source=this.map.getSource(SOURCE_ID);if(source)source.setData({type:'FeatureCollection',features:this.features});
-        this.emit('ready',`${this.level==='junior'?'國中':'國小'}校點 · ${this.features.length} 所`);
+        // District and point requests settle independently. A first pass now plus the idle listener lets
+        // markers adopt the exact rendered catchment color as soon as both layers are ready.
+        requestAnimationFrame(()=>this.syncDistrictColors());
+        this.emit('ready',`${this.level==='junior'?'國中':'國小'}校點 · ${this.features.length} 所 · 色彩跟隨學區`);
       }catch(e){
         if(e?.name==='AbortError')return;
         console.warn('School location layer failed',e);this.clear();this.emit('error',`校點暫時載入失敗 · ${e?.message||e}`);

@@ -20,7 +20,7 @@
   const TERRAIN_TILEJSON='https://tiles.mapterhorn.com/tilejson.json';
   const NLSC_PHOTO_TILE='https://wmts.nlsc.gov.tw/wmts/PHOTO2/default/GoogleMapsCompatible/{z}/{y}/{x}';
   const GSI_PHOTO_TILE='https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg';
-  const NASA_BLUE_MARBLE_TILE='https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_NextGeneration/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg';
+  const GSI_LANDSAT_TILE='https://cyberjapandata.gsi.go.jp/xyz/lndst/{z}/{x}/{y}.png';
   const SKY={
     'sky-color':'#9fd5f6',
     'horizon-color':'#eef7fb',
@@ -32,10 +32,9 @@
   };
 
   const IDS={
-    osmSource:'osm',imageryFallbackSource:'nasaBlueMarble',nlscPhotoSource:'nlscPhoto',gsiPhotoSource:'gsiPhoto',terrainSource:'terrain',overtureSource:'overture',
-    osmLayer:'osm',imageryFallbackLayer:'nasa-blue-marble',nlscPhotoLayer:'nlsc-photo',gsiPhotoLayer:'gsi-photo',hillshadeLayer:'hillshade',buildingLayer:'building',partsLayer:'building-part'
+    osmSource:'osm',imageryFallbackSource:'gsiLandsat',nlscPhotoSource:'nlscPhoto',gsiPhotoSource:'gsiPhoto',terrainSource:'terrain',overtureSource:'overture',
+    osmLayer:'osm',imageryFallbackLayer:'gsi-landsat',nlscPhotoLayer:'nlsc-photo',gsiPhotoLayer:'gsi-photo',hillshadeLayer:'hillshade',buildingLayer:'building',partsLayer:'building-part'
   };
-  // Compatibility aliases for pages that still refer to the original single-photo IDs.
   IDS.photoSource=IDS.nlscPhotoSource;
   IDS.photoLayer=IDS.nlscPhotoLayer;
 
@@ -46,8 +45,6 @@
     },
     {
       id:'jp-gsi',label:'日本 GSI 全国最新写真',sourceId:IDS.gsiPhotoSource,layerId:IDS.gsiPhotoLayer,
-      // Split boxes avoid classifying Korea/China as Japan while still covering the main islands,
-      // Ryukyu/Okinawa, and the southern Pacific islands used by the seamless photo service.
       regions:[[129,30,146.5,46.5],[122.5,23,132,31.5],[136,20,143,30]]
     }
   ];
@@ -79,9 +76,9 @@
   function coreSources(overtureUrl){
     return {
       [IDS.osmSource]:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,attribution:'© OpenStreetMap contributors',maxzoom:19},
-      // GSI's current seamless orthophoto is officially z14-18. A coarse NASA image sits underneath
-      // country imagery so high-pitch / low-effective-zoom areas stay photographic instead of exposing OSM.
-      [IDS.imageryFallbackSource]:{type:'raster',tiles:[NASA_BLUE_MARBLE_TILE],tileSize:256,attribution:'Imagery © NASA GIBS / ESDIS',maxzoom:8},
+      // GSI seamless orthophoto is z14-18. GSI's own nationwide Landsat mosaic (z2-13)
+      // is the correct low-zoom photographic companion and avoids the brown NASA mismatch.
+      [IDS.imageryFallbackSource]:{type:'raster',tiles:[GSI_LANDSAT_TILE],tileSize:256,attribution:'© 国土地理院 GSI / Landsat mosaic',minzoom:2,maxzoom:13,bounds:[122,20,154,47]},
       [IDS.nlscPhotoSource]:{type:'raster',tiles:[NLSC_PHOTO_TILE],tileSize:256,attribution:'© 內政部國土測繪中心 NLSC',maxzoom:19,bounds:[118,21.5,123,26.7]},
       [IDS.gsiPhotoSource]:{type:'raster',tiles:[GSI_PHOTO_TILE],tileSize:256,attribution:'© 国土地理院 GSI',minzoom:14,maxzoom:18,bounds:[122,20,154,47]},
       [IDS.terrainSource]:{type:'raster-dem',url:TERRAIN_TILEJSON},
@@ -94,9 +91,9 @@
     if(hasParts)building.filter=['!=',['get','has_parts'],true];
     const layers=[
       {id:IDS.osmLayer,type:'raster',source:IDS.osmSource},
-      {id:IDS.imageryFallbackLayer,type:'raster',source:IDS.imageryFallbackSource,layout:{visibility:'none'},paint:{'raster-resampling':'linear','raster-fade-duration':0}},
+      {id:IDS.imageryFallbackLayer,type:'raster',source:IDS.imageryFallbackSource,layout:{visibility:'none'},paint:{'raster-resampling':'linear','raster-fade-duration':300}},
       {id:IDS.nlscPhotoLayer,type:'raster',source:IDS.nlscPhotoSource,layout:{visibility:'none'}},
-      {id:IDS.gsiPhotoLayer,type:'raster',source:IDS.gsiPhotoSource,layout:{visibility:'none'}},
+      {id:IDS.gsiPhotoLayer,type:'raster',source:IDS.gsiPhotoSource,layout:{visibility:'none'},paint:{'raster-fade-duration':300}},
       {id:IDS.hillshadeLayer,type:'hillshade',source:IDS.terrainSource,paint:{'hillshade-shadow-color':'#665b4e','hillshade-highlight-color':'rgba(255,255,255,.55)','hillshade-exaggeration':.22}},
       building
     ];
@@ -127,10 +124,9 @@
     for(const provider of IMAGERY_PROVIDERS)vis(map,provider.layerId,false);
     const provider=photo?imageryProviderForMap(map):null;
     if(provider){
-      // Keep a photographic low-zoom safety net beneath the country provider. This matters especially
-      // for GSI, whose current seamless imagery starts at z14: pitched views can otherwise reveal OSM
-      // along the far edge where MapLibre chooses lower effective tile zooms.
-      vis(map,IDS.imageryFallbackLayer,true);
+      // Only Japan needs a low-zoom companion because GSI seamlessphoto starts at z14.
+      // Keep the fallback from the same GSI stack so zoom transitions stay photographic and coherent.
+      if(provider.id==='jp-gsi')vis(map,IDS.imageryFallbackLayer,true);
       vis(map,provider.layerId,true);
     }
     map.__taipeiMapsImageryProvider=provider;
@@ -170,7 +166,7 @@
   function setTerrain(map,on){map.setTerrain(on?{source:IDS.terrainSource,exaggeration:1}:null);}
 
   window.TaipeiMapsCore={
-    PLACES,IDS,SKY,OVERTURE_CANDIDATES,TERRAIN_TILEJSON,NLSC_PHOTO_TILE,GSI_PHOTO_TILE,NASA_BLUE_MARBLE_TILE,IMAGERY_PROVIDERS,
+    PLACES,IDS,SKY,OVERTURE_CANDIDATES,TERRAIN_TILEJSON,NLSC_PHOTO_TILE,GSI_PHOTO_TILE,GSI_LANDSAT_TILE,IMAGERY_PROVIDERS,
     preflightOverture,ensurePmtilesProtocol,createMap,applyCoreVisualState,setTerrain,vis,paint,
     imageryProviderForLngLat,imageryProviderForMap,syncImageryForViewport
   };

@@ -9,6 +9,7 @@
   <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
   <script src="https://unpkg.com/pmtiles@4.4.1/dist/pmtiles.js"></script>
   <script src="./shared-map-core.js"></script>
+  <script src="./taipei-school-districts-115.js"></script>
   <script src="./school-district-layer.js"></script>
   <script src="./school-location-layer.js"></script>
   <style>
@@ -46,7 +47,7 @@
 <script>
 (async()=>{
   const status=document.querySelector('#status'),districtStatus=document.querySelector('#districtStatus'),schoolPointStatus=document.querySelector('#schoolPointStatus');
-  if(!window.maplibregl||!window.pmtiles||!window.TaipeiMapsCore||!window.TaipeiMapsSchoolDistrictLayer||!window.TaipeiMapsSchoolLocationLayer){status.textContent='Map core / MapLibre / PMTiles / School layers 載入失敗';status.className='status error';return;}
+  if(!window.maplibregl||!window.pmtiles||!window.TaipeiMapsCore||!window.TaipeiMapsSchoolDistrictData115||!window.TaipeiMapsSchoolDistrictLayer||!window.TaipeiMapsSchoolLocationLayer){status.textContent='Map core / MapLibre / PMTiles / School data/layers 載入失敗';status.className='status error';return;}
   const core=window.TaipeiMapsCore;
 
   let overture;

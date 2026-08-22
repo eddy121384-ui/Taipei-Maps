@@ -10,6 +10,7 @@
   <script src="https://unpkg.com/pmtiles@4.4.1/dist/pmtiles.js"></script>
   <script src="./shared-map-core.js"></script>
   <script src="./school-district-layer.js"></script>
+  <script src="./school-location-layer.js"></script>
   <style>
     html,body,#map{width:100%;height:100%;margin:0}body{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow:hidden;background:#9fd5f6}#map{position:absolute;inset:0}
     .hud{position:absolute;z-index:5;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));padding:10px;border:1px solid rgba(255,255,255,.65);border-radius:16px;background:rgba(255,255,255,.90);box-shadow:0 8px 28px rgba(0,0,0,.18);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
@@ -36,14 +37,16 @@
     <button id="elementaryBtn" class="mode-active">國小</button>
     <button id="juniorBtn">國中</button>
     <button id="seniorBtn" class="disabled" disabled title="高中沒有里鄰式學區">高中</button>
+    <button id="schoolPointBtn" class="mode-active">🏫 校點 ON</button>
   </div>
   <div id="status" class="status">Loading shared map core…</div>
-  <div id="districtStatus" class="status muted">學區 OFF · 這版畫的是學區區塊，不是學校點位。先做大安/信義 exact pilot。</div>
+  <div id="districtStatus" class="status muted">學區 OFF · 這版畫的是學區區塊，不是以距離猜測。</div>
+  <div id="schoolPointStatus" class="status muted">校點待學區開啟 · 只顯示目前選擇的國小或國中</div>
 </section>
 <script>
 (async()=>{
-  const status=document.querySelector('#status'),districtStatus=document.querySelector('#districtStatus');
-  if(!window.maplibregl||!window.pmtiles||!window.TaipeiMapsCore||!window.TaipeiMapsSchoolDistrictLayer){status.textContent='Map core / MapLibre / PMTiles / School district layer 載入失敗';status.className='status error';return;}
+  const status=document.querySelector('#status'),districtStatus=document.querySelector('#districtStatus'),schoolPointStatus=document.querySelector('#schoolPointStatus');
+  if(!window.maplibregl||!window.pmtiles||!window.TaipeiMapsCore||!window.TaipeiMapsSchoolDistrictLayer||!window.TaipeiMapsSchoolLocationLayer){status.textContent='Map core / MapLibre / PMTiles / School layers 載入失敗';status.className='status error';return;}
   const core=window.TaipeiMapsCore;
 
   let overture;
@@ -53,10 +56,10 @@
   const map=core.createMap({container:'map',view:{...core.PLACES.daan,zoom:15.0,pitch:57},overtureUrl:overture.candidate.url,hasParts:overture.hasParts});
   map.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'top-right');
 
-  let photo=false,show3d=true,terrain=true,districtOn=false,districtLevel='elementary';
+  let photo=false,show3d=true,terrain=true,districtOn=false,districtLevel='elementary',schoolPointsOn=true;
   const mapBtn=document.querySelector('#mapBtn'),photoBtn=document.querySelector('#photoBtn'),threeBtn=document.querySelector('#threeBtn'),terrainBtn=document.querySelector('#terrainBtn');
-  const districtBtn=document.querySelector('#districtBtn'),elementaryBtn=document.querySelector('#elementaryBtn'),juniorBtn=document.querySelector('#juniorBtn');
-  let districtLayer=null;
+  const districtBtn=document.querySelector('#districtBtn'),elementaryBtn=document.querySelector('#elementaryBtn'),juniorBtn=document.querySelector('#juniorBtn'),schoolPointBtn=document.querySelector('#schoolPointBtn');
+  let districtLayer=null,schoolLocationLayer=null;
 
   function sync(){
     if(!map.isStyleLoaded())return;
@@ -69,6 +72,14 @@
   function syncDistrictButtons(){
     districtBtn.classList.toggle('active',districtOn);districtBtn.textContent=`🎓 學區 ${districtOn?'ON':'OFF'}`;
     elementaryBtn.classList.toggle('mode-active',districtLevel==='elementary');juniorBtn.classList.toggle('mode-active',districtLevel==='junior');
+    schoolPointBtn.classList.toggle('mode-active',schoolPointsOn);schoolPointBtn.textContent=`🏫 校點 ${schoolPointsOn?'ON':'OFF'}`;
+  }
+
+  function syncSchoolLocationLayer(){
+    if(!schoolLocationLayer)return;
+    schoolLocationLayer.setLevel(districtLevel);
+    schoolLocationLayer.setEnabled(districtOn&&schoolPointsOn);
+    if(!districtOn)schoolPointStatus.textContent='校點待學區開啟 · 只顯示目前選擇的國小或國中';
   }
 
   map.on('load',()=>{
@@ -77,15 +88,22 @@
       districtStatus.textContent=message;
       districtStatus.className=`status ${state==='error'?'error':state==='ready'?'good':'muted'}`;
     }});
-    districtLayer.init();syncDistrictButtons();
+    districtLayer.init();
+    schoolLocationLayer=new TaipeiMapsSchoolLocationLayer.SchoolLocationLayer(map,{onState:({state,message})=>{
+      schoolPointStatus.textContent=message;
+      schoolPointStatus.className=`status ${state==='error'?'error':state==='ready'?'good':'muted'}`;
+    }});
+    schoolLocationLayer.init();
+    syncDistrictButtons();
   });
   map.on('moveend',()=>{if(photo)sync();});
   map.on('taipei-maps-imagerychange',()=>{if(photo)sync();});
   map.on('error',e=>console.error('Map error',e?.error||e));
   mapBtn.onclick=()=>{photo=false;sync()};photoBtn.onclick=()=>{photo=true;sync()};threeBtn.onclick=()=>{show3d=!show3d;sync()};terrainBtn.onclick=()=>{terrain=!terrain;core.setTerrain(map,terrain);sync()};
-  districtBtn.onclick=()=>{if(!districtLayer)return;districtOn=!districtOn;districtLayer.setEnabled(districtOn);syncDistrictButtons();};
-  elementaryBtn.onclick=()=>{if(!districtLayer)return;districtLevel='elementary';districtLayer.setLevel('elementary');syncDistrictButtons();};
-  juniorBtn.onclick=()=>{if(!districtLayer)return;districtLevel='junior';districtLayer.setLevel('junior');syncDistrictButtons();};
+  districtBtn.onclick=()=>{if(!districtLayer)return;districtOn=!districtOn;districtLayer.setEnabled(districtOn);syncSchoolLocationLayer();syncDistrictButtons();};
+  elementaryBtn.onclick=()=>{if(!districtLayer)return;districtLevel='elementary';districtLayer.setLevel('elementary');syncSchoolLocationLayer();syncDistrictButtons();};
+  juniorBtn.onclick=()=>{if(!districtLayer)return;districtLevel='junior';districtLayer.setLevel('junior');syncSchoolLocationLayer();syncDistrictButtons();};
+  schoolPointBtn.onclick=()=>{schoolPointsOn=!schoolPointsOn;syncSchoolLocationLayer();syncDistrictButtons();};
   document.querySelectorAll('.place').forEach(btn=>btn.onclick=()=>map.easeTo({...core.PLACES[btn.dataset.place],duration:650}));
 })();
 </script>

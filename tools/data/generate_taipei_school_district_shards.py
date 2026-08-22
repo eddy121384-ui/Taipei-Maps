@@ -35,6 +35,7 @@ def normalize_extracted(level: str, table: dict[str, dict]) -> dict[str, dict]:
             field = "all" if "all" in target else "school"
             school = target[field]
             school = school.replace("、共同學區", "共同學區")
+            school = school.replace("金華、民族螢橋共同學區", "金華、民族、螢橋共同學區")
             if level == "elementary":
                 school = school.replace("國小共同學區", "共同學區")
             target[field] = school

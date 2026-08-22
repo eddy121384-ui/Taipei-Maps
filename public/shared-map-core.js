@@ -19,6 +19,7 @@
 
   const TERRAIN_TILEJSON='https://tiles.mapterhorn.com/tilejson.json';
   const NLSC_PHOTO_TILE='https://wmts.nlsc.gov.tw/wmts/PHOTO2/default/GoogleMapsCompatible/{z}/{y}/{x}';
+  const GSI_PHOTO_TILE='https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg';
   const SKY={
     'sky-color':'#9fd5f6',
     'horizon-color':'#eef7fb',
@@ -30,9 +31,25 @@
   };
 
   const IDS={
-    osmSource:'osm',photoSource:'nlscPhoto',terrainSource:'terrain',overtureSource:'overture',
-    osmLayer:'osm',photoLayer:'nlsc-photo',hillshadeLayer:'hillshade',buildingLayer:'building',partsLayer:'building-part'
+    osmSource:'osm',nlscPhotoSource:'nlscPhoto',gsiPhotoSource:'gsiPhoto',terrainSource:'terrain',overtureSource:'overture',
+    osmLayer:'osm',nlscPhotoLayer:'nlsc-photo',gsiPhotoLayer:'gsi-photo',hillshadeLayer:'hillshade',buildingLayer:'building',partsLayer:'building-part'
   };
+  // Compatibility aliases for pages that still refer to the original single-photo IDs.
+  IDS.photoSource=IDS.nlscPhotoSource;
+  IDS.photoLayer=IDS.nlscPhotoLayer;
+
+  const IMAGERY_PROVIDERS=[
+    {
+      id:'tw-nlsc',label:'台灣 NLSC PHOTO2',sourceId:IDS.nlscPhotoSource,layerId:IDS.nlscPhotoLayer,
+      regions:[[118,21.5,123,26.7]]
+    },
+    {
+      id:'jp-gsi',label:'日本 GSI 全国最新写真',sourceId:IDS.gsiPhotoSource,layerId:IDS.gsiPhotoLayer,
+      // Split boxes avoid classifying Korea/China as Japan while still covering the main islands,
+      // Ryukyu/Okinawa, and the southern Pacific islands used by the seamless photo service.
+      regions:[[129,30,146.5,46.5],[122.5,23,132,31.5],[136,20,143,30]]
+    }
+  ];
 
   const height=['case',['>', ['to-number',['get','height'],0],0],['to-number',['get','height'],0],['>', ['to-number',['get','num_floors'],0],0],['*',['to-number',['get','num_floors'],0],3.2],9.6];
   const base=['to-number',['get','min_height'],0];
@@ -61,7 +78,8 @@
   function coreSources(overtureUrl){
     return {
       [IDS.osmSource]:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,attribution:'© OpenStreetMap contributors',maxzoom:19},
-      [IDS.photoSource]:{type:'raster',tiles:[NLSC_PHOTO_TILE],tileSize:256,attribution:'© 內政部國土測繪中心 NLSC',maxzoom:19,bounds:[118,21.5,122.5,26.5]},
+      [IDS.nlscPhotoSource]:{type:'raster',tiles:[NLSC_PHOTO_TILE],tileSize:256,attribution:'© 內政部國土測繪中心 NLSC',maxzoom:19,bounds:[118,21.5,123,26.7]},
+      [IDS.gsiPhotoSource]:{type:'raster',tiles:[GSI_PHOTO_TILE],tileSize:256,attribution:'© 国土地理院 GSI',minzoom:14,maxzoom:18,bounds:[122,20,154,47]},
       [IDS.terrainSource]:{type:'raster-dem',url:TERRAIN_TILEJSON},
       [IDS.overtureSource]:{type:'vector',url:`pmtiles://${overtureUrl}`,attribution:'© Overture Maps Foundation / source contributors'}
     };
@@ -72,7 +90,8 @@
     if(hasParts)building.filter=['!=',['get','has_parts'],true];
     const layers=[
       {id:IDS.osmLayer,type:'raster',source:IDS.osmSource},
-      {id:IDS.photoLayer,type:'raster',source:IDS.photoSource,layout:{visibility:'none'}},
+      {id:IDS.nlscPhotoLayer,type:'raster',source:IDS.nlscPhotoSource,layout:{visibility:'none'}},
+      {id:IDS.gsiPhotoLayer,type:'raster',source:IDS.gsiPhotoSource,layout:{visibility:'none'}},
       {id:IDS.hillshadeLayer,type:'hillshade',source:IDS.terrainSource,paint:{'hillshade-shadow-color':'#665b4e','hillshade-highlight-color':'rgba(255,255,255,.55)','hillshade-exaggeration':.22}},
       building
     ];
@@ -80,29 +99,67 @@
     return layers;
   }
 
-  function createMap({container,view,overtureUrl,hasParts,extraSources={},extraLayers=[],maxZoom=18}){
-    ensurePmtilesProtocol();
-    return new maplibregl.Map({
-      container,...view,maxPitch:85,maxZoom,antialias:true,
-      style:{version:8,sky:SKY,sources:{...coreSources(overtureUrl),...extraSources},layers:[...coreLayers(hasParts),...extraLayers],terrain:{source:IDS.terrainSource,exaggeration:1}}
-    });
+  function pointInRegion(lng,lat,[west,south,east,north]){
+    return lng>=west&&lng<=east&&lat>=south&&lat<=north;
+  }
+
+  function imageryProviderForLngLat(lngLat){
+    const lng=Array.isArray(lngLat)?lngLat[0]:lngLat.lng;
+    const lat=Array.isArray(lngLat)?lngLat[1]:lngLat.lat;
+    return IMAGERY_PROVIDERS.find(provider=>provider.regions.some(region=>pointInRegion(lng,lat,region)))||null;
+  }
+
+  function imageryProviderForMap(map){
+    return imageryProviderForLngLat(map.getCenter());
   }
 
   const vis=(map,id,on)=>map.getLayer(id)&&map.setLayoutProperty(id,'visibility',on?'visible':'none');
   const paint=(map,id,p,v)=>map.getLayer(id)&&map.setPaintProperty(id,p,v);
 
+  function syncImageryForViewport(map,photo){
+    if(!map.isStyleLoaded())return null;
+    for(const provider of IMAGERY_PROVIDERS)vis(map,provider.layerId,false);
+    const provider=photo?imageryProviderForMap(map):null;
+    if(provider)vis(map,provider.layerId,true);
+    map.__taipeiMapsImageryProvider=provider;
+    return provider;
+  }
+
+  function createMap({container,view,overtureUrl,hasParts,extraSources={},extraLayers=[],maxZoom=18}){
+    ensurePmtilesProtocol();
+    const map=new maplibregl.Map({
+      container,...view,maxPitch:85,maxZoom,antialias:true,
+      style:{version:8,sky:SKY,sources:{...coreSources(overtureUrl),...extraSources},layers:[...coreLayers(hasParts),...extraLayers],terrain:{source:IDS.terrainSource,exaggeration:1}}
+    });
+    map.on('moveend',()=>{
+      const state=map.__taipeiMapsVisualState;
+      if(!state?.photo||!map.isStyleLoaded())return;
+      const previous=map.__taipeiMapsImageryProvider?.id||null;
+      const provider=syncImageryForViewport(map,true);
+      const current=provider?.id||null;
+      if(current!==previous)map.fire('taipei-maps-imagerychange',{provider});
+    });
+    return map;
+  }
+
   function applyCoreVisualState(map,{photo=false,show3d=true,terrain=true,hasParts=false}){
-    if(!map.isStyleLoaded())return;
-    vis(map,IDS.photoLayer,photo);
+    if(!map.isStyleLoaded())return null;
+    map.__taipeiMapsVisualState={photo,show3d,terrain,hasParts};
+    const provider=syncImageryForViewport(map,photo);
     vis(map,IDS.buildingLayer,show3d);
     if(hasParts)vis(map,IDS.partsLayer,show3d);
     vis(map,IDS.hillshadeLayer,terrain);
     paint(map,IDS.buildingLayer,'fill-extrusion-opacity',photo?.50:.88);
     if(hasParts)paint(map,IDS.partsLayer,'fill-extrusion-opacity',photo?.55:.92);
     paint(map,IDS.hillshadeLayer,'hillshade-exaggeration',photo?.10:.22);
+    return provider;
   }
 
   function setTerrain(map,on){map.setTerrain(on?{source:IDS.terrainSource,exaggeration:1}:null);}
 
-  window.TaipeiMapsCore={PLACES,IDS,SKY,OVERTURE_CANDIDATES,TERRAIN_TILEJSON,NLSC_PHOTO_TILE,preflightOverture,ensurePmtilesProtocol,createMap,applyCoreVisualState,setTerrain,vis,paint};
+  window.TaipeiMapsCore={
+    PLACES,IDS,SKY,OVERTURE_CANDIDATES,TERRAIN_TILEJSON,NLSC_PHOTO_TILE,GSI_PHOTO_TILE,IMAGERY_PROVIDERS,
+    preflightOverture,ensurePmtilesProtocol,createMap,applyCoreVisualState,setTerrain,vis,paint,
+    imageryProviderForLngLat,imageryProviderForMap,syncImageryForViewport
+  };
 })();

@@ -12,6 +12,43 @@ ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_BOOTSTRAP = ROOT / "public" / "taipei-school-districts-115.js"
 DEFAULT_SHARD_DIR = ROOT / "public" / "school-districts-115"
 
+VILLAGE_NAME_FIXES = {
+    ("信義", "三犛"): "三犁",
+    ("中山", "恒安"): "恆安",
+    ("萬華", "柳郷"): "柳鄉",
+    ("萬華", "糖蔀"): "糖廍",
+    ("內湖", "葫州"): "葫洲",
+}
+
+
+def normalize_extracted(level: str, table: dict[str, dict]) -> dict[str, dict]:
+    out = {}
+    for key, entry in table.items():
+        district, village = key.split("|", 1)
+        village = VILLAGE_NAME_FIXES.get((district, village), village)
+        fixed_key = f"{district}|{village}"
+        if fixed_key in out:
+            raise RuntimeError(f"{level}: normalization collision at {fixed_key}")
+        entry = json.loads(json.dumps(entry, ensure_ascii=False))
+        targets = [entry] if "all" in entry else entry.get("rules", [])
+        for target in targets:
+            field = "all" if "all" in target else "school"
+            school = target[field]
+            school = school.replace("、共同學區", "共同學區")
+            if level == "elementary":
+                school = school.replace("國小共同學區", "共同學區")
+            target[field] = school
+        out[fixed_key] = entry
+    return out
+
+
+def assert_same_villages(elementary: dict[str, dict], junior: dict[str, dict]) -> None:
+    for district in builder.DISTRICTS:
+        e = {k.split("|", 1)[1] for k in elementary if k.startswith(f"{district}|")}
+        j = {k.split("|", 1)[1] for k in junior if k.startswith(f"{district}|")}
+        if e != j:
+            raise RuntimeError(f"{district}: elementary/junior village-name mismatch: E-only={sorted(e-j)}, J-only={sorted(j-e)}")
+
 
 def js_json(value) -> str:
     return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
@@ -63,8 +100,9 @@ def main() -> int:
             raise RuntimeError(f"{level}: checksum mismatch for {path}: {actual} != {expected}")
         paths[level] = path
 
-    elementary = builder.extract_pdf(paths["elementary"], "elementary")
-    junior = builder.extract_pdf(paths["junior"], "junior")
+    elementary = normalize_extracted("elementary", builder.extract_pdf(paths["elementary"], "elementary"))
+    junior = normalize_extracted("junior", builder.extract_pdf(paths["junior"], "junior"))
+    assert_same_villages(elementary, junior)
     dataset = builder.build_dataset(elementary, junior)
     write_outputs(dataset, args.bootstrap_out, args.shard_dir)
     print(json.dumps(dataset["generated"]["validation"], ensure_ascii=False, indent=2))

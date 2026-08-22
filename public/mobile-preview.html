@@ -9,11 +9,11 @@
   <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
   <script src="https://unpkg.com/pmtiles@4.4.1/dist/pmtiles.js"></script>
   <script src="./shared-map-core.js"></script>
+  <script src="./school-layer.js"></script>
   <style>
     html,body,#map{width:100%;height:100%;margin:0}body{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow:hidden;background:#9fd5f6}#map{position:absolute;inset:0}
     .hud{position:absolute;z-index:5;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));padding:10px;border:1px solid rgba(255,255,255,.65);border-radius:16px;background:rgba(255,255,255,.90);box-shadow:0 8px 28px rgba(0,0,0,.18);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
-    .title{font-size:13px;font-weight:800;margin-bottom:8px;color:#24303a}.controls{display:flex;gap:7px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}.controls::-webkit-scrollbar{display:none}button{flex:0 0 auto;border:1px solid #c7d0d8;border-radius:12px;padding:9px 11px;background:#fff;font-size:13px;font-weight:800;color:#26323c}.active{background:#26323c;color:#fff;border-color:#26323c}.status{margin-top:8px;font-size:11px;line-height:1.35;color:#5e6872}.good{color:#137333;font-weight:700}.error{color:#b42318;font-weight:700}
-    .maplibregl-ctrl-top-right{top:env(safe-area-inset-top)}
+    .title{font-size:13px;font-weight:800;margin-bottom:8px;color:#24303a}.controls{display:flex;gap:7px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}.controls+.controls{margin-top:7px}.controls::-webkit-scrollbar{display:none}button{flex:0 0 auto;border:1px solid #c7d0d8;border-radius:12px;padding:9px 11px;background:#fff;font-size:13px;font-weight:800;color:#26323c;min-height:42px}.active{background:#26323c;color:#fff;border-color:#26323c}.level-active{background:#edf3f7;border-color:#96a7b4;color:#26323c}.status{margin-top:8px;font-size:11px;line-height:1.35;color:#5e6872}.status+.status{margin-top:3px}.good{color:#137333;font-weight:700}.error{color:#b42318;font-weight:700}.muted{color:#68727d}.maplibregl-ctrl-top-right{top:env(safe-area-inset-top)}
   </style>
 </head>
 <body>
@@ -27,15 +27,23 @@
     <button id="terrainBtn" class="active">⛰ 地形</button>
     <button class="place" data-place="daan">大安</button>
     <button class="place" data-place="xinyi">信義</button>
+    <button class="place" data-place="banqiao">板橋</button>
     <button class="place" data-place="yangmingshan">陽明山</button>
     <button class="place" data-place="tokyo">東京</button>
   </div>
+  <div class="controls">
+    <button id="schoolBtn">🎓 就學</button>
+    <button id="elementaryBtn" class="level-active">🟢 國小</button>
+    <button id="juniorBtn" class="level-active">🔵 國中</button>
+    <button id="seniorBtn" class="level-active">🟠 高中職</button>
+  </div>
   <div id="status" class="status">Loading shared map core…</div>
+  <div id="schoolStatus" class="status muted">就學圖層 OFF · v0.1 先顯示學校點位；正式國小／國中學區邊界下一階段加入</div>
 </section>
 <script>
 (async()=>{
-  const status=document.querySelector('#status');
-  if(!window.maplibregl||!window.pmtiles||!window.TaipeiMapsCore){status.textContent='Map core / MapLibre / PMTiles 載入失敗';status.className='status error';return;}
+  const status=document.querySelector('#status'),schoolStatus=document.querySelector('#schoolStatus');
+  if(!window.maplibregl||!window.pmtiles||!window.TaipeiMapsCore||!window.TaipeiMapsSchoolLayer){status.textContent='Map core / MapLibre / PMTiles / School layer 載入失敗';status.className='status error';return;}
   const core=window.TaipeiMapsCore;
 
   let overture;
@@ -45,8 +53,13 @@
   const map=core.createMap({container:'map',view:{...core.PLACES.daan,zoom:15.0,pitch:57},overtureUrl:overture.candidate.url,hasParts:overture.hasParts});
   map.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'top-right');
 
-  let photo=false,show3d=true,terrain=true;
+  let photo=false,show3d=true,terrain=true,schoolOn=false;
+  const levels={elementary:true,junior:true,senior:true};
   const mapBtn=document.querySelector('#mapBtn'),photoBtn=document.querySelector('#photoBtn'),threeBtn=document.querySelector('#threeBtn'),terrainBtn=document.querySelector('#terrainBtn');
+  const schoolBtn=document.querySelector('#schoolBtn'),elementaryBtn=document.querySelector('#elementaryBtn'),juniorBtn=document.querySelector('#juniorBtn'),seniorBtn=document.querySelector('#seniorBtn');
+  const levelButtons={elementary:elementaryBtn,junior:juniorBtn,senior:seniorBtn};
+  let schoolLayer=null;
+
   function sync(){
     if(!map.isStyleLoaded())return;
     const provider=core.applyCoreVisualState(map,{photo,show3d,terrain,hasParts:overture.hasParts});
@@ -54,7 +67,22 @@
     const basemap=photo?(provider?.label||'官方航照無覆蓋 · OSM fallback'):'OSM 地圖';
     status.textContent=`READY · ${basemap} · ${show3d?'3D':'2D'} · ${terrain?'地形 ON':'地形 OFF'} · Overture ${overture.candidate.release}`;status.className='status good';
   }
-  map.on('load',sync);
+
+  function syncSchoolButtons(){
+    schoolBtn.classList.toggle('active',schoolOn);
+    schoolBtn.textContent=`🎓 就學 ${schoolOn?'ON':'OFF'}`;
+    for(const [level,btn] of Object.entries(levelButtons))btn.classList.toggle('level-active',levels[level]);
+  }
+
+  map.on('load',()=>{
+    sync();
+    schoolLayer=new TaipeiMapsSchoolLayer.SchoolLayer(map,{onState:({state,message})=>{
+      schoolStatus.textContent=message;
+      schoolStatus.className=`status ${state==='error'?'error':state==='ready'?'good':'muted'}`;
+    }});
+    schoolLayer.init();
+    syncSchoolButtons();
+  });
   map.on('moveend',()=>{if(photo)sync();});
   map.on('taipei-maps-imagerychange',()=>{if(photo)sync();});
   map.on('error',e=>console.error('Map error',e?.error||e));
@@ -62,6 +90,8 @@
   photoBtn.onclick=()=>{photo=true;sync()};
   threeBtn.onclick=()=>{show3d=!show3d;sync()};
   terrainBtn.onclick=()=>{terrain=!terrain;core.setTerrain(map,terrain);sync()};
+  schoolBtn.onclick=()=>{if(!schoolLayer)return;schoolOn=!schoolOn;schoolLayer.setEnabled(schoolOn);syncSchoolButtons();};
+  for(const [level,btn] of Object.entries(levelButtons))btn.onclick=()=>{if(!schoolLayer)return;levels[level]=!levels[level];schoolLayer.setLevel(level,levels[level]);syncSchoolButtons();};
   document.querySelectorAll('.place').forEach(btn=>btn.onclick=()=>map.easeTo({...core.PLACES[btn.dataset.place],duration:650}));
 })();
 </script>

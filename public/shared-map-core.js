@@ -68,11 +68,13 @@
   }
 
   function coreLayers(hasParts){
+    const building={id:IDS.buildingLayer,type:'fill-extrusion',source:IDS.overtureSource,'source-layer':'building',minzoom:14,paint:{'fill-extrusion-base':base,'fill-extrusion-height':height,'fill-extrusion-color':'#e2e7eb','fill-extrusion-opacity':.88,'fill-extrusion-vertical-gradient':true}};
+    if(hasParts)building.filter=['!=',['get','has_parts'],true];
     const layers=[
       {id:IDS.osmLayer,type:'raster',source:IDS.osmSource},
       {id:IDS.photoLayer,type:'raster',source:IDS.photoSource,layout:{visibility:'none'}},
       {id:IDS.hillshadeLayer,type:'hillshade',source:IDS.terrainSource,paint:{'hillshade-shadow-color':'#665b4e','hillshade-highlight-color':'rgba(255,255,255,.55)','hillshade-exaggeration':.22}},
-      {id:IDS.buildingLayer,type:'fill-extrusion',source:IDS.overtureSource,'source-layer':'building',minzoom:14,filter:hasParts?['!=',['get','has_parts'],true]:undefined,paint:{'fill-extrusion-base':base,'fill-extrusion-height':height,'fill-extrusion-color':'#e2e7eb','fill-extrusion-opacity':.88,'fill-extrusion-vertical-gradient':true}}
+      building
     ];
     if(hasParts)layers.push({id:IDS.partsLayer,type:'fill-extrusion',source:IDS.overtureSource,'source-layer':'building_part',minzoom:14,paint:{'fill-extrusion-base':base,'fill-extrusion-height':height,'fill-extrusion-color':'#cbd7df','fill-extrusion-opacity':.92,'fill-extrusion-vertical-gradient':true}});
     return layers;

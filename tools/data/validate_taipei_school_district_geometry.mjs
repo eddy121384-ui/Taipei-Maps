@@ -157,6 +157,7 @@ for(const merge of reconciliation.merges||[]){
 }
 
 let splitVillageChecks=0,neighborChecks=0,reconciledAssignmentRefs=0;
+const missingAssignmentGeometry=[];
 for(const level of ['elementary','junior']){
   for(const [key,entry] of Object.entries(dataset.levels[level]||{})){
     if(!Array.isArray(entry?.rules))continue;
@@ -175,8 +176,10 @@ for(const level of ['elementary','junior']){
           reconciledAssignmentRefs++;
           continue;
         }
-        const records=(details.get(key)||[]).sort((a,b)=>(a.neighbors[0]??0)-(b.neighbors[0]??0));
-        throw new Error(`${level} ${key} assignment references neighbor ${neighbor}, absent from official geometry and no audited reconciliation exists; available=${[...available].sort((a,b)=>a-b).join(',')}; records=${JSON.stringify(records)}`);
+        missingAssignmentGeometry.push({
+          level,key,neighbor,school:rule.school,
+          available:[...available].sort((a,b)=>a-b),
+        });
       }
     }
   }
@@ -190,8 +193,18 @@ for(const [key,neighbors] of geometry){
     }
   }
 }
-if(unassignedGeometry.length){
-  throw new Error(`Current official geometry has ${unassignedGeometry.length} neighbor assignments with no school mapping: ${JSON.stringify(unassignedGeometry.slice(0,100))}`);
+
+if(missingAssignmentGeometry.length||unassignedGeometry.length){
+  const report={
+    geometryJoin:'FAIL',
+    missingAssignmentGeometryCount:missingAssignmentGeometry.length,
+    missingAssignmentGeometry,
+    unassignedGeometryCount:unassignedGeometry.length,
+    unassignedGeometry,
+    auditedHistoricalMerges:(reconciliation.merges||[]).length,
+    reconciledAssignmentRefs,
+  };
+  throw new Error(`School assignment / current geometry discrepancies remain:\n${JSON.stringify(report,null,2)}`);
 }
 
 console.log(JSON.stringify({
@@ -208,5 +221,6 @@ console.log(JSON.stringify({
   auditedHistoricalMerges:(reconciliation.merges||[]).length,
   reconciliationLevelChecks,
   reconciledAssignmentRefs,
+  missingAssignmentGeometryCount:0,
   unassignedGeometryCount:0,
 },null,2));

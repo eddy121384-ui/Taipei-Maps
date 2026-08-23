@@ -37,6 +37,12 @@ for(const empty of reconciliation.emptyNeighbors||[]){
   if(mergeMap.has(key))throw new Error(`Neighbor ${key} cannot be both merged and empty`);
   emptyNeighborMap.set(key,empty);
 }
+const nonCurrentAssignmentMap=new Map();
+for(const item of reconciliation.nonCurrentAssignmentNeighbors||[]){
+  const key=`${item.level}|${item.district}|${item.village}|${item.neighbor}`;
+  if(nonCurrentAssignmentMap.has(key))throw new Error(`Duplicate non-current assignment reconciliation ${key}`);
+  nonCurrentAssignmentMap.set(key,item);
+}
 
 const endpoint=dataset.sources?.geometry?.endpoint;
 if(!endpoint)throw new Error('Official neighbor geometry endpoint missing from dataset metadata');
@@ -172,8 +178,18 @@ for(const empty of reconciliation.emptyNeighbors||[]){
     throw new Error(`Empty-neighbor reconciliation ${key} neighbor ${empty.neighbor} is no longer referenced by either assignment level`);
   }
 }
+for(const item of reconciliation.nonCurrentAssignmentNeighbors||[]){
+  const key=`${item.district}|${item.village}`;
+  const available=geometry.get(key)||new Set();
+  if(available.has(item.neighbor)){
+    throw new Error(`Stale non-current assignment reconciliation ${item.level} ${key} neighbor ${item.neighbor} now has geometry; re-audit before drawing it`);
+  }
+  if(!schoolFor(item.level,key,item.neighbor)){
+    throw new Error(`Non-current assignment reconciliation ${item.level} ${key} neighbor ${item.neighbor} is no longer referenced by the assignment table`);
+  }
+}
 
-let splitVillageChecks=0,neighborChecks=0,reconciledAssignmentRefs=0,emptyAssignmentRefs=0;
+let splitVillageChecks=0,neighborChecks=0,reconciledAssignmentRefs=0,emptyAssignmentRefs=0,nonCurrentAssignmentRefs=0;
 const missingAssignmentGeometry=[];
 for(const level of ['elementary','junior']){
   for(const [key,entry] of Object.entries(dataset.levels[level]||{})){
@@ -197,6 +213,10 @@ for(const level of ['elementary','junior']){
           emptyAssignmentRefs++;
           continue;
         }
+        if(nonCurrentAssignmentMap.has(`${level}|${key}|${neighbor}`)){
+          nonCurrentAssignmentRefs++;
+          continue;
+        }
         missingAssignmentGeometry.push({
           level,key,neighbor,school:rule.school,
           available:[...available].sort((a,b)=>a-b),
@@ -210,7 +230,10 @@ const unassignedGeometry=[];
 for(const [key,neighbors] of geometry){
   for(const level of ['elementary','junior']){
     for(const neighbor of neighbors){
-      if(!schoolFor(level,key,neighbor))unassignedGeometry.push({level,key,neighbor});
+      if(!schoolFor(level,key,neighbor)){
+        const records=(details.get(key)||[]).filter(record=>record.neighbors.includes(neighbor));
+        unassignedGeometry.push({level,key,neighbor,records});
+      }
     }
   }
 }
@@ -224,8 +247,10 @@ if(missingAssignmentGeometry.length||unassignedGeometry.length){
     unassignedGeometry,
     auditedHistoricalMerges:(reconciliation.merges||[]).length,
     auditedEmptyNeighbors:(reconciliation.emptyNeighbors||[]).length,
+    auditedNonCurrentAssignmentNeighbors:(reconciliation.nonCurrentAssignmentNeighbors||[]).length,
     reconciledAssignmentRefs,
     emptyAssignmentRefs,
+    nonCurrentAssignmentRefs,
   };
   throw new Error(`School assignment / current geometry discrepancies remain:\n${JSON.stringify(report,null,2)}`);
 }
@@ -243,9 +268,11 @@ console.log(JSON.stringify({
   assignedNeighborChecks:neighborChecks,
   auditedHistoricalMerges:(reconciliation.merges||[]).length,
   auditedEmptyNeighbors:(reconciliation.emptyNeighbors||[]).length,
+  auditedNonCurrentAssignmentNeighbors:(reconciliation.nonCurrentAssignmentNeighbors||[]).length,
   reconciliationLevelChecks,
   reconciledAssignmentRefs,
   emptyAssignmentRefs,
+  nonCurrentAssignmentRefs,
   missingAssignmentGeometryCount:0,
   unassignedGeometryCount:0,
 },null,2));

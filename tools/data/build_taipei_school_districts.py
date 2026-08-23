@@ -5,9 +5,9 @@ Sources are official Taipei City PDFs. This parser is deliberately fail-closed:
 it verifies source hashes/page counts, district/village counts, neighbor syntax, and
 rule overlap before writing the runtime dataset.
 
-The elementary Beitou table uses vertically merged PDF cells that pdfplumber does
-not associate reliably with village names. Its 42 Taipei-village assignments are
-therefore transcribed as an explicit, source-audited parser exception from page 14.
+Known PDF table-extraction defects are handled only as explicit, source-audited
+exceptions. Beitou elementary uses vertically merged village cells, while Shilin
+Tianhe has one neighbor rule continued across a PDF page break.
 """
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ from pathlib import Path
 
 import pdfplumber
 
-PARSER_VERSION = "1.0.0"
+PARSER_VERSION = "1.0.1"
 ACADEMIC_YEAR = 115
 ROOT = Path(__file__).resolve().parents[2] if "tools/data" in str(Path(__file__).as_posix()) else Path.cwd()
 DEFAULT_OUT = ROOT / "public" / "taipei-school-districts-115.js"
@@ -67,6 +67,15 @@ DISTRICTS = list(DISTRICT_VILLAGE_COUNTS)
 # generic fill-down heuristic.
 JUNIOR_MERGED_SCHOOL_EXCEPTIONS = {
     ("中山", "晴光"): "新興、北安共同學區",
+}
+
+# Official elementary PDF: 士林區天和里 is split across the page break. The first
+# page contains neighbors 1-17 and 18; the next page begins with neighbors 19-21,
+# but pdfplumber loses the village association for that continuation row.
+# Keep the exact missing continuation explicit; overlap validation will fail loud
+# if a future parser/version starts extracting the row by itself.
+ELEMENTARY_PAGE_BREAK_RULE_EXCEPTIONS = {
+    ("士林", "天和"): {"spec": "19-21", "school": "三玉、天母共同學區"},
 }
 
 # Official elementary PDF page 14. Beitou village cells are vertically centered
@@ -271,6 +280,12 @@ def extract_pdf(path: Path, level: str) -> dict[str, dict]:
         out[key] = collapse_rows(rows)
     if level == "elementary":
         out.update({f"北投|{village}": entry for village, entry in BEITOU_ELEMENTARY.items()})
+        for (district, village), rule in ELEMENTARY_PAGE_BREAK_RULE_EXCEPTIONS.items():
+            key = f"{district}|{village}"
+            entry = out.get(key)
+            if not entry or not isinstance(entry.get("rules"), list):
+                raise RuntimeError(f"elementary page-break exception target changed: {key}")
+            entry["rules"].append(dict(rule))
     return out
 
 
@@ -376,6 +391,7 @@ def build_dataset(elementary: dict, junior: dict) -> dict:
             "validation": summary,
             "exceptions": {
                 "elementaryBeitou": "Official PDF page 14 uses vertically merged village cells; 42 Taipei villages are source-audited in parser exception table.",
+                "elementaryShilinTianhePageBreak": "Official elementary PDF continues 士林區天和里 neighbors 19-21 on the next page; pdfplumber loses the village association, so the continuation is explicit.",
                 "juniorZhongshanQingguang": "Official PDF merges 晴光里 school cell with 新喜里; explicit fill is 新興、北安共同學區.",
             },
         },

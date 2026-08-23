@@ -37,13 +37,16 @@
     return out;
   }
 
-  // Runtime lookup tables are compiled from the canonical dataset so the data module stays plain,
-  // serializable assignment data and the renderer owns neighbor-spec parsing/runtime Sets.
   const ELEMENTARY=compileTable(DATASET.levels.elementary);
   const JUNIOR=compileTable(DATASET.levels.junior);
 
   function cleanDistrict(s){return String(s||'').trim().replace(/市$/,'').replace(/區$/,'');}
   function cleanVillage(s){return String(s||'').trim().replace(/里$/,'');}
+  function canonicalVillage(properties){
+    const sdf=String(properties?.SDFNAME||'').trim();
+    const fromSdf=sdf.match(/^(.+?)里\s*\d/);
+    return cleanVillage(fromSdf?.[1]||properties?.LIE_NAME);
+  }
   function neighborNos(value){return [...new Set((String(value??'').match(/\d+/g)||[]).map(Number).filter(Number.isFinite))];}
 
   function assignment(level,district,village,neighbor){
@@ -154,7 +157,7 @@
       this.abortController?.abort();this.abortController=new AbortController();
       this.emit('loading',`${this.level==='junior'?'國中':'國小'}學區載入中…`);
       const params=new URLSearchParams({
-        where:COVERAGE_WHERE,outFields:'SECT_NAME,LIE_NAME,LI_NO',returnGeometry:'true',
+        where:COVERAGE_WHERE,outFields:'f_id,SECT_NAME,LIE_NAME,LIE_CODE,LI_NO,SDFNAME',returnGeometry:'true',
         geometry:`${b.getWest()},${b.getSouth()},${b.getEast()},${b.getNorth()}`,geometryType:'esriGeometryEnvelope',inSR:'4326',outSR:'4326',
         spatialRel:'esriSpatialRelIntersects',resultRecordCount:'1000',f:'geojson'
       });
@@ -165,7 +168,7 @@
         const features=[];let unmatched=0,multiNeighbor=0;
         for(const f of fc.features||[]){
           const p=f.properties||{};
-          const district=cleanDistrict(p.SECT_NAME),village=cleanVillage(p.LIE_NAME),neighbors=neighborNos(p.LI_NO);
+          const district=cleanDistrict(p.SECT_NAME),village=canonicalVillage(p),neighbors=neighborNos(p.LI_NO);
           if(!COVERAGE_DISTRICTS.has(district)||!neighbors.length)continue;
           const school=assignmentForNeighbors(this.level,district,village,neighbors);
           if(!school){unmatched++;continue;}
@@ -183,5 +186,5 @@
     clear(){const src=this.map.getSource(SOURCE_ID);if(src)src.setData(EMPTY);}
   }
 
-  window.TaipeiMapsSchoolDistrictLayer={SchoolDistrictLayer,assignment,assignmentForNeighbors,neighborNos,ELEMENTARY,JUNIOR,DATASET};
+  window.TaipeiMapsSchoolDistrictLayer={SchoolDistrictLayer,assignment,assignmentForNeighbors,canonicalVillage,neighborNos,ELEMENTARY,JUNIOR,DATASET};
 })();

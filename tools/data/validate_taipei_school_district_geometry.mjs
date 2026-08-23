@@ -40,7 +40,7 @@ function expandSpec(spec){
 async function fetchPage(offset){
   const params=new URLSearchParams({
     where:`SECT_NAME IN (${districts.map(d=>`'${d}區'`).join(',')})`,
-    outFields:'f_id,SECT_NAME,LIE_NAME,LI_NO',
+    outFields:'f_id,SECT_NAME,SECT_CODE,LIE_NAME,LIE_CODE,LI_NO,SDFKEY,SDFNAME',
     orderByFields:'f_id ASC',
     returnGeometry:'false',
     resultOffset:String(offset),
@@ -60,6 +60,7 @@ async function fetchPage(offset){
 }
 
 const geometry=new Map();
+const details=new Map();
 const objectIds=new Set();
 let offset=0,pages=0,featureCount=0;
 while(true){
@@ -77,7 +78,15 @@ while(true){
     if(!districts.includes(district)||!village||neighbor==null)continue;
     const key=`${district}|${village}`;
     if(!geometry.has(key))geometry.set(key,new Set());
+    if(!details.has(key))details.set(key,[]);
     geometry.get(key).add(neighbor);
+    details.get(key).push({
+      f_id:p.f_id??null,
+      LI_NO:p.LI_NO??null,
+      LIE_CODE:p.LIE_CODE??null,
+      SDFKEY:p.SDFKEY??null,
+      SDFNAME:p.SDFNAME??null,
+    });
     featureCount++;
   }
   offset+=features.length;
@@ -103,7 +112,8 @@ for(const level of ['elementary','junior']){
       for(const neighbor of expandSpec(rule.spec)){
         neighborChecks++;
         if(!available.has(neighbor)){
-          throw new Error(`${level} ${key} assignment references neighbor ${neighbor}, absent from official geometry; available=${[...available].sort((a,b)=>a-b).join(',')}`);
+          const records=(details.get(key)||[]).sort((a,b)=>(neighborNo(a.LI_NO)??0)-(neighborNo(b.LI_NO)??0));
+          throw new Error(`${level} ${key} assignment references neighbor ${neighbor}, absent from official geometry; available=${[...available].sort((a,b)=>a-b).join(',')}; records=${JSON.stringify(records)}`);
         }
       }
     }

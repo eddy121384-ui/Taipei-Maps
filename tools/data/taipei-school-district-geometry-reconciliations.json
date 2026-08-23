@@ -1,6 +1,6 @@
 {
   "academicYear": 115,
-  "description": "Source-audited reconciliations between school-assignment neighbor numbers and the current Taipei Civil Affairs neighbor geometry. Entries may be historical administrative merges, documented empty neighbor numbers, or stale education-table references to non-current neighbor numbers. None creates inferred polygons.",
+  "description": "Source-audited reconciliations between school-assignment neighbor numbers and the current Taipei Civil Affairs neighbor geometry. Entries may be historical administrative merges, documented empty neighbor numbers, stale education-table references, or exact stale geometry features. None creates inferred polygons.",
   "sources": [
     {
       "authority": "臺北市南港區公所",
@@ -37,6 +37,18 @@
       "title": "臺北市士林區各里戶數及人口數統計資訊（現行）",
       "url": "https://www-ws.gov.taipei/001/Upload/427/relfile/21145/8385319/7b086447-fb6a-4ab9-bc02-a47dd3d36ec2.pdf",
       "evidence": "三玉里現有門牌與戶籍登記均為21鄰；民政鄰界亦只有1至21鄰。"
+    },
+    {
+      "authority": "臺北市信義區公所",
+      "title": "臺北市信義區114年8月各里人口數、戶數統計表",
+      "url": "https://www-ws.gov.taipei/Download.ashx?icon=.pdf&n=6Ie65YyX5biC5L%2Bh576p5Y2AMTE05bm0OOaciOWQhOmHjOS6uuWPo%2BaVuOOAgeaItuaVuOe1seioiOihqC5wZGY%3D&u=LzAwMS9VcGxvYWQvNDE4L3JlbGZpbGUvMjA3MjkvOTQ2ODEyOC9kNTMyNGQ0Yi0zMjFkLTRmMTEtODA1Ni1mZmU3NDBjNzZlMmUucGRm",
+      "evidence": "富台里現行鄰數為18鄰。"
+    },
+    {
+      "authority": "臺北市信義區公所",
+      "title": "臺北市信義區鄰長通訊一覽表（114年）",
+      "url": "https://www-ws.gov.taipei/Download.ashx?icon=..pdf&n=5L%2Bh576p5Y2AMTE05bm056ysMTTlsYbphLDplbfpgJroqIrkuIDopr3ooagt57ay56uZ5YWs5biD54mIMTE0MDQucGRm&u=LzAwMS9VcGxvYWQvMzE3L3JlbGZpbGUvMTI4NjEvMTM2ODIwL2U4ODNmOTY3LTU1ZjUtNGRhNS04Y2E5LTBmNDAwMGJiNzJlNC5wZGY%3D",
+      "evidence": "富台里鄰長資料只涉及現行1至18鄰；現行統計同樣為18鄰。"
     }
   ],
   "merges": [
@@ -70,6 +82,18 @@
       "neighbor": 22,
       "level": "junior",
       "reason": "The 115 education table still includes neighbor 22, but official household/admin records show 三玉里 has had 21 neighbors since at least 93年 and current geometry contains only 1-21. No current polygon or remapping is inferred."
+    }
+  ],
+  "staleGeometryFeatures": [
+    {
+      "f_id": 9688,
+      "district": "信義",
+      "village": "富台",
+      "neighbor": 19,
+      "LIE_CODE": "6300200019",
+      "SDFKEY": "6300200019019",
+      "SDFNAME": "富台里19鄰",
+      "reason": "Current Xinyi official statistics report 富台里 as 18 neighbors. This exact neighbor-19 geometry record is stale and must not be treated as a current catchment polygon."
     }
   ]
 }

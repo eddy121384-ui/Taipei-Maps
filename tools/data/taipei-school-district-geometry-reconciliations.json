@@ -1,6 +1,6 @@
 {
   "academicYear": 115,
-  "description": "Source-audited reconciliations between school-assignment neighbor numbers and the current Taipei Civil Affairs neighbor geometry. These are historical administrative merges, not inferred polygons.",
+  "description": "Source-audited reconciliations between school-assignment neighbor numbers and the current Taipei Civil Affairs neighbor geometry. Entries may be historical administrative merges or documented empty neighbor numbers; neither creates inferred polygons.",
   "sources": [
     {
       "authority": "臺北市南港區公所",
@@ -13,6 +13,18 @@
       "title": "成福里基本資料",
       "url": "https://li.taipei/News_Content.aspx?n=8CC4391B60340D9C&s=C8F47BAF8D06AD7B&sms=D982815F3A372FF5",
       "evidence": "原31個鄰依北市民區字第11160144481號函調整為29個鄰，自111年5月1日起生效。"
+    },
+    {
+      "authority": "臺北市大安區公所",
+      "title": "臺北市大安區公所施政報告（資料截止109年12月31日）",
+      "url": "https://www-ws.gov.taipei/Download.ashx?icon=.pdf&n=MTEw5bm05LiK5Y2K5bm05pa95pS%2F5aCx5ZGKKDEwOS4wN34xMDkuMTIpLnBkZg%3D%3D&u=LzAwMS9VcGxvYWQvMzExL3JlbGZpbGUvMTM5NjEvODM2NjM3NC8wNGI5OTUyNi1kMzA0LTRlOWQtOGJiOC0xOWQ5ZjlhZDBiMmIucGRm",
+      "evidence": "大安區53里1,030鄰中，芳和里第7鄰列為空鄰。"
+    },
+    {
+      "authority": "臺北市鄰里服務網",
+      "title": "芳和里基本資料",
+      "url": "https://li.taipei/News_Content.aspx?n=8CC4391B60340D9C&s=673AEB1A6CCC5F64",
+      "evidence": "現行芳和里統計鄰數為20鄰；現行民政鄰界亦無第7鄰 polygon。"
     }
   ],
   "merges": [
@@ -29,6 +41,14 @@
       "retiredNeighbor": 29,
       "mergedInto": 16,
       "effectiveDate": "2022-05-01"
+    }
+  ],
+  "emptyNeighbors": [
+    {
+      "district": "大安",
+      "village": "芳和",
+      "neighbor": 7,
+      "reason": "Official district administration report documents this as an empty neighbor; current geometry has no polygon, so no polygon is invented."
     }
   ]
 }

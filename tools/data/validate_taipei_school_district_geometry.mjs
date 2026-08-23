@@ -43,12 +43,23 @@ for(const item of reconciliation.nonCurrentAssignmentNeighbors||[]){
   if(nonCurrentAssignmentMap.has(key))throw new Error(`Duplicate non-current assignment reconciliation ${key}`);
   nonCurrentAssignmentMap.set(key,item);
 }
+const staleGeometryMap=new Map();
+for(const item of reconciliation.staleGeometryFeatures||[]){
+  const id=String(item.f_id);
+  if(staleGeometryMap.has(id))throw new Error(`Duplicate stale geometry f_id ${id}`);
+  staleGeometryMap.set(id,item);
+}
 
 const endpoint=dataset.sources?.geometry?.endpoint;
 if(!endpoint)throw new Error('Official neighbor geometry endpoint missing from dataset metadata');
 
 function cleanDistrict(value){return String(value||'').trim().replace(/市$/,'').replace(/區$/,'');}
 function cleanVillage(value){return String(value||'').trim().replace(/里$/,'');}
+function canonicalVillage(properties){
+  const sdf=String(properties?.SDFNAME||'').trim();
+  const fromSdf=sdf.match(/^(.+?)里\s*\d/);
+  return cleanVillage(fromSdf?.[1]||properties?.LIE_NAME);
+}
 function neighborNos(value){
   return [...new Set((String(value??'').match(/\d+/g)||[]).map(Number).filter(Number.isFinite))];
 }
@@ -96,6 +107,7 @@ async function fetchPage(offset){
 const geometry=new Map();
 const details=new Map();
 const objectIds=new Set();
+const seenStaleGeometry=new Set();
 let offset=0,pages=0,featureCount=0,multiNeighborFeatures=0;
 while(true){
   const payload=await fetchPage(offset);
@@ -103,13 +115,25 @@ while(true){
   const features=payload.features||[];
   for(const feature of features){
     const p=feature.attributes||feature.properties||{};
-    if(p.f_id!=null){
-      const id=String(p.f_id);
+    const id=p.f_id==null?null:String(p.f_id);
+    if(id!=null){
       if(objectIds.has(id))throw new Error(`Official neighbor API pagination duplicated f_id ${id}`);
       objectIds.add(id);
     }
-    const district=cleanDistrict(p.SECT_NAME),village=cleanVillage(p.LIE_NAME),neighbors=neighborNos(p.LI_NO);
+    const district=cleanDistrict(p.SECT_NAME),village=canonicalVillage(p),neighbors=neighborNos(p.LI_NO);
     if(!districts.includes(district)||!village||!neighbors.length)continue;
+
+    const stale=id==null?null:staleGeometryMap.get(id);
+    if(stale){
+      const actual={district,village,neighbor:neighbors.length===1?neighbors[0]:null,LIE_CODE:p.LIE_CODE??null,SDFKEY:p.SDFKEY??null,SDFNAME:p.SDFNAME??null};
+      const expected={district:stale.district,village:stale.village,neighbor:stale.neighbor,LIE_CODE:stale.LIE_CODE,SDFKEY:stale.SDFKEY,SDFNAME:stale.SDFNAME};
+      if(JSON.stringify(actual)!==JSON.stringify(expected)){
+        throw new Error(`Stale geometry f_id ${id} changed; re-audit required. actual=${JSON.stringify(actual)} expected=${JSON.stringify(expected)}`);
+      }
+      seenStaleGeometry.add(id);
+      continue;
+    }
+
     const key=`${district}|${village}`;
     if(!geometry.has(key))geometry.set(key,new Set());
     if(!details.has(key))details.set(key,[]);
@@ -139,6 +163,10 @@ while(true){
   if(!payload.exceededTransferLimit&&features.length<1000)break;
   if(!features.length)break;
   if(pages>30)throw new Error('Official neighbor API pagination guard exceeded 30 pages');
+}
+
+for(const id of staleGeometryMap.keys()){
+  if(!seenStaleGeometry.has(id))throw new Error(`Audited stale geometry f_id ${id} is no longer present; re-audit and remove/update the exception`);
 }
 
 const assignmentKeys=new Set([
@@ -248,6 +276,7 @@ if(missingAssignmentGeometry.length||unassignedGeometry.length){
     auditedHistoricalMerges:(reconciliation.merges||[]).length,
     auditedEmptyNeighbors:(reconciliation.emptyNeighbors||[]).length,
     auditedNonCurrentAssignmentNeighbors:(reconciliation.nonCurrentAssignmentNeighbors||[]).length,
+    auditedStaleGeometryFeatures:(reconciliation.staleGeometryFeatures||[]).length,
     reconciledAssignmentRefs,
     emptyAssignmentRefs,
     nonCurrentAssignmentRefs,
@@ -269,10 +298,12 @@ console.log(JSON.stringify({
   auditedHistoricalMerges:(reconciliation.merges||[]).length,
   auditedEmptyNeighbors:(reconciliation.emptyNeighbors||[]).length,
   auditedNonCurrentAssignmentNeighbors:(reconciliation.nonCurrentAssignmentNeighbors||[]).length,
+  auditedStaleGeometryFeatures:(reconciliation.staleGeometryFeatures||[]).length,
   reconciliationLevelChecks,
   reconciledAssignmentRefs,
   emptyAssignmentRefs,
   nonCurrentAssignmentRefs,
+  staleGeometryFeaturesSkipped:seenStaleGeometry.size,
   missingAssignmentGeometryCount:0,
   unassignedGeometryCount:0,
 },null,2));

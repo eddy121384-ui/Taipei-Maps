@@ -4,18 +4,32 @@ import vm from 'node:vm';
 import {fileURLToPath} from 'node:url';
 
 const here=path.dirname(fileURLToPath(import.meta.url));
-const datasetPath=path.resolve(here,'../../public/taipei-school-districts-115.js');
-const source=fs.readFileSync(datasetPath,'utf8');
-const context={window:{}};
-vm.runInNewContext(source,context,{filename:datasetPath});
+const publicRoot=path.resolve(here,'../../public');
+const bootstrapPath=path.join(publicRoot,'taipei-school-districts-115.js');
+const guardPath=path.join(publicRoot,'school-district-data-guard.js');
+const context={window:{},console};
 
-const dataset=context.window.TaipeiMapsSchoolDistrictData115;
-if(!dataset)throw new Error('Dataset did not register TaipeiMapsSchoolDistrictData115');
+function runFile(filePath){
+  if(!fs.existsSync(filePath))throw new Error(`Missing runtime file: ${path.relative(publicRoot,filePath)}`);
+  vm.runInNewContext(fs.readFileSync(filePath,'utf8'),context,{filename:filePath});
+}
+
+runFile(bootstrapPath);
+let dataset=context.window.TaipeiMapsSchoolDistrictData115;
+if(!dataset)throw new Error('Dataset bootstrap did not register TaipeiMapsSchoolDistrictData115');
 if(dataset.academicYear!==115)throw new Error(`Expected academicYear 115, got ${dataset.academicYear}`);
 
 const districts=dataset.coverage?.districts||[];
-if(!districts.length)throw new Error('coverage.districts is empty');
+if(districts.length!==12)throw new Error(`Expected 12 coverage districts, got ${districts.length}`);
 if(new Set(districts).size!==districts.length)throw new Error('coverage.districts contains duplicates');
+
+for(const district of districts)runFile(path.join(publicRoot,'school-districts-115',`${district}.js`));
+runFile(guardPath);
+if(!context.window.TaipeiMapsSchoolDistrictDataReady){
+  throw new Error(context.window.TaipeiMapsSchoolDistrictDataError||'Runtime data guard did not mark dataset ready');
+}
+dataset=context.window.TaipeiMapsSchoolDistrictData115;
+if(!dataset)throw new Error('Runtime data guard removed dataset unexpectedly');
 
 function parseSpec(spec){
   const out=new Set();
@@ -35,7 +49,7 @@ const summary={};
 for(const level of ['elementary','junior']){
   const table=dataset.levels?.[level];
   if(!table||typeof table!=='object')throw new Error(`Missing level table: ${level}`);
-  let whole=0,split=0,rules=0;
+  let whole=0,split=0,rules=0,notes=0;
   const districtCounts=Object.fromEntries(districts.map(d=>[d,0]));
 
   for(const [key,entry] of Object.entries(table)){
@@ -48,7 +62,11 @@ for(const level of ['elementary','junior']){
     const hasRules=Array.isArray(entry?.rules)&&entry.rules.length>0;
     if(Boolean(hasAll)===Boolean(hasRules))throw new Error(`${level}: ${key} must have exactly one of all/rules`);
 
-    if(hasAll){whole++;continue;}
+    if(hasAll){
+      whole++;
+      if(entry.note)notes++;
+      continue;
+    }
     split++;
     const occupied=new Set();
     for(const rule of entry.rules){
@@ -56,6 +74,7 @@ for(const level of ['elementary','junior']){
       const neighbors=parseSpec(rule.spec);
       if(!neighbors.size)throw new Error(`${level}: ${key} has empty neighbor spec`);
       rules++;
+      if(rule.note)notes++;
       for(const n of neighbors){
         if(occupied.has(n))throw new Error(`${level}: ${key} neighbor ${n} appears in multiple rules`);
         occupied.add(n);
@@ -63,8 +82,26 @@ for(const level of ['elementary','junior']){
     }
   }
 
-  for(const [district,count] of Object.entries(districtCounts))if(!count)throw new Error(`${level}: declared coverage district ${district} has no assignments`);
-  summary[level]={villages:Object.keys(table).length,whole,split,rules,districtCounts};
+  const actual={villages:Object.keys(table).length,whole,split,rules,notes,districtCounts};
+  const expected=dataset.generated?.validation?.[level];
+  if(!expected)throw new Error(`${level}: generated validation metadata missing`);
+  for(const metric of ['villages','whole','split','rules','notes']){
+    if(actual[metric]!==expected[metric])throw new Error(`${level}: ${metric} ${actual[metric]} != expected ${expected[metric]}`);
+  }
+  for(const district of districts){
+    if(actual.districtCounts[district]!==expected.districtCounts?.[district]){
+      throw new Error(`${level}: ${district} villages ${actual.districtCounts[district]} != expected ${expected.districtCounts?.[district]}`);
+    }
+  }
+  summary[level]=actual;
 }
 
-console.log(JSON.stringify({academicYear:dataset.academicYear,coverage:districts,summary},null,2));
+const elementaryVillages=new Set(Object.keys(dataset.levels.elementary));
+const juniorVillages=new Set(Object.keys(dataset.levels.junior));
+const onlyElementary=[...elementaryVillages].filter(k=>!juniorVillages.has(k));
+const onlyJunior=[...juniorVillages].filter(k=>!elementaryVillages.has(k));
+if(onlyElementary.length||onlyJunior.length){
+  throw new Error(`Village-set mismatch: elementary-only=${onlyElementary.join(',')} junior-only=${onlyJunior.join(',')}`);
+}
+
+console.log(JSON.stringify({academicYear:dataset.academicYear,coverage:districts,runtimeGuard:'PASS',summary},null,2));

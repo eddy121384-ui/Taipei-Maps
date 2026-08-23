@@ -7,6 +7,7 @@ const here=path.dirname(fileURLToPath(import.meta.url));
 const publicRoot=path.resolve(here,'../../public');
 const bootstrapPath=path.join(publicRoot,'taipei-school-districts-115.js');
 const guardPath=path.join(publicRoot,'school-district-data-guard.js');
+const rendererPath=path.join(publicRoot,'school-district-layer.js');
 const mobilePath=path.join(publicRoot,'mobile-preview.html');
 const context={window:{},console};
 
@@ -134,6 +135,19 @@ for(const [level,district,village,neighbor,expected] of regressions){
   if(actual!==expected)throw new Error(`Regression ${level} ${district}|${village} neighbor ${neighbor}: ${actual} != ${expected}`);
 }
 
+// Load the renderer without constructing a map so its pure geometry/assignment helpers
+// can be regression-tested. Taipei's official neighbor layer can encode multiple neighbor
+// numbers in one polygon (e.g. 富台里 LI_NO="012,018").
+runFile(rendererPath);
+const renderer=context.window.TaipeiMapsSchoolDistrictLayer;
+if(!renderer)throw new Error('school-district-layer.js did not register runtime helpers');
+const parsedMulti=renderer.neighborNos('012,018');
+if(JSON.stringify(parsedMulti)!==JSON.stringify([12,18]))throw new Error(`Multi-neighbor parse regression: ${JSON.stringify(parsedMulti)}`);
+const futaiElementary=renderer.assignmentForNeighbors('elementary','信義','富台',[12,18]);
+if(futaiElementary!=='雙永')throw new Error(`富台 12/18 elementary multi-neighbor assignment regression: ${futaiElementary}`);
+const futaiJunior=renderer.assignmentForNeighbors('junior','信義','富台',[12,18]);
+if(futaiJunior!=='興雅')throw new Error(`富台 12/18 junior multi-neighbor assignment regression: ${futaiJunior}`);
+
 // The browser must use the same fail-closed order the validator just exercised:
 // bootstrap -> every declared district shard -> guard -> renderer.
 const mobile=fs.readFileSync(mobilePath,'utf8');
@@ -151,4 +165,4 @@ for(const script of scripts){
   previous=index;
 }
 
-console.log(JSON.stringify({academicYear:dataset.academicYear,coverage:districts,runtimeGuard:'PASS',assignmentRegressions:regressions.length,mobileLoadOrder:'PASS',summary},null,2));
+console.log(JSON.stringify({academicYear:dataset.academicYear,coverage:districts,runtimeGuard:'PASS',assignmentRegressions:regressions.length,multiNeighborRuntime:'PASS',mobileLoadOrder:'PASS',summary},null,2));

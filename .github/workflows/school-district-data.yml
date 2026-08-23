@@ -16,6 +16,7 @@ on:
       - 'tools/data/compare_taipei_school_district_semantics.mjs'
       - 'tools/data/validate_taipei_school_districts.mjs'
       - 'tools/data/validate_taipei_school_district_geometry.mjs'
+      - 'tools/data/taipei-school-district-geometry-reconciliations.json'
       - 'tools/data/requirements-school-districts.txt'
       - '.github/workflows/school-district-data.yml'
 

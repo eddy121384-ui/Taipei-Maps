@@ -1,6 +1,6 @@
 {
   "academicYear": 115,
-  "description": "Source-audited reconciliations between school-assignment neighbor numbers and the current Taipei Civil Affairs neighbor geometry. Entries may be historical administrative merges or documented empty neighbor numbers; neither creates inferred polygons.",
+  "description": "Source-audited reconciliations between school-assignment neighbor numbers and the current Taipei Civil Affairs neighbor geometry. Entries may be historical administrative merges, documented empty neighbor numbers, or stale education-table references to non-current neighbor numbers. None creates inferred polygons.",
   "sources": [
     {
       "authority": "臺北市南港區公所",
@@ -25,6 +25,18 @@
       "title": "芳和里基本資料",
       "url": "https://li.taipei/News_Content.aspx?n=8CC4391B60340D9C&s=673AEB1A6CCC5F64",
       "evidence": "現行芳和里統計鄰數為20鄰；現行民政鄰界亦無第7鄰 polygon。"
+    },
+    {
+      "authority": "臺北市士林區戶政事務所",
+      "title": "士林區各里戶數及人口數統計資訊（93年12月）",
+      "url": "https://slhr.gov.taipei/News_Content.aspx?n=9571B53A93548917&s=18564CDFE078BDE9&sms=94B80086DC54BEDE",
+      "evidence": "三玉里於93年12月已列21鄰；95年、98年、100年及現行官方統計亦持續為21鄰。"
+    },
+    {
+      "authority": "臺北市士林區戶政事務所",
+      "title": "臺北市士林區各里戶數及人口數統計資訊（現行）",
+      "url": "https://www-ws.gov.taipei/001/Upload/427/relfile/21145/8385319/7b086447-fb6a-4ab9-bc02-a47dd3d36ec2.pdf",
+      "evidence": "三玉里現有門牌與戶籍登記均為21鄰；民政鄰界亦只有1至21鄰。"
     }
   ],
   "merges": [
@@ -49,6 +61,15 @@
       "village": "芳和",
       "neighbor": 7,
       "reason": "Official district administration report documents this as an empty neighbor; current geometry has no polygon, so no polygon is invented."
+    }
+  ],
+  "nonCurrentAssignmentNeighbors": [
+    {
+      "district": "士林",
+      "village": "三玉",
+      "neighbor": 22,
+      "level": "junior",
+      "reason": "The 115 education table still includes neighbor 22, but official household/admin records show 三玉里 has had 21 neighbors since at least 93年 and current geometry contains only 1-21. No current polygon or remapping is inferred."
     }
   ]
 }

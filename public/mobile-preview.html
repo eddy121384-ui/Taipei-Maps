@@ -10,6 +10,18 @@
   <script src="https://unpkg.com/pmtiles@4.4.1/dist/pmtiles.js"></script>
   <script src="./shared-map-core.js"></script>
   <script src="./taipei-school-districts-115.js"></script>
+  <script src="./school-districts-115/松山.js"></script>
+  <script src="./school-districts-115/信義.js"></script>
+  <script src="./school-districts-115/大安.js"></script>
+  <script src="./school-districts-115/中山.js"></script>
+  <script src="./school-districts-115/中正.js"></script>
+  <script src="./school-districts-115/大同.js"></script>
+  <script src="./school-districts-115/萬華.js"></script>
+  <script src="./school-districts-115/文山.js"></script>
+  <script src="./school-districts-115/南港.js"></script>
+  <script src="./school-districts-115/內湖.js"></script>
+  <script src="./school-districts-115/士林.js"></script>
+  <script src="./school-districts-115/北投.js"></script>
   <script src="./school-district-layer.js"></script>
   <script src="./school-location-layer.js"></script>
   <style>
@@ -47,7 +59,10 @@
 <script>
 (async()=>{
   const status=document.querySelector('#status'),districtStatus=document.querySelector('#districtStatus'),schoolPointStatus=document.querySelector('#schoolPointStatus');
-  if(!window.maplibregl||!window.pmtiles||!window.TaipeiMapsCore||!window.TaipeiMapsSchoolDistrictData115||!window.TaipeiMapsSchoolDistrictLayer||!window.TaipeiMapsSchoolLocationLayer){status.textContent='Map core / MapLibre / PMTiles / School data/layers 載入失敗';status.className='status error';return;}
+  if(!window.maplibregl||!window.pmtiles||!window.TaipeiMapsCore||!window.TaipeiMapsSchoolDistrictData115||!window.TaipeiMapsSchoolDistrictLayer||!window.TaipeiMapsSchoolLocationLayer){
+    const dataError=window.TaipeiMapsSchoolDistrictDataError?` · ${window.TaipeiMapsSchoolDistrictDataError}`:'';
+    status.textContent=`Map core / MapLibre / PMTiles / School data/layers 載入失敗${dataError}`;status.className='status error';return;
+  }
   const core=window.TaipeiMapsCore;
 
   let overture;

@@ -24,7 +24,9 @@ if(!endpoint)throw new Error('Official neighbor geometry endpoint missing from d
 
 function cleanDistrict(value){return String(value||'').trim().replace(/市$/,'').replace(/區$/,'');}
 function cleanVillage(value){return String(value||'').trim().replace(/里$/,'');}
-function neighborNo(value){const n=Number(String(value??'').match(/\d+/)?.[0]);return Number.isFinite(n)?n:null;}
+function neighborNos(value){
+  return [...new Set((String(value??'').match(/\d+/g)||[]).map(Number).filter(Number.isFinite))];
+}
 
 function expandSpec(spec){
   const out=new Set();
@@ -35,6 +37,13 @@ function expandSpec(spec){
     else throw new Error(`Invalid neighbor token: ${token}`);
   }
   return out;
+}
+
+function schoolFor(level,key,neighbor){
+  const entry=dataset.levels?.[level]?.[key];
+  if(!entry)return null;
+  if(entry.all)return entry.all;
+  return (entry.rules||[]).find(rule=>expandSpec(rule.spec).has(neighbor))?.school||null;
 }
 
 async function fetchPage(offset){
@@ -62,7 +71,7 @@ async function fetchPage(offset){
 const geometry=new Map();
 const details=new Map();
 const objectIds=new Set();
-let offset=0,pages=0,featureCount=0;
+let offset=0,pages=0,featureCount=0,multiNeighborFeatures=0;
 while(true){
   const payload=await fetchPage(offset);
   pages++;
@@ -74,19 +83,31 @@ while(true){
       if(objectIds.has(id))throw new Error(`Official neighbor API pagination duplicated f_id ${id}`);
       objectIds.add(id);
     }
-    const district=cleanDistrict(p.SECT_NAME),village=cleanVillage(p.LIE_NAME),neighbor=neighborNo(p.LI_NO);
-    if(!districts.includes(district)||!village||neighbor==null)continue;
+    const district=cleanDistrict(p.SECT_NAME),village=cleanVillage(p.LIE_NAME),neighbors=neighborNos(p.LI_NO);
+    if(!districts.includes(district)||!village||!neighbors.length)continue;
     const key=`${district}|${village}`;
     if(!geometry.has(key))geometry.set(key,new Set());
     if(!details.has(key))details.set(key,[]);
-    geometry.get(key).add(neighbor);
-    details.get(key).push({
+    for(const neighbor of neighbors)geometry.get(key).add(neighbor);
+    const record={
       f_id:p.f_id??null,
       LI_NO:p.LI_NO??null,
+      neighbors,
       LIE_CODE:p.LIE_CODE??null,
       SDFKEY:p.SDFKEY??null,
       SDFNAME:p.SDFNAME??null,
-    });
+    };
+    details.get(key).push(record);
+    if(neighbors.length>1){
+      multiNeighborFeatures++;
+      for(const level of ['elementary','junior']){
+        const schools=neighbors.map(neighbor=>schoolFor(level,key,neighbor));
+        const unique=[...new Set(schools)];
+        if(unique.length!==1||unique[0]==null){
+          throw new Error(`${level} ${key} multi-neighbor geometry ${JSON.stringify(record)} cannot be represented by one exact catchment assignment; assignments=${JSON.stringify(schools)}`);
+        }
+      }
+    }
     featureCount++;
   }
   offset+=features.length;
@@ -112,10 +133,19 @@ for(const level of ['elementary','junior']){
       for(const neighbor of expandSpec(rule.spec)){
         neighborChecks++;
         if(!available.has(neighbor)){
-          const records=(details.get(key)||[]).sort((a,b)=>(neighborNo(a.LI_NO)??0)-(neighborNo(b.LI_NO)??0));
+          const records=(details.get(key)||[]).sort((a,b)=>(a.neighbors[0]??0)-(b.neighbors[0]??0));
           throw new Error(`${level} ${key} assignment references neighbor ${neighbor}, absent from official geometry; available=${[...available].sort((a,b)=>a-b).join(',')}; records=${JSON.stringify(records)}`);
         }
       }
+    }
+  }
+}
+
+const unassignedGeometry=[];
+for(const [key,neighbors] of geometry){
+  for(const level of ['elementary','junior']){
+    for(const neighbor of neighbors){
+      if(!schoolFor(level,key,neighbor))unassignedGeometry.push({level,key,neighbor});
     }
   }
 }
@@ -126,8 +156,11 @@ console.log(JSON.stringify({
   pages,
   uniqueObjectIds:objectIds.size,
   officialNeighborFeatures:featureCount,
+  multiNeighborFeatures,
   geometryVillages:geometry.size,
   assignmentVillages:assignmentKeys.size,
   splitVillageChecks,
   assignedNeighborChecks:neighborChecks,
+  unassignedGeometryCount:unassignedGeometry.length,
+  unassignedGeometry:unassignedGeometry.slice(0,100),
 },null,2));

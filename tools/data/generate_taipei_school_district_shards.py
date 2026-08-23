@@ -20,6 +20,12 @@ VILLAGE_NAME_FIXES = {
     ("內湖", "葫州"): "葫洲",
 }
 
+# Source-audited text fixes where PDF table extraction drops wording while a second
+# official Taipei Education Department table makes the intended assignment explicit.
+JUNIOR_WHOLE_SCHOOL_FIXES = {
+    ("北投", "洲美"): "陽明、北投、石牌、明德、士林共同學區",
+}
+
 
 def normalize_extracted(level: str, table: dict[str, dict]) -> dict[str, dict]:
     out = {}
@@ -39,6 +45,10 @@ def normalize_extracted(level: str, table: dict[str, dict]) -> dict[str, dict]:
             if level == "elementary":
                 school = school.replace("國小共同學區", "共同學區")
             target[field] = school
+        if level == "junior" and "all" in entry:
+            audited = JUNIOR_WHOLE_SCHOOL_FIXES.get((district, village))
+            if audited:
+                entry["all"] = audited
         out[fixed_key] = entry
     return out
 

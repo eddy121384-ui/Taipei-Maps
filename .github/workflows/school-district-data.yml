@@ -13,7 +13,9 @@ on:
       - 'public/mobile-preview.html'
       - 'tools/data/build_taipei_school_districts.py'
       - 'tools/data/generate_taipei_school_district_shards.py'
+      - 'tools/data/compare_taipei_school_district_semantics.mjs'
       - 'tools/data/validate_taipei_school_districts.mjs'
+      - 'tools/data/requirements-school-districts.txt'
       - '.github/workflows/school-district-data.yml'
 
 permissions:
@@ -30,7 +32,19 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Validate sharded runtime dataset
-        run: node tools/data/validate_taipei_school_districts.mjs
       - name: Compile importer and shard generator
         run: python -m py_compile tools/data/build_taipei_school_districts.py tools/data/generate_taipei_school_district_shards.py
+      - name: Install pinned PDF parser
+        run: python -m pip install -r tools/data/requirements-school-districts.txt
+      - name: Regenerate from pinned official 115 PDFs
+        run: >-
+          python tools/data/generate_taipei_school_district_shards.py
+          --bootstrap-out /tmp/taipei-school-districts-115.js
+          --shard-dir /tmp/school-districts-115
+      - name: Compare committed runtime semantics with fresh importer output
+        run: >-
+          node tools/data/compare_taipei_school_district_semantics.mjs
+          /tmp/taipei-school-districts-115.js
+          /tmp/school-districts-115
+      - name: Validate sharded runtime dataset
+        run: node tools/data/validate_taipei_school_districts.mjs

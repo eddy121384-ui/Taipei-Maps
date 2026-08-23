@@ -40,8 +40,8 @@ function expandSpec(spec){
 async function fetchPage(offset){
   const params=new URLSearchParams({
     where:`SECT_NAME IN (${districts.map(d=>`'${d}區'`).join(',')})`,
-    outFields:'OBJECTID,SECT_NAME,LIE_NAME,LI_NO',
-    orderByFields:'OBJECTID ASC',
+    outFields:'f_id,SECT_NAME,LIE_NAME,LI_NO',
+    orderByFields:'f_id ASC',
     returnGeometry:'false',
     resultOffset:String(offset),
     resultRecordCount:'1000',
@@ -68,9 +68,9 @@ while(true){
   const features=payload.features||[];
   for(const feature of features){
     const p=feature.attributes||feature.properties||{};
-    if(p.OBJECTID!=null){
-      const id=String(p.OBJECTID);
-      if(objectIds.has(id))throw new Error(`Official neighbor API pagination duplicated OBJECTID ${id}`);
+    if(p.f_id!=null){
+      const id=String(p.f_id);
+      if(objectIds.has(id))throw new Error(`Official neighbor API pagination duplicated f_id ${id}`);
       objectIds.add(id);
     }
     const district=cleanDistrict(p.SECT_NAME),village=cleanVillage(p.LIE_NAME),neighbor=neighborNo(p.LI_NO);

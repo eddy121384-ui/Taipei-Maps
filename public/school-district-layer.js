@@ -44,7 +44,7 @@
 
   function cleanDistrict(s){return String(s||'').trim().replace(/市$/,'').replace(/區$/,'');}
   function cleanVillage(s){return String(s||'').trim().replace(/里$/,'');}
-  function neighborNo(value){const n=Number(String(value??'').match(/\d+/)?.[0]);return Number.isFinite(n)?n:null;}
+  function neighborNos(value){return [...new Set((String(value??'').match(/\d+/g)||[]).map(Number).filter(Number.isFinite))];}
 
   function assignment(level,district,village,neighbor){
     const table=level==='junior'?JUNIOR:ELEMENTARY;
@@ -53,6 +53,14 @@
     if(entry.all)return entry.all;
     if(neighbor==null)return null;
     return entry.rules.find(r=>r.neighbors.has(neighbor))?.school||null;
+  }
+
+  function assignmentForNeighbors(level,district,village,neighbors){
+    if(!Array.isArray(neighbors)||!neighbors.length)return null;
+    const schools=neighbors.map(neighbor=>assignment(level,district,village,neighbor));
+    if(schools.some(school=>!school))return null;
+    const unique=[...new Set(schools)];
+    return unique.length===1?unique[0]:null;
   }
 
   function colorFor(label){
@@ -154,17 +162,20 @@
         const response=await fetch(`${TAIPEI_NEIGHBOR_QUERY}?${params}`,{signal:this.abortController.signal,cache:'no-store'});
         if(!response.ok)throw new Error(`臺北鄰界 HTTP ${response.status}`);
         const fc=await response.json();
-        const features=[];let unmatched=0;
+        const features=[];let unmatched=0,multiNeighbor=0;
         for(const f of fc.features||[]){
-          const p=f.properties||{};const district=cleanDistrict(p.SECT_NAME),village=cleanVillage(p.LIE_NAME),neighbor=neighborNo(p.LI_NO);
-          if(!COVERAGE_DISTRICTS.has(district))continue;
-          const school=assignment(this.level,district,village,neighbor);
+          const p=f.properties||{};
+          const district=cleanDistrict(p.SECT_NAME),village=cleanVillage(p.LIE_NAME),neighbors=neighborNos(p.LI_NO);
+          if(!COVERAGE_DISTRICTS.has(district)||!neighbors.length)continue;
+          const school=assignmentForNeighbors(this.level,district,village,neighbors);
           if(!school){unmatched++;continue;}
-          features.push({...f,properties:{...p,district,village,neighbor,school,label:labelFor(school),showLabel:false,level:this.level,color:colorFor(school),key:`${district}|${village}|${neighbor}`}});
+          if(neighbors.length>1)multiNeighbor++;
+          const neighbor=neighbors.join('、');
+          features.push({...f,properties:{...p,district,village,neighbor,neighbor_numbers:neighbors.join(','),school,label:labelFor(school),showLabel:false,level:this.level,color:colorFor(school),key:`${district}|${village}|${neighbor}`}});
         }
         const catchments=chooseLabelAnchors(features);
         const src=this.map.getSource(SOURCE_ID);if(src)src.setData({type:'FeatureCollection',features});
-        this.emit('ready',`${this.level==='junior'?'國中':'國小'}學區 · ${catchments} 個學區 · ${features.length} 個鄰界 · ${COVERAGE_LABEL} ${ACADEMIC_YEAR}學年度`,{count:features.length,catchments,unmatched});
+        this.emit('ready',`${this.level==='junior'?'國中':'國小'}學區 · ${catchments} 個學區 · ${features.length} 個鄰界 · ${COVERAGE_LABEL} ${ACADEMIC_YEAR}學年度`,{count:features.length,catchments,unmatched,multiNeighbor});
       }catch(e){
         if(e?.name==='AbortError')return;console.warn('School district layer failed',e);this.clear();this.emit('error',`學區邊界暫時載入失敗 · ${e?.message||e}`);
       }
@@ -172,5 +183,5 @@
     clear(){const src=this.map.getSource(SOURCE_ID);if(src)src.setData(EMPTY);}
   }
 
-  window.TaipeiMapsSchoolDistrictLayer={SchoolDistrictLayer,assignment,ELEMENTARY,JUNIOR,DATASET};
+  window.TaipeiMapsSchoolDistrictLayer={SchoolDistrictLayer,assignment,assignmentForNeighbors,neighborNos,ELEMENTARY,JUNIOR,DATASET};
 })();

@@ -113,9 +113,6 @@ if(onlyElementary.length||onlyJunior.length){
   throw new Error(`Village-set mismatch: elementary-only=${onlyElementary.join(',')} junior-only=${onlyJunior.join(',')}`);
 }
 
-// Content regressions: keep approved Daan/Xinyi pilot semantics identical while also
-// pinning representative new Shilin/Beitou split rules. These catch a structurally
-// complete 456-village dataset whose neighbor assignments are nevertheless wrong.
 const regressions=[
   ['elementary','大安','義安',1,'仁愛'],
   ['elementary','大安','義安',3,'仁愛、建安共同學區'],
@@ -135,9 +132,6 @@ for(const [level,district,village,neighbor,expected] of regressions){
   if(actual!==expected)throw new Error(`Regression ${level} ${district}|${village} neighbor ${neighbor}: ${actual} != ${expected}`);
 }
 
-// Load the renderer without constructing a map so its pure geometry/assignment helpers
-// can be regression-tested. Taipei's official neighbor layer can encode multiple neighbor
-// numbers in one polygon (e.g. 富台里 LI_NO="012,018").
 runFile(rendererPath);
 const renderer=context.window.TaipeiMapsSchoolDistrictLayer;
 if(!renderer)throw new Error('school-district-layer.js did not register runtime helpers');
@@ -147,9 +141,9 @@ const futaiElementary=renderer.assignmentForNeighbors('elementary','信義','富
 if(futaiElementary!=='雙永')throw new Error(`富台 12/18 elementary multi-neighbor assignment regression: ${futaiElementary}`);
 const futaiJunior=renderer.assignmentForNeighbors('junior','信義','富台',[12,18]);
 if(futaiJunior!=='興雅')throw new Error(`富台 12/18 junior multi-neighbor assignment regression: ${futaiJunior}`);
+const yangmingVillage=renderer.canonicalVillage({LIE_NAME:'陽明區',SDFNAME:'陽明里17鄰'});
+if(yangmingVillage!=='陽明')throw new Error(`SDFNAME village canonicalization regression: ${yangmingVillage}`);
 
-// The browser must use the same fail-closed order the validator just exercised:
-// bootstrap -> every declared district shard -> guard -> renderer.
 const mobile=fs.readFileSync(mobilePath,'utf8');
 const scripts=[
   './taipei-school-districts-115.js',
@@ -165,4 +159,4 @@ for(const script of scripts){
   previous=index;
 }
 
-console.log(JSON.stringify({academicYear:dataset.academicYear,coverage:districts,runtimeGuard:'PASS',assignmentRegressions:regressions.length,multiNeighborRuntime:'PASS',mobileLoadOrder:'PASS',summary},null,2));
+console.log(JSON.stringify({academicYear:dataset.academicYear,coverage:districts,runtimeGuard:'PASS',assignmentRegressions:regressions.length,multiNeighborRuntime:'PASS',geometryVillageCanonicalization:'PASS',mobileLoadOrder:'PASS',summary},null,2));

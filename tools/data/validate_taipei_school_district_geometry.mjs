@@ -5,6 +5,7 @@ import {fileURLToPath} from 'node:url';
 
 const here=path.dirname(fileURLToPath(import.meta.url));
 const publicRoot=path.resolve(here,'../../public');
+const reconciliationPath=path.join(here,'taipei-school-district-geometry-reconciliations.json');
 const context={window:{},console};
 
 function runFile(filePath){
@@ -18,6 +19,17 @@ if(!dataset)throw new Error('School-district bootstrap missing');
 const districts=dataset.coverage?.districts||[];
 for(const district of districts)runFile(path.join(publicRoot,'school-districts-115',`${district}.js`));
 dataset=context.window.TaipeiMapsSchoolDistrictData115;
+
+const reconciliation=JSON.parse(fs.readFileSync(reconciliationPath,'utf8'));
+if(reconciliation.academicYear!==dataset.academicYear){
+  throw new Error(`Geometry reconciliation academicYear ${reconciliation.academicYear} != dataset ${dataset.academicYear}`);
+}
+const mergeMap=new Map();
+for(const merge of reconciliation.merges||[]){
+  const key=`${merge.district}|${merge.village}|${merge.retiredNeighbor}`;
+  if(mergeMap.has(key))throw new Error(`Duplicate geometry reconciliation ${key}`);
+  mergeMap.set(key,merge);
+}
 
 const endpoint=dataset.sources?.geometry?.endpoint;
 if(!endpoint)throw new Error('Official neighbor geometry endpoint missing from dataset metadata');
@@ -123,7 +135,28 @@ const assignmentKeys=new Set([
 const missingVillages=[...assignmentKeys].filter(key=>!geometry.has(key)).sort();
 if(missingVillages.length)throw new Error(`Official geometry missing ${missingVillages.length} assignment villages: ${missingVillages.slice(0,30).join(', ')}`);
 
-let splitVillageChecks=0,neighborChecks=0;
+let reconciliationLevelChecks=0;
+for(const merge of reconciliation.merges||[]){
+  const key=`${merge.district}|${merge.village}`;
+  const available=geometry.get(key)||new Set();
+  if(available.has(merge.retiredNeighbor)){
+    throw new Error(`Stale geometry reconciliation ${key} retired neighbor ${merge.retiredNeighbor} is present again; re-audit source history`);
+  }
+  if(!available.has(merge.mergedInto)){
+    throw new Error(`Geometry reconciliation ${key} target neighbor ${merge.mergedInto} is absent`);
+  }
+  for(const level of ['elementary','junior']){
+    const retiredSchool=schoolFor(level,key,merge.retiredNeighbor);
+    if(retiredSchool==null)continue;
+    const targetSchool=schoolFor(level,key,merge.mergedInto);
+    if(targetSchool!==retiredSchool){
+      throw new Error(`${level} ${key} historical merge ${merge.retiredNeighbor}->${merge.mergedInto} changes catchment ${retiredSchool} -> ${targetSchool}; exact polygon reconciliation is unsafe`);
+    }
+    reconciliationLevelChecks++;
+  }
+}
+
+let splitVillageChecks=0,neighborChecks=0,reconciledAssignmentRefs=0;
 for(const level of ['elementary','junior']){
   for(const [key,entry] of Object.entries(dataset.levels[level]||{})){
     if(!Array.isArray(entry?.rules))continue;
@@ -132,10 +165,18 @@ for(const level of ['elementary','junior']){
     for(const rule of entry.rules){
       for(const neighbor of expandSpec(rule.spec)){
         neighborChecks++;
-        if(!available.has(neighbor)){
-          const records=(details.get(key)||[]).sort((a,b)=>(a.neighbors[0]??0)-(b.neighbors[0]??0));
-          throw new Error(`${level} ${key} assignment references neighbor ${neighbor}, absent from official geometry; available=${[...available].sort((a,b)=>a-b).join(',')}; records=${JSON.stringify(records)}`);
+        if(available.has(neighbor))continue;
+        const merge=mergeMap.get(`${key}|${neighbor}`);
+        if(merge){
+          const targetSchool=schoolFor(level,key,merge.mergedInto);
+          if(targetSchool!==rule.school){
+            throw new Error(`${level} ${key} reconciliation ${neighbor}->${merge.mergedInto} does not preserve school ${rule.school}`);
+          }
+          reconciledAssignmentRefs++;
+          continue;
         }
+        const records=(details.get(key)||[]).sort((a,b)=>(a.neighbors[0]??0)-(b.neighbors[0]??0));
+        throw new Error(`${level} ${key} assignment references neighbor ${neighbor}, absent from official geometry and no audited reconciliation exists; available=${[...available].sort((a,b)=>a-b).join(',')}; records=${JSON.stringify(records)}`);
       }
     }
   }
@@ -149,6 +190,9 @@ for(const [key,neighbors] of geometry){
     }
   }
 }
+if(unassignedGeometry.length){
+  throw new Error(`Current official geometry has ${unassignedGeometry.length} neighbor assignments with no school mapping: ${JSON.stringify(unassignedGeometry.slice(0,100))}`);
+}
 
 console.log(JSON.stringify({
   geometryJoin:'PASS',
@@ -161,6 +205,8 @@ console.log(JSON.stringify({
   assignmentVillages:assignmentKeys.size,
   splitVillageChecks,
   assignedNeighborChecks:neighborChecks,
-  unassignedGeometryCount:unassignedGeometry.length,
-  unassignedGeometry:unassignedGeometry.slice(0,100),
+  auditedHistoricalMerges:(reconciliation.merges||[]).length,
+  reconciliationLevelChecks,
+  reconciledAssignmentRefs,
+  unassignedGeometryCount:0,
 },null,2));

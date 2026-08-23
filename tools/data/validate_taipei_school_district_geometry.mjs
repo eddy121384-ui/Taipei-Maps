@@ -40,7 +40,8 @@ function expandSpec(spec){
 async function fetchPage(offset){
   const params=new URLSearchParams({
     where:`SECT_NAME IN (${districts.map(d=>`'${d}區'`).join(',')})`,
-    outFields:'SECT_NAME,LIE_NAME,LI_NO',
+    outFields:'OBJECTID,SECT_NAME,LIE_NAME,LI_NO',
+    orderByFields:'OBJECTID ASC',
     returnGeometry:'false',
     resultOffset:String(offset),
     resultRecordCount:'1000',
@@ -59,6 +60,7 @@ async function fetchPage(offset){
 }
 
 const geometry=new Map();
+const objectIds=new Set();
 let offset=0,pages=0,featureCount=0;
 while(true){
   const payload=await fetchPage(offset);
@@ -66,6 +68,11 @@ while(true){
   const features=payload.features||[];
   for(const feature of features){
     const p=feature.attributes||feature.properties||{};
+    if(p.OBJECTID!=null){
+      const id=String(p.OBJECTID);
+      if(objectIds.has(id))throw new Error(`Official neighbor API pagination duplicated OBJECTID ${id}`);
+      objectIds.add(id);
+    }
     const district=cleanDistrict(p.SECT_NAME),village=cleanVillage(p.LIE_NAME),neighbor=neighborNo(p.LI_NO);
     if(!districts.includes(district)||!village||neighbor==null)continue;
     const key=`${district}|${village}`;
@@ -95,7 +102,9 @@ for(const level of ['elementary','junior']){
     for(const rule of entry.rules){
       for(const neighbor of expandSpec(rule.spec)){
         neighborChecks++;
-        if(!available.has(neighbor))throw new Error(`${level} ${key} assignment references neighbor ${neighbor}, absent from official geometry`);
+        if(!available.has(neighbor)){
+          throw new Error(`${level} ${key} assignment references neighbor ${neighbor}, absent from official geometry; available=${[...available].sort((a,b)=>a-b).join(',')}`);
+        }
       }
     }
   }
@@ -105,6 +114,7 @@ console.log(JSON.stringify({
   geometryJoin:'PASS',
   endpoint,
   pages,
+  uniqueObjectIds:objectIds.size,
   officialNeighborFeatures:featureCount,
   geometryVillages:geometry.size,
   assignmentVillages:assignmentKeys.size,

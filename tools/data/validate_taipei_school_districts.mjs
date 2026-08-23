@@ -7,6 +7,7 @@ const here=path.dirname(fileURLToPath(import.meta.url));
 const publicRoot=path.resolve(here,'../../public');
 const bootstrapPath=path.join(publicRoot,'taipei-school-districts-115.js');
 const guardPath=path.join(publicRoot,'school-district-data-guard.js');
+const mobilePath=path.join(publicRoot,'mobile-preview.html');
 const context={window:{},console};
 
 function runFile(filePath){
@@ -43,6 +44,13 @@ function parseSpec(spec){
     else throw new Error(`Invalid neighbor token: ${token}`);
   }
   return out;
+}
+
+function assignment(level,district,village,neighbor){
+  const entry=dataset.levels?.[level]?.[`${district}|${village}`];
+  if(!entry)return null;
+  if(entry.all)return entry.all;
+  return entry.rules?.find(rule=>parseSpec(rule.spec).has(neighbor))?.school||null;
 }
 
 const summary={};
@@ -104,4 +112,43 @@ if(onlyElementary.length||onlyJunior.length){
   throw new Error(`Village-set mismatch: elementary-only=${onlyElementary.join(',')} junior-only=${onlyJunior.join(',')}`);
 }
 
-console.log(JSON.stringify({academicYear:dataset.academicYear,coverage:districts,runtimeGuard:'PASS',summary},null,2));
+// Content regressions: keep approved Daan/Xinyi pilot semantics identical while also
+// pinning representative new Shilin/Beitou split rules. These catch a structurally
+// complete 456-village dataset whose neighbor assignments are nevertheless wrong.
+const regressions=[
+  ['elementary','大安','義安',1,'仁愛'],
+  ['elementary','大安','義安',3,'仁愛、建安共同學區'],
+  ['elementary','大安','義安',8,'建安'],
+  ['elementary','信義','三犁',17,'信義、吳興共同學區'],
+  ['junior','大安','通安',1,'仁愛'],
+  ['junior','大安','通安',4,'大安'],
+  ['junior','信義','中興',4,'信義、仁愛共同學區'],
+  ['elementary','士林','芝山',1,'陽明山、芝山共同學區'],
+  ['elementary','士林','芝山',2,'雨聲、芝山共同學區'],
+  ['junior','士林','社子',16,'陽明、福安共同學區'],
+  ['elementary','北投','長安',10,'逸仙、北投共同學區'],
+  ['junior','北投','中央',7,'北投、新民共同學區'],
+];
+for(const [level,district,village,neighbor,expected] of regressions){
+  const actual=assignment(level,district,village,neighbor);
+  if(actual!==expected)throw new Error(`Regression ${level} ${district}|${village} neighbor ${neighbor}: ${actual} != ${expected}`);
+}
+
+// The browser must use the same fail-closed order the validator just exercised:
+// bootstrap -> every declared district shard -> guard -> renderer.
+const mobile=fs.readFileSync(mobilePath,'utf8');
+const scripts=[
+  './taipei-school-districts-115.js',
+  ...districts.map(d=>`./school-districts-115/${d}.js`),
+  './school-district-data-guard.js',
+  './school-district-layer.js',
+];
+let previous=-1;
+for(const script of scripts){
+  const index=mobile.indexOf(`src="${script}"`);
+  if(index<0)throw new Error(`mobile-preview.html does not load ${script}`);
+  if(index<=previous)throw new Error(`mobile-preview.html school script load order is invalid at ${script}`);
+  previous=index;
+}
+
+console.log(JSON.stringify({academicYear:dataset.academicYear,coverage:districts,runtimeGuard:'PASS',assignmentRegressions:regressions.length,mobileLoadOrder:'PASS',summary},null,2));

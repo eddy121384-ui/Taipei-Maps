@@ -1,0 +1,36 @@
+name: School district data
+
+on:
+  push:
+    branches:
+      - feat/taipei-school-district-data-layer
+  pull_request:
+    paths:
+      - 'public/taipei-school-districts-115.js'
+      - 'public/school-districts-115/**'
+      - 'public/school-district-data-guard.js'
+      - 'public/school-district-layer.js'
+      - 'public/mobile-preview.html'
+      - 'tools/data/build_taipei_school_districts.py'
+      - 'tools/data/generate_taipei_school_district_shards.py'
+      - 'tools/data/validate_taipei_school_districts.mjs'
+      - '.github/workflows/school-district-data.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate sharded runtime dataset
+        run: node tools/data/validate_taipei_school_districts.mjs
+      - name: Compile importer and shard generator
+        run: python -m py_compile tools/data/build_taipei_school_districts.py tools/data/generate_taipei_school_district_shards.py

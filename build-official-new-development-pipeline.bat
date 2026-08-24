@@ -41,7 +41,7 @@ echo [1/5] Validating pipeline scripts...
 
 if not exist "%MOI_ZIP%" (
   echo [2/5] Downloading MOI presale project filing CSV ZIP...
-  powershell -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; $s=Get-Content -Raw 'tools/data/new-development-sources.json' ^| ConvertFrom-Json; Invoke-WebRequest -UseBasicParsing -Uri $s.sources.moi_presale_projects.download_url -OutFile '%MOI_ZIP%.part'; Move-Item -Force '%MOI_ZIP%.part' '%MOI_ZIP%'" || goto :fail
+  powershell -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; $s=ConvertFrom-Json (Get-Content -Raw -LiteralPath 'tools/data/new-development-sources.json'); Invoke-WebRequest -UseBasicParsing -Uri $s.sources.moi_presale_projects.download_url -OutFile '%MOI_ZIP%.part'; Move-Item -Force '%MOI_ZIP%.part' '%MOI_ZIP%'" || goto :fail
 ) else (
   echo [2/5] MOI ZIP cache found. Use: build-official-new-development-pipeline.bat refresh  to re-download.
 )
@@ -55,14 +55,14 @@ if not exist "%MOI_DIR%" (
 
 if not exist "%HIST_XML%" (
   echo [4/5] Downloading Taipei historical construction permits - large XML...
-  powershell -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; $s=Get-Content -Raw 'tools/data/new-development-sources.json' ^| ConvertFrom-Json; Invoke-WebRequest -UseBasicParsing -Uri $s.sources.taipei_construction_permits_historical.download_url -OutFile '%HIST_XML%.part'; Move-Item -Force '%HIST_XML%.part' '%HIST_XML%'" || goto :fail
+  powershell -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; $s=ConvertFrom-Json (Get-Content -Raw -LiteralPath 'tools/data/new-development-sources.json'); Invoke-WebRequest -UseBasicParsing -Uri $s.sources.taipei_construction_permits_historical.download_url -OutFile '%HIST_XML%.part'; Move-Item -Force '%HIST_XML%.part' '%HIST_XML%'" || goto :fail
 ) else (
   echo [4/5] Historical Taipei permit cache found.
 )
 
 if not exist "%CURR_XML%" (
   echo [4/5] Downloading Taipei current-year construction permits...
-  powershell -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; $s=Get-Content -Raw 'tools/data/new-development-sources.json' ^| ConvertFrom-Json; Invoke-WebRequest -UseBasicParsing -Uri $s.sources.taipei_construction_permits_current.download_url -OutFile '%CURR_XML%.part'; Move-Item -Force '%CURR_XML%.part' '%CURR_XML%'" || goto :fail
+  powershell -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; $s=ConvertFrom-Json (Get-Content -Raw -LiteralPath 'tools/data/new-development-sources.json'); Invoke-WebRequest -UseBasicParsing -Uri $s.sources.taipei_construction_permits_current.download_url -OutFile '%CURR_XML%.part'; Move-Item -Force '%CURR_XML%.part' '%CURR_XML%'" || goto :fail
 ) else (
   echo [4/5] Current Taipei permit cache found.
 )

@@ -56,14 +56,19 @@ function detectXmlEncoding(buffer) {
   return { encoding, declared, bom };
 }
 
-function strictDecode(buffer, encoding) {
-  return new TextDecoder(encoding, { fatal: true }).decode(buffer).replace(/^\uFEFF/, '');
-}
-
 function replacementCount(value) {
   let count = 0;
   for (const ch of value) if (ch === '\uFFFD') count += 1;
   return count;
+}
+
+function strictDecode(buffer, encoding) {
+  const decoded = new TextDecoder(encoding, { fatal: true }).decode(buffer).replace(/^\uFEFF/, '');
+  const literalReplacementCount = replacementCount(decoded);
+  if (literalReplacementCount) {
+    throw new Error(`${encoding} decoded text contains ${literalReplacementCount} literal U+FFFD marker(s)`);
+  }
+  return decoded;
 }
 
 function xmlTokenInfo(token) {
@@ -134,10 +139,13 @@ function escapeRegex(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function quarantineMalformedUtf8(buffer, sourceName) {
+function quarantineUtf8ReplacementMarkers(buffer, sourceName) {
+  // A source may be byte-valid UTF-8 yet already contain literal U+FFFD characters.
+  // Treat those markers with the same fail-closed policy as malformed UTF-8: never
+  // guess the missing character; quarantine the entire repeated permit record.
   const decoded = new TextDecoder('utf-8', { fatal: false }).decode(buffer).replace(/^\uFEFF/, '');
   const replacements = replacementCount(decoded);
-  if (!replacements) throw new Error(`${sourceName}: strict UTF-8 failed but lenient UTF-8 found no replacement marker`);
+  if (!replacements) throw new Error(`${sourceName}: UTF-8 fallback found no U+FFFD marker`);
 
   const record = inferRepeatedRecordTag(decoded, sourceName);
   const escaped = escapeRegex(record.name);
@@ -162,7 +170,7 @@ function quarantineMalformedUtf8(buffer, sourceName) {
 
   if (!totalRecords) throw new Error(`${sourceName}: inferred record <${record.name}> but matched zero complete records`);
   if (sanitized.includes('\uFFFD')) {
-    throw new Error(`${sourceName}: malformed UTF-8 remains outside quarantinable <${record.name}> records; refusing to alter XML structure`);
+    throw new Error(`${sourceName}: U+FFFD remains outside quarantinable <${record.name}> records; refusing to alter XML structure`);
   }
 
   const maxAllowed = Math.max(100, Math.ceil(totalRecords * 0.005));
@@ -173,7 +181,7 @@ function quarantineMalformedUtf8(buffer, sourceName) {
   validateXmlStructure(sanitized, sourceName);
   return {
     text: sanitized,
-    mode: 'utf-8-declared-with-record-quarantine',
+    mode: 'utf-8-with-record-quarantine',
     replacement_count: replacements,
     record_tag: record.name,
     source_record_count: totalRecords,
@@ -209,7 +217,7 @@ function decodeOfficialXml(buffer, sourceName) {
       throw new Error(`${sourceName}: strict ${detected.encoding} decode/validation failed: ${strictError?.message ?? strictError}`);
     }
 
-    const quarantined = quarantineMalformedUtf8(buffer, sourceName);
+    const quarantined = quarantineUtf8ReplacementMarkers(buffer, sourceName);
     return { ...quarantined, detected, strict_error: strictError?.message ?? String(strictError) };
   }
 }
@@ -227,6 +235,16 @@ async function normalizeSource(source) {
   const normalized = Buffer.from(decoded.text, 'utf8');
   await writeFile(source.file, normalized);
 
+  // Prove that the exact bytes consumed by the canonical parser are valid UTF-8
+  // and contain no literal replacement marker. This closes the gap between the
+  // normalizer's verdict and the downstream read path.
+  const writtenBytes = await readFile(source.file);
+  const writtenText = new TextDecoder('utf-8', { fatal: true }).decode(writtenBytes).replace(/^\uFEFF/, '');
+  if (writtenText.includes('\uFFFD')) {
+    throw new Error(`${source.name}: post-write verification found literal U+FFFD in normalized XML`);
+  }
+  validateXmlStructure(writtenText, `${source.name}_postwrite`);
+
   return {
     source: source.name,
     file: path.basename(source.file),
@@ -235,15 +253,16 @@ async function normalizeSource(source) {
     decode_mode: decoded.mode,
     strict_error: decoded.strict_error ?? null,
     source_bytes_sha256: sha256(rawBytes),
-    normalized_utf8_sha256: sha256(normalized),
+    normalized_utf8_sha256: sha256(writtenBytes),
     source_bytes: rawBytes.length,
-    normalized_utf8_bytes: normalized.length,
+    normalized_utf8_bytes: writtenBytes.length,
     replacement_sequence_count: decoded.replacement_count,
     inferred_record_tag: decoded.record_tag,
     source_record_count: decoded.source_record_count,
     quarantined_record_count: decoded.quarantined_record_count,
     quarantine_rate: decoded.quarantine_rate,
     quarantined_samples: decoded.quarantined_samples,
+    post_write_verified_no_ufffd: true,
   };
 }
 
@@ -257,16 +276,16 @@ async function main() {
   for (const source of SOURCES) files.push(await normalizeSource(source));
 
   const manifest = {
-    schema_version: 1,
+    schema_version: 2,
     generated_at: new Date().toISOString(),
-    policy: 'Honor XML BOM/declaration with strict decoding. For declared/default UTF-8 only, isolated malformed byte sequences are handled by quarantining the entire repeated XML record that contains U+FFFD; malformed markup or excessive quarantines fail closed.',
+    policy: 'Honor XML BOM/declaration with strict decoding. A byte-valid UTF-8 source that already contains literal U+FFFD is not accepted as clean: the entire repeated permit record containing each U+FFFD marker is quarantined rather than guessing the missing character. Malformed markup or excessive quarantines fail closed. Normalized output is reread and verified before canonical parsing.',
     files,
   };
   await writeFile(MANIFEST_PATH, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
 
   console.log(`Taipei permit XML normalization: ${files.length} file(s)`);
   for (const file of files) {
-    console.log(`  ${file.source}: ${file.decode_mode}; declared=${file.xml_declared_encoding ?? 'none'}; replacements=${file.replacement_sequence_count}; quarantined=${file.quarantined_record_count}`);
+    console.log(`  ${file.source}: ${file.decode_mode}; declared=${file.xml_declared_encoding ?? 'none'}; U+FFFD=${file.replacement_sequence_count}; quarantined=${file.quarantined_record_count}; postwrite=PASS`);
   }
   console.log(`  Raw source bytes preserved: ${RAW_DIR}`);
   console.log(`  XML encoding manifest: ${MANIFEST_PATH}`);

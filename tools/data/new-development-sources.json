@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "sources": {
+    "moi_presale_projects": {
+      "dataset_page": "https://data.gov.tw/dataset/176351",
+      "download_url": "https://plvr.land.moi.gov.tw/opendata/lvr_buildcasecsv.zip",
+      "format": "zip/csv",
+      "license": "Government Open Data License v1.0",
+      "refresh": "monthly",
+      "notes": "All presale project filings declared since 2021-07-01; regenerated monthly."
+    },
+    "taipei_construction_permits_historical": {
+      "dataset_page": "https://data.gov.tw/dataset/128204",
+      "download_url": "https://data.taipei/api/dataset/e20ea68e-c79d-4882-a2f9-2f3eeb45384b/resource/2d9396af-863b-496a-9893-0d2f2a8d8b71/download",
+      "format": "xml",
+      "license": "Government Open Data License v1.0",
+      "refresh": "yearly",
+      "notes": "Taipei construction permit summaries through ROC year 114."
+    },
+    "taipei_construction_permits_current": {
+      "dataset_page": "https://data.gov.tw/dataset/128200",
+      "download_url": "https://data.taipei/api/dataset/d8834353-ff8e-4a6c-9730-a4d3541f2669/resource/43624c8e-c768-4b3c-93c4-595f5af7a9cb/download",
+      "format": "xml",
+      "license": "Government Open Data License v1.0",
+      "refresh": "monthly",
+      "notes": "Current ROC year 115 Taipei construction permit summaries."
+    },
+    "taipei_building_permit_overlay": {
+      "dataset_page": "https://data.gov.tw/dataset/151936",
+      "download_url": "https://data.taipei/api/dataset/af067fb6-9e47-4f4c-a484-e72eba161319/resource/ccdfe8df-ef54-4c13-a93d-ba42968ced3b/download",
+      "format": "shp/twd97",
+      "license": "Government Open Data License v1.0",
+      "refresh": "irregular",
+      "notes": "Spatial source reserved for the next geometry-join stage; v0.1 must not fabricate coordinates if this join is unresolved."
+    }
+  }
+}

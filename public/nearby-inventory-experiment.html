@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#9fd5f6" />
+  <title>Taipei-Maps · POI 附近房源研究版</title>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" />
+  <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+  <script src="https://unpkg.com/pmtiles@4.4.1/dist/pmtiles.js"></script>
+  <script src="./shared-map-core.js"></script>
+  <script src="./taipei-school-districts-115.js"></script>
+  <script src="./school-districts-115/松山.js"></script>
+  <script src="./school-districts-115/信義.js"></script>
+  <script src="./school-districts-115/大安.js"></script>
+  <script src="./school-districts-115/中山.js"></script>
+  <script src="./school-districts-115/中正.js"></script>
+  <script src="./school-districts-115/大同.js"></script>
+  <script src="./school-districts-115/萬華.js"></script>
+  <script src="./school-districts-115/文山.js"></script>
+  <script src="./school-districts-115/南港.js"></script>
+  <script src="./school-districts-115/內湖.js"></script>
+  <script src="./school-districts-115/士林.js"></script>
+  <script src="./school-districts-115/北投.js"></script>
+  <script src="./school-district-data-guard.js"></script>
+  <script src="./school-district-layer.js"></script>
+  <script src="./school-location-layer.js"></script>
+  <style>
+    html,body,#map{width:100%;height:100%;margin:0}body{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow:hidden;background:#9fd5f6;color:#24303a}#map{position:absolute;inset:0}
+    .panel{position:absolute;z-index:8;left:14px;top:14px;width:min(440px,calc(100vw - 28px));max-height:calc(100vh - 28px);overflow:auto;padding:13px;border:1px solid rgba(255,255,255,.78);border-radius:16px;background:rgba(255,255,255,.94);box-shadow:0 10px 30px rgba(0,0,0,.18);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+    .eyebrow{font-size:10px;font-weight:900;letter-spacing:.12em;color:#69757f}.title{font-size:18px;font-weight:900;margin:4px 0}.sub{font-size:11.5px;line-height:1.45;color:#64707a;margin-bottom:8px}
+    .controls{display:flex;gap:6px;flex-wrap:wrap;margin:7px 0}button{border:1px solid #c7d0d8;border-radius:10px;padding:8px 10px;background:#fff;font-size:12px;font-weight:800;color:#26323c;cursor:pointer}.active{background:#26323c;color:#fff;border-color:#26323c}.mode-active{background:#edf3f7;border-color:#96a7b4}
+    .radius{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;margin:9px 0;padding:9px;border-radius:12px;background:#f4f7f9}.radius input{width:100%}.value{font-size:13px;font-weight:900;min-width:58px;text-align:right}
+    .selection{padding:10px;border:1px solid #d8dfe4;border-radius:12px;background:#fff}.selection strong{font-size:13px}.coords{font-size:10.5px;color:#73808a;margin-top:2px;font-variant-numeric:tabular-nums}.status{font-size:11px;line-height:1.42;color:#64707a;margin-top:6px}.good{color:#137333}.error{color:#b42318;font-weight:700}.warn{color:#8a5b00}
+    .research{margin-top:8px;padding:8px 9px;border-radius:10px;background:#fff6df;color:#77561d;font-size:10.5px;line-height:1.4}
+    .result-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px}.result-head strong{font-size:13px}.badge{display:inline-block;padding:2px 7px;border-radius:999px;background:#ef5a29;color:#fff;font-size:10px;font-weight:900}.cards{display:grid;gap:7px;margin-top:7px}.card{display:block;border:1px solid #e0e5e9;border-radius:11px;padding:9px;background:#fff;color:inherit;text-decoration:none}.card:hover{border-color:#aeb9c1;box-shadow:0 3px 10px rgba(0,0,0,.06)}.card-top{display:flex;gap:7px;align-items:flex-start;justify-content:space-between}.card-title{font-size:12px;font-weight:850;line-height:1.35}.price{font-size:13px;font-weight:950;white-space:nowrap}.meta{margin-top:4px;font-size:10.5px;color:#69757f;line-height:1.4}.distance{font-weight:850;color:#344651}.empty{padding:12px;border:1px dashed #cbd4da;border-radius:11px;color:#68757f;font-size:11px;line-height:1.45}
+    .listing-popup{font:12px/1.45 system-ui,-apple-system,sans-serif;min-width:220px;max-width:280px}.listing-popup .p-title{font-size:14px;font-weight:850;margin:4px 0}.listing-popup .p-price{font-size:15px;font-weight:950;color:#d34f22}.listing-popup a{display:inline-block;margin-top:7px;color:#1467a3;font-weight:800}.maplibregl-ctrl-top-right{top:8px}
+    @media(max-width:680px){.panel{left:10px;right:10px;top:auto;bottom:calc(10px + env(safe-area-inset-bottom));width:auto;max-height:56vh}.title{font-size:15px}.sub{display:none}.cards{max-height:170px;overflow:auto}}
+  </style>
+</head>
+<body>
+<div id="map"></div>
+<section class="panel">
+  <div class="eyebrow">ISSUE #46 · LOCAL INVENTORY RESEARCH</div>
+  <div class="title">點學校／地點 → 房源直接出現在地圖</div>
+  <div class="sub">學區仍是 Taipei-Maps 的精確官方里鄰層。點學校圓點或任意位置後，本機研究 server 會低頻讀取 591 公開頁面使用的資料服務，把有座標且落在 N 公尺內的中古屋直接畫回本圖。</div>
+
+  <div class="controls">
+    <button id="districtBtn" class="active">🎓 學區 ON</button>
+    <button id="elementaryBtn" class="mode-active">國小</button>
+    <button id="juniorBtn">國中</button>
+    <button id="schoolPointBtn" class="mode-active">🏫 校點 ON</button>
+    <button id="clearBtn">清除</button>
+  </div>
+
+  <div class="radius">
+    <span>搜尋半徑</span>
+    <input id="radiusInput" type="range" min="100" max="2000" step="50" value="500" />
+    <span id="radiusValue" class="value">500 m</span>
+  </div>
+  <div class="controls">
+    <button class="radiusPreset" data-radius="250">250m</button>
+    <button class="radiusPreset active" data-radius="500">500m</button>
+    <button class="radiusPreset" data-radius="750">750m</button>
+    <button class="radiusPreset" data-radius="1000">1km</button>
+    <button class="radiusPreset" data-radius="1500">1.5km</button>
+  </div>
+
+  <div class="selection">
+    <div id="selectionTitle"><strong>請點一個學校圓點，或直接點地圖</strong></div>
+    <div id="selectionCoords" class="coords">尚未選點</div>
+    <div id="selectionStatus" class="status">選點後會自動搜尋，不需要再跳去 591。</div>
+  </div>
+
+  <div class="research">⚠️ 研究版不是完整房源聚合器。目前每次最多掃描該行政區前 60 筆 591 搜尋候選，再用每筆 detail 的來源座標做真正 N 公尺過濾。看到 0 間不代表附近真的沒有房；這版只是在驗證「POI → 房源直接長在環境地圖上」的產品體驗。</div>
+
+  <div class="result-head"><strong>附近中古屋</strong><span class="badge">591 research</span></div>
+  <div id="inventoryStatus" class="status">尚未搜尋</div>
+  <div id="listingCards" class="cards"><div class="empty">先點一個學校或地點。成功後，房源 pin 與房源卡會直接出現在 Taipei-Maps；點卡片才前往原始 591 頁。</div></div>
+
+  <div id="districtStatus" class="status">學區載入中…</div>
+  <div id="schoolPointStatus" class="status">校點載入中…</div>
+</section>
+<script>
+(async()=>{
+  const $=s=>document.querySelector(s);
+  const districtStatus=$('#districtStatus'),schoolPointStatus=$('#schoolPointStatus'),inventoryStatus=$('#inventoryStatus'),listingCards=$('#listingCards');
+  const radiusInput=$('#radiusInput'),radiusValue=$('#radiusValue'),selectionTitle=$('#selectionTitle'),selectionCoords=$('#selectionCoords'),selectionStatus=$('#selectionStatus');
+  if(!window.maplibregl||!window.pmtiles||!window.TaipeiMapsCore||!window.TaipeiMapsSchoolDistrictDataReady||!window.TaipeiMapsSchoolDistrictLayer||!window.TaipeiMapsSchoolLocationLayer){selectionStatus.textContent=`載入失敗${window.TaipeiMapsSchoolDistrictDataError?` · ${window.TaipeiMapsSchoolDistrictDataError}`:''}`;selectionStatus.className='status error';return;}
+
+  const core=window.TaipeiMapsCore,DATASET=window.TaipeiMapsSchoolDistrictData115,EMPTY={type:'FeatureCollection',features:[]};
+  let overture;try{overture=await core.preflightOverture();}catch(e){selectionStatus.textContent=`Overture 載入失敗：${e?.message||e}`;selectionStatus.className='status error';return;}
+  const map=core.createMap({container:'map',view:{...core.PLACES.daan,zoom:14.7,pitch:0},overtureUrl:overture.candidate.url,hasParts:overture.hasParts});
+  map.addControl(new maplibregl.NavigationControl(),'top-right');
+
+  let districtLayer=null,schoolLocationLayer=null,districtLevel='elementary',schoolPointsOn=true;
+  let selected=null,radius=500,marker=null,searchSerial=0,radiusTimer=null,lastListings=[];
+
+  function safe(s){return String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
+  function destination(lng,lat,distanceM,bearingRad){const R=6371008.8,d=distanceM/R,phi1=lat*Math.PI/180,lambda1=lng*Math.PI/180;const phi2=Math.asin(Math.sin(phi1)*Math.cos(d)+Math.cos(phi1)*Math.sin(d)*Math.cos(bearingRad));const lambda2=lambda1+Math.atan2(Math.sin(bearingRad)*Math.sin(d)*Math.cos(phi1),Math.cos(d)-Math.sin(phi1)*Math.sin(phi2));return [lambda2*180/Math.PI,phi2*180/Math.PI];}
+  function circleFeature(lng,lat,distanceM){const ring=[];for(let i=0;i<=96;i++)ring.push(destination(lng,lat,distanceM,(i/96)*Math.PI*2));return {type:'Feature',properties:{radius_m:distanceM},geometry:{type:'Polygon',coordinates:[ring]}};}
+  function updateCircle(){radius=Number(radiusInput.value);radiusValue.textContent=radius>=1000?`${(radius/1000).toFixed(radius%1000?1:0)} km`:`${radius} m`;document.querySelectorAll('.radiusPreset').forEach(btn=>btn.classList.toggle('active',Number(btn.dataset.radius)===radius));const src=map.getSource('listing-radius');if(src)src.setData(selected?{type:'FeatureCollection',features:[circleFeature(selected.lng,selected.lat,radius)]}:EMPTY);if(selected)selectionTitle.innerHTML=`<strong>${safe(selected.label||'這個位置')} · ${safe(radiusValue.textContent)} 內</strong>`;}
+
+  async function districtAtPoint(lng,lat){const endpoint=DATASET.sources?.geometry?.endpoint;if(!endpoint)return null;const params=new URLSearchParams({where:'1=1',outFields:'SECT_NAME',returnGeometry:'false',geometry:`${lng},${lat}`,geometryType:'esriGeometryPoint',inSR:'4326',spatialRel:'esriSpatialRelIntersects',resultRecordCount:'5',f:'json'});try{const r=await fetch(`${endpoint}?${params}`,{cache:'no-store'});if(!r.ok)throw new Error(`HTTP ${r.status}`);const payload=await r.json();const raw=payload?.features?.[0]?.attributes?.SECT_NAME||payload?.features?.[0]?.properties?.SECT_NAME||'';return String(raw).replace(/區$/,'').trim()||null;}catch(e){console.warn('district lookup failed',e);return null;}}
+
+  function listingsToGeoJSON(listings){return {type:'FeatureCollection',features:listings.map((x,index)=>({type:'Feature',id:index,geometry:{type:'Point',coordinates:[Number(x.lng),Number(x.lat)]},properties:{...x,price_label:String(x.price||'').includes('萬')?String(x.price):`${x.price||'—'}萬`}}))};}
+  function setListings(listings){lastListings=listings;const src=map.getSource('nearby-listings');if(src)src.setData(listingsToGeoJSON(listings));renderCards(listings);}
+  function listingPopup(p){return `<div class="listing-popup"><span class="badge">591</span><div class="p-title">${safe(p.title)}</div><div class="p-price">${safe(p.price_label||p.price)}${String(p.price_label||p.price).includes('萬')?'':' 萬'}</div><div>${safe(p.layout||'')} ${p.area?`· ${safe(p.area)}坪`:''} ${p.age?`· ${safe(p.age)}年`:''}</div><div class="meta distance">距選點 ${safe(p.distance_m)} m</div>${p.community?`<div class="meta">${safe(p.community)}</div>`:''}<a href="${safe(p.url)}" target="_blank" rel="noopener">開啟 591 原始房源 ↗</a></div>`;}
+  function renderCards(listings){if(!listings.length){listingCards.innerHTML='<div class="empty">這個研究樣本沒有找到半徑內房源。⚠️ 不代表真的沒有房；目前只掃行政區前 60 筆候選。可以先把半徑放大到 1km / 1.5km 看產品感。</div>';return;}listingCards.innerHTML=listings.slice(0,20).map(x=>`<a class="card" href="${safe(x.url)}" target="_blank" rel="noopener"><div class="card-top"><div class="card-title"><span class="badge">591</span> ${safe(x.title)}</div><div class="price">${safe(x.price)}${String(x.price).includes('萬')?'':'萬'}</div></div><div class="meta"><span class="distance">${safe(x.distance_m)}m</span> · ${safe(x.layout||'格局未列')} ${x.area?`· ${safe(x.area)}坪`:''} ${x.age?`· ${safe(x.age)}年`:''}</div>${x.community?`<div class="meta">${safe(x.community)}</div>`:''}</a>`).join('');}
+
+  async function fetchNearbyListings(){if(!selected?.district)return;const serial=++searchSerial;inventoryStatus.textContent=`591 ${selected.district}區候選掃描中… 第一次會比較慢`;inventoryStatus.className='status warn';setListings([]);const params=new URLSearchParams({lat:String(selected.lat),lng:String(selected.lng),radius:String(radius),district:selected.district});try{const r=await fetch(`/api/nearby-listings?${params}`,{cache:'no-store'});const payload=await r.json();if(serial!==searchSerial)return;if(!r.ok)throw new Error(payload?.error||`HTTP ${r.status}`);setListings(payload.listings||[]);const cache=payload.cache_hit?' · 搜尋快取':'',errors=payload.detail_error_count?` · detail錯誤 ${payload.detail_error_count}`:'';inventoryStatus.textContent=`591 · ${selected.district}區 · 候選 ${payload.candidate_count} → 有座標 ${payload.geolocated_count} → ${radiusValue.textContent}內 ${payload.listings.length}間${cache}${errors}`;inventoryStatus.className='status good';selectionStatus.textContent=payload.coverage_note||'研究樣本完成';selectionStatus.className='status warn';}catch(e){if(serial!==searchSerial)return;setListings([]);inventoryStatus.textContent=`591 研究抓取失敗：${e?.message||e}`;inventoryStatus.className='status error';selectionStatus.textContent='請看黑色 BAT 視窗的 [591] 錯誤。研究版不做 CAPTCHA / Cloudflare 繞過。';selectionStatus.className='status error';}}
+
+  async function selectCenter(lng,lat,label='這個位置'){selected={lng:Number(lng),lat:Number(lat),label,district:null};if(!marker)marker=new maplibregl.Marker({color:'#d64545'}).setLngLat([selected.lng,selected.lat]).addTo(map);else marker.setLngLat([selected.lng,selected.lat]);selectionCoords.textContent=`${selected.lat.toFixed(6)}, ${selected.lng.toFixed(6)}`;selectionStatus.textContent='正在確認行政區…';selectionStatus.className='status';updateCircle();setListings([]);const district=await districtAtPoint(selected.lng,selected.lat);if(!selected||selected.lng!==Number(lng)||selected.lat!==Number(lat))return;if(!district){selectionStatus.textContent='目前研究版只在台北市 12 區抓 591 中古屋。';selectionStatus.className='status error';inventoryStatus.textContent='未搜尋';return;}selected.district=district;selectionTitle.innerHTML=`<strong>${safe(label)} · ${safe(district)}區 · ${safe(radiusValue.textContent)} 內</strong>`;selectionStatus.textContent='行政區確認完成，開始抓附近 591 研究樣本…';await fetchNearbyListings();}
+
+  function clearSelection(){searchSerial++;clearTimeout(radiusTimer);selected=null;if(marker){marker.remove();marker=null;}setListings([]);const radiusSrc=map.getSource('listing-radius');if(radiusSrc)radiusSrc.setData(EMPTY);selectionTitle.innerHTML='<strong>請點一個學校圓點，或直接點地圖</strong>';selectionCoords.textContent='尚未選點';selectionStatus.textContent='選點後會自動搜尋，不需要再跳去 591。';selectionStatus.className='status';inventoryStatus.textContent='尚未搜尋';inventoryStatus.className='status';listingCards.innerHTML='<div class="empty">先點一個學校或地點。成功後，房源 pin 與房源卡會直接出現在 Taipei-Maps；點卡片才前往原始 591 頁。</div>';}
+  function scheduleRadiusSearch(){updateCircle();if(!selected?.district)return;clearTimeout(radiusTimer);inventoryStatus.textContent='半徑已變更，準備重新過濾…';inventoryStatus.className='status';radiusTimer=setTimeout(()=>fetchNearbyListings(),550);}
+  function syncSchoolPoints(){if(!schoolLocationLayer)return;schoolLocationLayer.setLevel(districtLevel);schoolLocationLayer.setEnabled(schoolPointsOn);}
+  function syncLevelButtons(){$('#elementaryBtn').classList.toggle('mode-active',districtLevel==='elementary');$('#juniorBtn').classList.toggle('mode-active',districtLevel==='junior');$('#schoolPointBtn').classList.toggle('mode-active',schoolPointsOn);$('#schoolPointBtn').textContent=`🏫 校點 ${schoolPointsOn?'ON':'OFF'}`;}
+
+  map.on('load',()=>{
+    core.applyCoreVisualState(map,{photo:false,show3d:false,terrain:false,hasParts:overture.hasParts});
+    map.addSource('listing-radius',{type:'geojson',data:EMPTY});
+    const before=map.getLayer('building')?'building':undefined;
+    map.addLayer({id:'listing-radius-fill',type:'fill',source:'listing-radius',paint:{'fill-color':'#e95b3d','fill-opacity':.075}},before);
+    map.addLayer({id:'listing-radius-line',type:'line',source:'listing-radius',paint:{'line-color':'#d74b31','line-width':2,'line-dasharray':[2,1.5]}},before);
+    map.addSource('nearby-listings',{type:'geojson',data:EMPTY});
+    map.addLayer({id:'nearby-listing-point',type:'circle',source:'nearby-listings',paint:{'circle-radius':['interpolate',['linear'],['zoom'],13,6,15,8,17,10],'circle-color':'#ef5a29','circle-stroke-color':'#fff','circle-stroke-width':2.2,'circle-opacity':.96}});
+    map.addLayer({id:'nearby-listing-label',type:'symbol',source:'nearby-listings',minzoom:14,layout:{'text-field':['get','price_label'],'text-size':11,'text-offset':[0,1.25],'text-anchor':'top','text-allow-overlap':false,'text-padding':12},paint:{'text-color':'#7f2e18','text-halo-color':'rgba(255,255,255,.96)','text-halo-width':1.4}});
+
+    districtLayer=new TaipeiMapsSchoolDistrictLayer.SchoolDistrictLayer(map,{onState:({state,message})=>{districtStatus.textContent=message;districtStatus.className=`status ${state==='error'?'error':state==='ready'?'good':''}`;}});districtLayer.init();districtLayer.setEnabled(true);
+    schoolLocationLayer=new TaipeiMapsSchoolLocationLayer.SchoolLocationLayer(map,{onState:({state,message})=>{schoolPointStatus.textContent=message;schoolPointStatus.className=`status ${state==='error'?'error':state==='ready'?'good':''}`;}});schoolLocationLayer.init();syncSchoolPoints();syncLevelButtons();updateCircle();
+  });
+
+  map.on('click',e=>{
+    const listingHit=map.getLayer('nearby-listing-point')?map.queryRenderedFeatures(e.point,{layers:['nearby-listing-point']})?.[0]:null;if(listingHit){new maplibregl.Popup({maxWidth:'300px'}).setLngLat(listingHit.geometry.coordinates.slice()).setHTML(listingPopup(listingHit.properties||{})).addTo(map);return;}
+    const schoolHit=map.getLayer('school-location-point')?map.queryRenderedFeatures(e.point,{layers:['school-location-point']})?.[0]:null;if(schoolHit){const coords=schoolHit.geometry?.coordinates;if(coords)selectCenter(coords[0],coords[1],schoolHit.properties?.name||schoolHit.properties?.short_name||'學校');return;}
+    selectCenter(e.lngLat.lng,e.lngLat.lat,'地圖選點');
+  });
+  map.on('mouseenter','nearby-listing-point',()=>{map.getCanvas().style.cursor='pointer';});map.on('mouseleave','nearby-listing-point',()=>{map.getCanvas().style.cursor='';});
+  radiusInput.addEventListener('input',scheduleRadiusSearch);document.querySelectorAll('.radiusPreset').forEach(btn=>btn.onclick=()=>{radiusInput.value=btn.dataset.radius;scheduleRadiusSearch();});
+  $('#clearBtn').onclick=clearSelection;
+  $('#districtBtn').onclick=()=>{if(!districtLayer)return;const on=$('#districtBtn').classList.toggle('active');districtLayer.setEnabled(on);$('#districtBtn').textContent=`🎓 學區 ${on?'ON':'OFF'}`;};
+  $('#elementaryBtn').onclick=()=>{districtLevel='elementary';districtLayer?.setLevel('elementary');syncSchoolPoints();syncLevelButtons();};
+  $('#juniorBtn').onclick=()=>{districtLevel='junior';districtLayer?.setLevel('junior');syncSchoolPoints();syncLevelButtons();};
+  $('#schoolPointBtn').onclick=()=>{schoolPointsOn=!schoolPointsOn;syncSchoolPoints();syncLevelButtons();};
+})();
+</script>
+</body>
+</html>

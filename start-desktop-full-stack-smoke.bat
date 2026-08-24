@@ -4,8 +4,8 @@ cd /d "%~dp0"
 
 echo ==========================================================
 echo   Taipei-Maps - Desktop full-stack smoke test
-echo   Map + aerial + Overture + Taipei PMTiles + terrain + school + rail
- echo ==========================================================
+echo   Map + aerial + Overture + Taipei PMTiles + terrain + school
+echo ==========================================================
 echo.
 
 set "NODE_CMD="
@@ -35,7 +35,7 @@ if not exist public\generated\taipei_building_height_citywide.pmtiles (
   exit /b 1
 )
 
-echo [1/4] Validating committed Taipei 115 school-district runtime...
+echo [1/3] Validating committed Taipei 115 school-district runtime...
 "%NODE_CMD%" tools\data\validate_taipei_school_districts.mjs
 if errorlevel 1 (
   echo.
@@ -45,7 +45,7 @@ if errorlevel 1 (
 )
 
 echo.
-echo [2/4] Validating school-layer pagination and viewport caches...
+echo [2/3] Validating school-layer pagination and viewport caches...
 "%NODE_CMD%" tools\data\validate_school_layer_performance.mjs
 if errorlevel 1 (
   echo.
@@ -55,29 +55,16 @@ if errorlevel 1 (
 )
 
 echo.
-echo [3/4] Validating shared MRT / TRA / THSR rail overlay contract...
-"%NODE_CMD%" tools\data\validate_transit_layer.mjs
-if errorlevel 1 (
-  echo.
-  echo [ERROR] Rail transit overlay validation failed.
-  pause
-  exit /b 1
-)
-
-echo.
-echo [4/4] Opening desktop full-stack validation page...
+echo [3/3] Opening desktop full-stack validation page...
 echo.
 echo Smoke checklist:
 echo   - Daan / Xinyi: Local PMTiles + 3D + Terrain + school ON
-echo   - rail overlay appears automatically in Taiwan; top-right subway button toggles it
- echo   - blue = MRT / metro, green = TRA, orange = THSR
- echo   - switch Elementary / Junior and click catchment popup
+echo   - switch Elementary / Junior and click catchment popup
 echo   - pan around the same district: school status should show cache hits
 echo   - normal zoom should not show dense neighbor-grid lines; they appear only when zoomed close
 echo   - Neihu / Beitou / Yangmingshan / Wenshan
 echo   - map / aerial toggle
-echo   - Banqiao should still show Taiwan rail overlay
-echo   - Shanghai / Tokyo: Taiwan rail overlay hides automatically; NEVER black-screen
+echo   - Banqiao / Shanghai / Tokyo: NEVER black-screen
 echo.
 echo Keep this window open. Press Ctrl+C to stop the local server.
 echo.

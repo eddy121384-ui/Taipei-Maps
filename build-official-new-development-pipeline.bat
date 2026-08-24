@@ -22,6 +22,8 @@ set "MOI_ZIP=%CACHE_DIR%\lvr_buildcasecsv.zip"
 set "MOI_DIR=%CACHE_DIR%\moi"
 set "MOI_RAW_DIR=%CACHE_DIR%\moi-source-bytes"
 set "MOI_ENCODING_MANIFEST=%CACHE_DIR%\moi-encoding-manifest.json"
+set "MOI_NON_TAIPEI_DIR=%CACHE_DIR%\moi-ignored-non-taipei-buildcase"
+set "MOI_SCOPE_MANIFEST=%CACHE_DIR%\moi-taipei-scope-manifest.json"
 set "HIST_XML=%CACHE_DIR%\taipei-permits-historical.xml"
 set "CURR_XML=%CACHE_DIR%\taipei-permits-current.xml"
 set "PERMIT_RAW_DIR=%CACHE_DIR%\taipei-permit-source-bytes"
@@ -37,6 +39,8 @@ if "%REFRESH%"=="1" (
   if exist "%MOI_DIR%" rmdir /s /q "%MOI_DIR%"
   if exist "%MOI_RAW_DIR%" rmdir /s /q "%MOI_RAW_DIR%"
   if exist "%MOI_ENCODING_MANIFEST%" del /q "%MOI_ENCODING_MANIFEST%"
+  if exist "%MOI_NON_TAIPEI_DIR%" rmdir /s /q "%MOI_NON_TAIPEI_DIR%"
+  if exist "%MOI_SCOPE_MANIFEST%" del /q "%MOI_SCOPE_MANIFEST%"
   if exist "%HIST_XML%" del /q "%HIST_XML%"
   if exist "%CURR_XML%" del /q "%CURR_XML%"
   if exist "%PERMIT_RAW_DIR%" rmdir /s /q "%PERMIT_RAW_DIR%"
@@ -46,8 +50,10 @@ if "%REFRESH%"=="1" (
 echo [1/8] Validating pipeline scripts...
 "%NODE_CMD%" --check tools\data\build_official_new_development_pipeline.mjs || goto :fail
 "%NODE_CMD%" --check tools\data\normalize_moi_buildcase_encoding.mjs || goto :fail
+"%NODE_CMD%" --check tools\data\scope_moi_taipei_buildcase.mjs || goto :fail
 "%NODE_CMD%" --check tools\data\normalize_taipei_permit_xml_encoding.mjs || goto :fail
 "%NODE_CMD%" --check tools\data\augment_new_development_audit_encoding.mjs || goto :fail
+"%NODE_CMD%" --check tools\data\augment_new_development_taipei_scope.mjs || goto :fail
 "%NODE_CMD%" tools\data\validate_official_new_development_pipeline.mjs || goto :fail
 
 if not exist "%MOI_ZIP%" (
@@ -66,6 +72,8 @@ if not exist "%MOI_DIR%" (
 
 echo [4/8] Detecting and normalizing MOI BUILDCASE CSV scope/encoding...
 "%NODE_CMD%" tools\data\normalize_moi_buildcase_encoding.mjs || goto :fail
+echo [4b/8] Enforcing MOI Taipei city-code A scope...
+"%NODE_CMD%" tools\data\scope_moi_taipei_buildcase.mjs || goto :fail
 
 if not exist "%HIST_XML%" (
   echo [5/8] Downloading Taipei historical construction permits - large XML...
@@ -87,8 +95,9 @@ echo [6/8] Detecting and normalizing Taipei permit XML encoding...
 echo [7/8] Building canonical Taipei new-development dataset...
 "%NODE_CMD%" tools\data\build_official_new_development_pipeline.mjs || goto :fail
 
-echo [8/8] Attaching source encoding provenance to audit...
+echo [8/8] Attaching source provenance to canonical outputs...
 "%NODE_CMD%" tools\data\augment_new_development_audit_encoding.mjs || goto :fail
+"%NODE_CMD%" tools\data\augment_new_development_taipei_scope.mjs || goto :fail
 
 echo.
 echo ==========================================================

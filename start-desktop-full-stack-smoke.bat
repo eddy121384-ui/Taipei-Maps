@@ -35,7 +35,7 @@ if not exist public\generated\taipei_building_height_citywide.pmtiles (
   exit /b 1
 )
 
-echo [1/2] Validating committed Taipei 115 school-district runtime...
+echo [1/3] Validating committed Taipei 115 school-district runtime...
 "%NODE_CMD%" tools\data\validate_taipei_school_districts.mjs
 if errorlevel 1 (
   echo.
@@ -45,11 +45,23 @@ if errorlevel 1 (
 )
 
 echo.
-echo [2/2] Opening desktop full-stack validation page...
+echo [2/3] Validating school-layer pagination and viewport caches...
+"%NODE_CMD%" tools\data\validate_school_layer_performance.mjs
+if errorlevel 1 (
+  echo.
+  echo [ERROR] School-layer performance regression validation failed.
+  pause
+  exit /b 1
+)
+
+echo.
+echo [3/3] Opening desktop full-stack validation page...
 echo.
 echo Smoke checklist:
 echo   - Daan / Xinyi: Local PMTiles + 3D + Terrain + school ON
 echo   - switch Elementary / Junior and click catchment popup
+echo   - pan around the same district: school status should show cache hits
+echo   - normal zoom should not show dense neighbor-grid lines; they appear only when zoomed close
 echo   - Neihu / Beitou / Yangmingshan / Wenshan
 echo   - map / aerial toggle
 echo   - Banqiao / Shanghai / Tokyo: NEVER black-screen

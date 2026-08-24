@@ -38,16 +38,28 @@ const requiredTransitTokens=[
   "O:'#f8b61c'",
   "BL:'#0070bd'",
   "Y:'#ffdb00'",
+  "GLOBAL_METRO_COLOR='#1976d2'",
+  "GLOBAL_RAIL_COLOR='#5f6b76'",
+  "TAIWAN_TRA_COLOR='#2e7d32'",
+  "TAIWAN_THSR_COLOR='#f57c00'",
+  "GLOBAL_LAYER_IDS",
+  "TAIWAN_ONLY_LAYER_IDS",
+  "applyRegionalAppearance",
+  "this.map.setPaintProperty(LAYERS.tra,'line-color',inTaiwan?TAIWAN_TRA_COLOR:GLOBAL_RAIL_COLOR)",
+  "this.map.setPaintProperty(LAYERS.thsr,'line-color',inTaiwan?TAIWAN_THSR_COLOR:GLOBAL_RAIL_COLOR)",
+  "this.map.setLayoutProperty(id,'visibility',this.enabled?'visible':'none')",
+  "localVisible=this.enabled&&inTaiwan&&this.officialMrtReady",
+  "軌道 ON · 全球捷運 / 鐵路 · Overture",
+  "map.addControl(this.control,'top-right')",
   "validateOfficialMrt",
   "Local Taipei MRT GIS HTTP",
-  "lineLayer(LAYERS.mrt,mrtFilter,'#1976d2'",
-  "this.setFallbackMetroAppearance(true)",
-  "map.addControl(this.control,'top-right')",
-  "this.emit('outside','軌道僅在台灣顯示'",
   "return false;"
 ];
 for(const token of requiredTransitTokens){
   if(!transit.includes(token))throw new Error(`Transit contract missing: ${token}`);
+}
+if(transit.includes("this.emit('outside','軌道僅在台灣顯示'")){
+  throw new Error('Global rail regression: transit overlay must not disappear outside Taiwan');
 }
 if(transit.includes('data.taipei/api/frontstage/tpeod/dataset/resource.download')){
   throw new Error('Browser transit layer must not fetch Taipei government GIS cross-origin; use the local generated dataset');
@@ -101,14 +113,18 @@ for(const forbidden of ['sale.591.com.tw','sinyi.com.tw','yungching.com.tw']){
 console.log(JSON.stringify({
   status:'PASS',
   rail_base:'Overture transportation.pmtiles / segment',
+  global_transit:true,
+  overseas_behavior:'blue metro + neutral rail; no Taiwan provider semantics',
+  taiwan_behavior:'official MRT colors + green TRA + orange THSR',
   mrt_authoritative_source:'Taipei City DORTS GIS',
   mrt_runtime_path:'local generated GeoJSON; no browser CORS dependency',
   mrt_source_crs:'EPSG:3826',
   mrt_output_crs:'EPSG:4326',
   mrt_colors:{BR:'#c48c31',R:'#e3002c',G:'#008659',O:'#f8b61c',BL:'#0070bd',Y:'#ffdb00'},
-  filters:{mrt_fallback:['subway','monorail','light_rail'],tra:['narrow_gauge'],thsr:['standard_gauge']},
-  fallback_mrt_color:'#1976d2',
-  taiwan_scoped:true,
+  filters:{mrt_fallback:['subway','monorail','light_rail'],rail_narrow:['narrow_gauge'],rail_standard:['standard_gauge']},
+  global_mrt_color:'#1976d2',
+  global_rail_color:'#5f6b76',
+  taiwan_local_semantics:true,
   shared_core_bootstrap:true,
   default_enabled:true,
   transit_toggle_control:true,

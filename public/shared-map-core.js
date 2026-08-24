@@ -1,4 +1,7 @@
 (()=>{
+  const CORE_SCRIPT_URL=document.currentScript?.src||location.href;
+  const TRANSIT_MODULE_URL=new URL('./transit-layer.js',CORE_SCRIPT_URL).href;
+
   const PLACES={
     daan:{center:[121.5434,25.0268],zoom:15.15,pitch:58,bearing:-24},
     songshan:{center:[121.5608,25.0525],zoom:15.15,pitch:58,bearing:18},
@@ -133,12 +136,27 @@
     return provider;
   }
 
+  async function bootstrapTransit(map,overtureUrl){
+    try{
+      if(!window.TaipeiMapsTransitLayer)await import(TRANSIT_MODULE_URL);
+      const TransitLayer=window.TaipeiMapsTransitLayer?.TransitLayer;
+      if(!TransitLayer)throw new Error('TransitLayer module did not register');
+      const transit=new TransitLayer(map,{overtureBuildingUrl:overtureUrl,enabled:true});
+      map.__taipeiMapsTransitLayer=transit;
+      await transit.init();
+    }catch(e){
+      console.warn('Taipei-Maps transit overlay bootstrap failed',e);
+      map.fire('taipei-maps-transitchange',{state:'error',message:`軌道交通暫時無法載入 · ${e?.message||e}`,enabled:false});
+    }
+  }
+
   function createMap({container,view,overtureUrl,hasParts,extraSources={},extraLayers=[],maxZoom=18}){
     ensurePmtilesProtocol();
     const map=new maplibregl.Map({
       container,...view,maxPitch:85,maxZoom,antialias:true,
       style:{version:8,sky:SKY,sources:{...coreSources(overtureUrl),...extraSources},layers:[...coreLayers(hasParts),...extraLayers],terrain:{source:IDS.terrainSource,exaggeration:1}}
     });
+    map.on('load',()=>{bootstrapTransit(map,overtureUrl);});
     map.on('moveend',()=>{
       const state=map.__taipeiMapsVisualState;
       if(!state?.photo||!map.isStyleLoaded())return;

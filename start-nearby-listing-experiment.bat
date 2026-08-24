@@ -33,7 +33,17 @@ if not exist public\nearby-listing-experiment.html (
   exit /b 1
 )
 
-echo Opening product experiment...
+echo [1/2] Validating experiment page and handoff contracts...
+"%NODE_CMD%" tools\data\validate_nearby_listing_experiment.mjs
+if errorlevel 1 (
+  echo.
+  echo [ERROR] Nearby-listing experiment validation failed.
+  pause
+  exit /b 1
+)
+
+echo.
+echo [2/2] Opening product experiment...
 echo.
 echo Test flow:
 echo   1. pick elementary or junior school catchment

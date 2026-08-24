@@ -10,9 +10,13 @@ const builder=await readFile(builderPath,'utf8');
 
 new vm.Script(transit,{filename:transitPath});
 new vm.Script(core,{filename:corePath,importModuleDynamically:()=>{}});
-// The builder is ESM. Strip import declarations only for a no-execution syntax
-// parse so validation does not depend on experimental vm module flags.
-new vm.Script(builder.replace(/^import .*$/gm,''),{filename:builderPath});
+// The builder is ESM. For a no-execution syntax parse, remove imports and
+// replace the import.meta bootstrap only in this temporary validation copy.
+const builderSyntaxCopy=builder
+  .replace(/^import .*$/gm,'')
+  .replace(/^const __filename=.*$/m,"const __filename='';")
+  .replace(/^const __dirname=.*$/m,"const __dirname='';");
+new vm.Script(builderSyntaxCopy,{filename:builderPath});
 
 const requiredTransitTokens=[
   "transportation.pmtiles",

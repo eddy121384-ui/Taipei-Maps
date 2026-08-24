@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#9fd5f6" />
+  <title>Taipei-Maps · 附近房源實驗</title>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" />
+  <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+  <script src="https://unpkg.com/pmtiles@4.4.1/dist/pmtiles.js"></script>
+  <script src="./shared-map-core.js"></script>
+  <script src="./taipei-school-districts-115.js"></script>
+  <script src="./school-districts-115/松山.js"></script>
+  <script src="./school-districts-115/信義.js"></script>
+  <script src="./school-districts-115/大安.js"></script>
+  <script src="./school-districts-115/中山.js"></script>
+  <script src="./school-districts-115/中正.js"></script>
+  <script src="./school-districts-115/大同.js"></script>
+  <script src="./school-districts-115/萬華.js"></script>
+  <script src="./school-districts-115/文山.js"></script>
+  <script src="./school-districts-115/南港.js"></script>
+  <script src="./school-districts-115/內湖.js"></script>
+  <script src="./school-districts-115/士林.js"></script>
+  <script src="./school-districts-115/北投.js"></script>
+  <script src="./school-district-data-guard.js"></script>
+  <script src="./school-district-layer.js"></script>
+  <script src="./school-location-layer.js"></script>
+  <style>
+    html,body,#map{width:100%;height:100%;margin:0}body{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow:hidden;background:#9fd5f6;color:#24303a}#map{position:absolute;inset:0}
+    .panel{position:absolute;z-index:5;left:14px;top:14px;width:min(430px,calc(100vw - 28px));max-height:calc(100vh - 28px);overflow:auto;padding:13px;border:1px solid rgba(255,255,255,.7);border-radius:16px;background:rgba(255,255,255,.93);box-shadow:0 10px 30px rgba(0,0,0,.18);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+    .eyebrow{font-size:10px;font-weight:900;letter-spacing:.12em;color:#69757f}.title{font-size:18px;font-weight:900;margin:4px 0}.sub{font-size:11.5px;line-height:1.45;color:#64707a;margin-bottom:9px}.controls{display:flex;gap:6px;flex-wrap:wrap;margin:7px 0}button,.linkbtn{border:1px solid #c7d0d8;border-radius:10px;padding:8px 10px;background:#fff;font-size:12px;font-weight:800;color:#26323c;cursor:pointer;text-decoration:none}.active{background:#26323c;color:#fff;border-color:#26323c}.mode-active{background:#edf3f7;border-color:#96a7b4}.radius{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;margin:10px 0;padding:9px;border-radius:12px;background:#f4f7f9}.radius input{width:100%}.value{font-size:13px;font-weight:900;min-width:58px;text-align:right}.selection{margin-top:9px;padding:10px;border:1px solid #d8dfe4;border-radius:12px;background:#fff}.coords{font-size:11px;color:#66717b;font-variant-numeric:tabular-nums}.provider{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:9px 0;border-top:1px solid #e6eaed}.provider:first-of-type{border-top:0}.provider strong{font-size:13px}.provider small{display:block;margin-top:2px;color:#6a7680;line-height:1.35}.good{color:#137333}.warn{color:#a15c00}.status{font-size:11px;line-height:1.4;color:#64707a;margin-top:6px}.maplibregl-ctrl-top-right{top:8px}.maplibregl-marker{z-index:4}
+    @media(max-width:680px){.panel{left:10px;right:10px;top:auto;bottom:calc(10px + env(safe-area-inset-bottom));width:auto;max-height:52vh}.title{font-size:15px}.sub{display:none}}
+  </style>
+</head>
+<body>
+<div id="map"></div>
+<section class="panel">
+  <div class="eyebrow">ISSUE #46 · PRODUCT EXPERIMENT</div>
+  <div class="title">點一個地方 → 看附近房源</div>
+  <div class="sub">先用 115 學年度精確學區挑位置，再點地圖任一處。Taipei-Maps 負責精準 N 公尺圈；外部房仲網站只做房源入口，不假裝擁有房源。</div>
+
+  <div class="controls">
+    <button id="districtBtn" class="active">🎓 學區 ON</button>
+    <button id="elementaryBtn" class="mode-active">國小</button>
+    <button id="juniorBtn">國中</button>
+    <button id="schoolPointBtn" class="mode-active">🏫 校點 ON</button>
+    <button id="clearBtn">清除選點</button>
+  </div>
+
+  <div class="radius">
+    <span>搜尋半徑</span>
+    <input id="radiusInput" type="range" min="100" max="2000" step="50" value="500" />
+    <span id="radiusValue" class="value">500 m</span>
+  </div>
+  <div class="controls">
+    <button class="radiusPreset" data-radius="250">250m</button>
+    <button class="radiusPreset active" data-radius="500">500m</button>
+    <button class="radiusPreset" data-radius="750">750m</button>
+    <button class="radiusPreset" data-radius="1000">1km</button>
+    <button class="radiusPreset" data-radius="1500">1.5km</button>
+  </div>
+
+  <div class="selection">
+    <div id="selectionTitle"><strong>請直接點地圖選一個中心點</strong></div>
+    <div id="selectionCoords" class="coords">尚未選點</div>
+    <div id="selectionStatus" class="status">圓圈只代表 Taipei-Maps 的精準搜尋範圍；外部網站是否能承接同一個半徑，會個別標示。</div>
+    <div class="provider">
+      <div><strong>信義房屋地圖</strong><small id="sinyiNote">選點後可把中心座標帶到信義；信義原生有 500m 半徑圈選。</small></div>
+      <a id="sinyiLink" class="linkbtn" href="https://www.sinyi.com.tw/buy/map" target="_blank" rel="noopener">開啟</a>
+    </div>
+    <div class="provider">
+      <div><strong>591 中古屋地圖</strong><small class="warn">目前未驗證公開 URL 可承接任意座標／半徑；會開啟 591 地圖，需手動移到同位置。</small></div>
+      <a id="fiveNineOneLink" class="linkbtn" href="https://sale.591.com.tw/map-index.html" target="_blank" rel="noopener">開啟</a>
+    </div>
+  </div>
+
+  <div id="districtStatus" class="status">學區載入中…</div>
+  <div id="schoolPointStatus" class="status">校點載入中…</div>
+</section>
+<script>
+(async()=>{
+  const $=s=>document.querySelector(s);
+  const districtStatus=$('#districtStatus'),schoolPointStatus=$('#schoolPointStatus'),radiusInput=$('#radiusInput'),radiusValue=$('#radiusValue');
+  const selectionTitle=$('#selectionTitle'),selectionCoords=$('#selectionCoords'),selectionStatus=$('#selectionStatus'),sinyiLink=$('#sinyiLink'),sinyiNote=$('#sinyiNote');
+  if(!window.maplibregl||!window.pmtiles||!window.TaipeiMapsCore||!window.TaipeiMapsSchoolDistrictDataReady||!window.TaipeiMapsSchoolDistrictLayer||!window.TaipeiMapsSchoolLocationLayer){
+    selectionStatus.textContent=`載入失敗${window.TaipeiMapsSchoolDistrictDataError?` · ${window.TaipeiMapsSchoolDistrictDataError}`:''}`;return;
+  }
+  const core=window.TaipeiMapsCore,DATASET=window.TaipeiMapsSchoolDistrictData115;
+  const DISTRICT_ZIP={中正:'100',大同:'103',中山:'104',松山:'105',大安:'106',萬華:'108',信義:'110',士林:'111',北投:'112',內湖:'114',南港:'115',文山:'116'};
+  let overture;
+  try{overture=await core.preflightOverture();}catch(e){selectionStatus.textContent=`Overture 載入失敗：${e?.message||e}`;return;}
+  const map=core.createMap({container:'map',view:{...core.PLACES.daan,zoom:14.7,pitch:0},overtureUrl:overture.candidate.url,hasParts:overture.hasParts});
+  map.addControl(new maplibregl.NavigationControl(),'top-right');
+
+  let districtLayer=null,schoolLocationLayer=null,districtLevel='elementary',schoolPointsOn=true,selected=null,radius=500,marker=null,lookupSerial=0;
+  const EMPTY={type:'FeatureCollection',features:[]};
+
+  function destination(lng,lat,distanceM,bearingRad){
+    const R=6371008.8,d=distanceM/R,phi1=lat*Math.PI/180,lambda1=lng*Math.PI/180;
+    const phi2=Math.asin(Math.sin(phi1)*Math.cos(d)+Math.cos(phi1)*Math.sin(d)*Math.cos(bearingRad));
+    const lambda2=lambda1+Math.atan2(Math.sin(bearingRad)*Math.sin(d)*Math.cos(phi1),Math.cos(d)-Math.sin(phi1)*Math.sin(phi2));
+    return [lambda2*180/Math.PI,phi2*180/Math.PI];
+  }
+  function circleFeature(lng,lat,distanceM){
+    const ring=[];for(let i=0;i<=96;i++)ring.push(destination(lng,lat,distanceM,(i/96)*Math.PI*2));
+    return {type:'Feature',properties:{radius_m:distanceM},geometry:{type:'Polygon',coordinates:[ring]}};
+  }
+  function syncCircle(){
+    radius=Number(radiusInput.value);radiusValue.textContent=radius>=1000?`${(radius/1000).toFixed(radius%1000?1:0)} km`:`${radius} m`;
+    document.querySelectorAll('.radiusPreset').forEach(btn=>btn.classList.toggle('active',Number(btn.dataset.radius)===radius));
+    const src=map.getSource('listing-radius');if(src)src.setData(selected?{type:'FeatureCollection',features:[circleFeature(selected.lng,selected.lat,radius)]}:EMPTY);
+    if(selected){selectionTitle.innerHTML=`<strong>以這裡為中心找 ${radiusValue.textContent} 內房源</strong>`;selectionStatus.textContent=radius===500?'信義可帶入同一中心點，並可使用其原生 500m 圈選；591 仍需手動移圖。':'目前只有 Taipei-Maps 圓圈是精準 N 公尺；信義可帶中心但其公開頁面只確認原生 500m 圈選。';}
+  }
+  async function districtAtPoint(lng,lat){
+    const serial=++lookupSerial;
+    const endpoint=DATASET.sources?.geometry?.endpoint;if(!endpoint)return null;
+    const params=new URLSearchParams({where:'1=1',outFields:'SECT_NAME',returnGeometry:'false',geometry:`${lng},${lat}`,geometryType:'esriGeometryPoint',inSR:'4326',spatialRel:'esriSpatialRelIntersects',resultRecordCount:'5',f:'json'});
+    try{
+      const r=await fetch(`${endpoint}?${params}`,{cache:'no-store'});if(!r.ok)throw new Error(`HTTP ${r.status}`);
+      const payload=await r.json();if(serial!==lookupSerial)return null;
+      const raw=payload?.features?.[0]?.attributes?.SECT_NAME||payload?.features?.[0]?.properties?.SECT_NAME||'';
+      return String(raw).replace(/區$/,'').trim()||null;
+    }catch(e){console.warn('district lookup failed',e);return null;}
+  }
+  async function selectPoint(lngLat){
+    selected={lng:lngLat.lng,lat:lngLat.lat};
+    if(!marker)marker=new maplibregl.Marker({color:'#d64545'}).setLngLat([selected.lng,selected.lat]).addTo(map);else marker.setLngLat([selected.lng,selected.lat]);
+    selectionCoords.textContent=`${selected.lat.toFixed(6)}, ${selected.lng.toFixed(6)}`;
+    sinyiLink.href='https://www.sinyi.com.tw/buy/map';sinyiNote.textContent='正在確認台北行政區，以建立同中心點連結…';
+    syncCircle();
+    const district=await districtAtPoint(selected.lng,selected.lat),zip=DISTRICT_ZIP[district];
+    if(zip){
+      sinyiLink.href=`https://www.sinyi.com.tw/buy/map/Taipei-city/${zip}-zip/Area-buyMapType/${selected.lat.toFixed(11)}-${selected.lng.toFixed(11)}-mapCenterPosition/default-desc/1`;
+      sinyiNote.textContent=`${district}區 · 中心座標會帶入信義；500m 時可再按信義原生「半徑500m圈選」。`;
+    }else{
+      sinyiLink.href='https://www.sinyi.com.tw/buy/map';sinyiNote.textContent='此點未解析為台北市行政區；先開啟信義地圖首頁。';
+    }
+  }
+  function clearSelection(){selected=null;lookupSerial++;if(marker){marker.remove();marker=null;}selectionTitle.innerHTML='<strong>請直接點地圖選一個中心點</strong>';selectionCoords.textContent='尚未選點';selectionStatus.textContent='圓圈只代表 Taipei-Maps 的精準搜尋範圍；外部網站是否能承接同一個半徑，會個別標示。';sinyiLink.href='https://www.sinyi.com.tw/buy/map';sinyiNote.textContent='選點後可把中心座標帶到信義；信義原生有 500m 半徑圈選。';syncCircle();}
+  function syncSchoolPoints(){if(!schoolLocationLayer)return;schoolLocationLayer.setLevel(districtLevel);schoolLocationLayer.setEnabled(schoolPointsOn);}
+  function syncLevelButtons(){$('#elementaryBtn').classList.toggle('mode-active',districtLevel==='elementary');$('#juniorBtn').classList.toggle('mode-active',districtLevel==='junior');$('#schoolPointBtn').classList.toggle('mode-active',schoolPointsOn);$('#schoolPointBtn').textContent=`🏫 校點 ${schoolPointsOn?'ON':'OFF'}`;}
+
+  map.on('load',()=>{
+    core.applyCoreVisualState(map,{photo:false,show3d:false,terrain:false,hasParts:overture.hasParts});
+    map.addSource('listing-radius',{type:'geojson',data:EMPTY});
+    const before=map.getLayer('building')?'building':undefined;
+    map.addLayer({id:'listing-radius-fill',type:'fill',source:'listing-radius',paint:{'fill-color':'#d64545','fill-opacity':.09}},before);
+    map.addLayer({id:'listing-radius-line',type:'line',source:'listing-radius',paint:{'line-color':'#d64545','line-width':2,'line-dasharray':[2,1]}},before);
+    districtLayer=new TaipeiMapsSchoolDistrictLayer.SchoolDistrictLayer(map,{onState:({state,message})=>{districtStatus.textContent=message;districtStatus.className=`status ${state==='error'?'warn':state==='ready'?'good':''}`;}});districtLayer.init();districtLayer.setEnabled(true);
+    schoolLocationLayer=new TaipeiMapsSchoolLocationLayer.SchoolLocationLayer(map,{onState:({state,message})=>{schoolPointStatus.textContent=message;schoolPointStatus.className=`status ${state==='error'?'warn':state==='ready'?'good':''}`;}});schoolLocationLayer.init();syncSchoolPoints();syncCircle();
+  });
+  map.on('click',e=>selectPoint(e.lngLat));
+  map.on('error',e=>console.error('Map error',e?.error||e));
+  radiusInput.oninput=syncCircle;
+  document.querySelectorAll('.radiusPreset').forEach(btn=>btn.onclick=()=>{radiusInput.value=btn.dataset.radius;syncCircle();});
+  $('#clearBtn').onclick=clearSelection;
+  $('#districtBtn').onclick=()=>{const on=$('#districtBtn').classList.toggle('active');$('#districtBtn').textContent=`🎓 學區 ${on?'ON':'OFF'}`;districtLayer?.setEnabled(on);};
+  $('#elementaryBtn').onclick=()=>{districtLevel='elementary';districtLayer?.setLevel('elementary');syncSchoolPoints();syncLevelButtons();};
+  $('#juniorBtn').onclick=()=>{districtLevel='junior';districtLayer?.setLevel('junior');syncSchoolPoints();syncLevelButtons();};
+  $('#schoolPointBtn').onclick=()=>{schoolPointsOn=!schoolPointsOn;syncSchoolPoints();syncLevelButtons();};
+})();
+</script>
+</body>
+</html>

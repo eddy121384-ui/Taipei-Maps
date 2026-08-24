@@ -52,19 +52,21 @@ async function fetchJson(url,{timeoutMs=15000}={}){
 
 async function search591(sectionId,keyword=''){
   const key=`${sectionId}|${keyword}`;const cached=cacheGet(listCache,key,LIST_TTL);if(cached)return {...cached,cache:true};
-  const all=[];let totalRows=null;
+  const all=[];let totalRows=null,pagesFetched=0;
   for(let page=0;page<MAX_PAGES;page++){
     const params=new URLSearchParams({type:'sale',version:'2017',regionid:'1',sectionidStr:String(sectionId),firstRow:String(page*PAGE_SIZE),newPageSize:String(PAGE_SIZE),device:'touch',device_id:deviceId,timestamp:String(Date.now())});
     if(keyword)params.set('keywords',keyword);
     const payload=await fetchJson(`https://bff-house.591.com.tw/v1/touch/sale/list?${params}`);
+    pagesFetched++;
     if(totalRows==null&&Number.isFinite(Number(payload?.totalRows)))totalRows=Number(payload.totalRows);
-    const items=Array.isArray(payload?.data)?payload.data.filter(item=>item&&item.post_id!=null):[];
+    const rawItems=Array.isArray(payload?.data)?payload.data:[];
+    const items=rawItems.filter(item=>item&&item.post_id!=null);
     all.push(...items);
-    if(items.length<PAGE_SIZE)break;
+    if(rawItems.length<PAGE_SIZE)break;
     await sleep(120);
   }
   const seen=new Set();const rows=all.filter(item=>{const id=String(item.post_id);if(seen.has(id))return false;seen.add(id);return true;});
-  return {...cacheSet(listCache,key,{rows,totalRows,pages:Math.ceil(all.length/PAGE_SIZE)}),cache:false};
+  return {...cacheSet(listCache,key,{rows,totalRows,pages:pagesFetched}),cache:false};
 }
 
 async function detail591(postId){

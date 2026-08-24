@@ -14,6 +14,10 @@
     Y:'#ffdb00'
   };
   const EXPECTED_MRT_COLORS=new Set(Object.values(MRT_COLORS));
+  const GLOBAL_METRO_COLOR='#1976d2';
+  const GLOBAL_RAIL_COLOR='#5f6b76';
+  const TAIWAN_TRA_COLOR='#2e7d32';
+  const TAIWAN_THSR_COLOR='#f57c00';
 
   const LAYERS={
     mrtCasing:'transit-mrt-casing',mrt:'transit-mrt',
@@ -21,7 +25,9 @@
     thsrCasing:'transit-thsr-casing',thsr:'transit-thsr',
     mrtOfficialCasing:'transit-mrt-official-casing',mrtOfficial:'transit-mrt-official'
   };
-  const ALL_LAYER_IDS=Object.values(LAYERS);
+  const GLOBAL_LAYER_IDS=[LAYERS.mrtCasing,LAYERS.mrt,LAYERS.traCasing,LAYERS.tra,LAYERS.thsrCasing,LAYERS.thsr];
+  const TAIWAN_ONLY_LAYER_IDS=[LAYERS.mrtOfficialCasing,LAYERS.mrtOfficial];
+  const ALL_LAYER_IDS=[...GLOBAL_LAYER_IDS,...TAIWAN_ONLY_LAYER_IDS];
 
   function transportationUrl(buildingUrl,release){
     if(buildingUrl&&/\/buildings\.pmtiles(?:\?.*)?$/.test(buildingUrl)){
@@ -98,7 +104,7 @@
       container.className='maplibregl-ctrl maplibregl-ctrl-group';
       const button=document.createElement('button');
       button.type='button';
-      button.setAttribute('aria-label','切換捷運、台鐵與高鐵路線');
+      button.setAttribute('aria-label','切換捷運與鐵路路線');
       button.textContent='🚇';
       button.style.fontSize='16px';
       button.style.lineHeight='1';
@@ -111,10 +117,12 @@
     onRemove(){this.container?.remove();this.container=null;this.button=null;}
     update({inTaiwan=centerInsideTaiwan(this.layer.map)}={}){
       if(!this.button)return;
-      this.button.style.opacity=inTaiwan?'1':'.42';
-      this.button.style.background=this.layer.enabled&&inTaiwan?'#e8f1f8':'';
-      this.button.title=!inTaiwan?'軌道路線僅在台灣顯示':`軌道 ${this.layer.enabled?'ON':'OFF'} · 捷運 / 台鐵 / 高鐵`;
-      this.button.setAttribute('aria-pressed',this.layer.enabled&&inTaiwan?'true':'false');
+      this.button.style.opacity='1';
+      this.button.style.background=this.layer.enabled?'#e8f1f8':'';
+      this.button.title=this.layer.enabled
+        ?(inTaiwan?'軌道 ON · 捷運 / 台鐵 / 高鐵':'軌道 ON · 全球捷運 / 鐵路')
+        :'軌道 OFF · 捷運 / 鐵路';
+      this.button.setAttribute('aria-pressed',this.layer.enabled?'true':'false');
     }
   }
 
@@ -135,9 +143,15 @@
       this.map.fire('taipei-maps-transitchange',{state,message,enabled:this.enabled,...extra});
     }
 
-    setFallbackMetroAppearance(officialReady){
-      if(this.map.getLayer(LAYERS.mrtCasing))this.map.setPaintProperty(LAYERS.mrtCasing,'line-opacity',officialReady?.18:.88);
-      if(this.map.getLayer(LAYERS.mrt))this.map.setPaintProperty(LAYERS.mrt,'line-opacity',officialReady?.22:.96);
+    applyRegionalAppearance(inTaiwan){
+      const officialDominates=inTaiwan&&this.officialMrtReady;
+      if(this.map.getLayer(LAYERS.mrtCasing))this.map.setPaintProperty(LAYERS.mrtCasing,'line-opacity',officialDominates?.18:.88);
+      if(this.map.getLayer(LAYERS.mrt)){
+        this.map.setPaintProperty(LAYERS.mrt,'line-color',GLOBAL_METRO_COLOR);
+        this.map.setPaintProperty(LAYERS.mrt,'line-opacity',officialDominates?.22:.96);
+      }
+      if(this.map.getLayer(LAYERS.tra))this.map.setPaintProperty(LAYERS.tra,'line-color',inTaiwan?TAIWAN_TRA_COLOR:GLOBAL_RAIL_COLOR);
+      if(this.map.getLayer(LAYERS.thsr))this.map.setPaintProperty(LAYERS.thsr,'line-color',inTaiwan?TAIWAN_THSR_COLOR:GLOBAL_RAIL_COLOR);
     }
 
     async loadOfficialTaipeiMrt(beforeId){
@@ -151,7 +165,7 @@
         if(!this.map.getLayer(layer.id))this.map.addLayer(layer,beforeId);
       }
       this.officialMrtReady=true;
-      this.setFallbackMetroAppearance(true);
+      this.applyRegionalAppearance(centerInsideTaiwan(this.map));
       return data.features.length;
     }
 
@@ -175,14 +189,16 @@
         const traFilter=railFilter(['narrow_gauge']);
         const thsrFilter=railFilter(['standard_gauge']);
         const layers=[
-          // Blue Overture metro is a safe fallback. Once the local official
-          // Taipei MRT dataset loads, this fades back and official line colors dominate.
+          // Overture metro remains a blue global base. In Taipei it fades back
+          // when the authoritative local MRT geometry is available.
           lineLayer(LAYERS.mrtCasing,mrtFilter,'rgba(255,255,255,.96)',true,.88),
-          lineLayer(LAYERS.mrt,mrtFilter,'#1976d2',false,.96),
+          lineLayer(LAYERS.mrt,mrtFilter,GLOBAL_METRO_COLOR,false,.96),
+          // Outside Taiwan these rail classes are deliberately neutral: their
+          // provider class must not be presented as TRA/THSR semantics abroad.
           lineLayer(LAYERS.traCasing,traFilter,'rgba(255,255,255,.96)',true),
-          lineLayer(LAYERS.tra,traFilter,'#2e7d32'),
+          lineLayer(LAYERS.tra,traFilter,GLOBAL_RAIL_COLOR),
           lineLayer(LAYERS.thsrCasing,thsrFilter,'rgba(255,255,255,.96)',true),
-          lineLayer(LAYERS.thsr,thsrFilter,'#f57c00')
+          lineLayer(LAYERS.thsr,thsrFilter,GLOBAL_RAIL_COLOR)
         ];
         const beforeId=this.map.getLayer('building')?'building':undefined;
         for(const layer of layers)if(!this.map.getLayer(layer.id))this.map.addLayer(layer,beforeId);
@@ -191,7 +207,8 @@
           const count=await this.loadOfficialTaipeiMrt(beforeId);
           console.info(`Taipei official MRT local geometry ready: ${count} feature(s)`);
         }catch(error){
-          this.setFallbackMetroAppearance(false);
+          this.officialMrtReady=false;
+          this.applyRegionalAppearance(centerInsideTaiwan(this.map));
           console.warn('Local official Taipei MRT geometry unavailable; keeping blue Overture metro fallback',error);
         }
 
@@ -211,14 +228,18 @@
     sync(){
       if(!this.initialized||!this.map.isStyleLoaded())return;
       const inTaiwan=centerInsideTaiwan(this.map);
-      const visible=this.enabled&&inTaiwan;
-      for(const id of ALL_LAYER_IDS){
-        if(this.map.getLayer(id))this.map.setLayoutProperty(id,'visibility',visible?'visible':'none');
+      this.applyRegionalAppearance(inTaiwan);
+      for(const id of GLOBAL_LAYER_IDS){
+        if(this.map.getLayer(id))this.map.setLayoutProperty(id,'visibility',this.enabled?'visible':'none');
+      }
+      const localVisible=this.enabled&&inTaiwan&&this.officialMrtReady;
+      for(const id of TAIWAN_ONLY_LAYER_IDS){
+        if(this.map.getLayer(id))this.map.setLayoutProperty(id,'visibility',localVisible?'visible':'none');
       }
       this.control?.update({inTaiwan});
-      if(!this.enabled)this.emit('off','軌道 OFF',{inTaiwan,officialMrt:this.officialMrtReady});
-      else if(!inTaiwan)this.emit('outside','軌道僅在台灣顯示',{inTaiwan,officialMrt:this.officialMrtReady});
-      else this.emit('ready',`軌道 ON · 捷運${this.officialMrtReady?'官方線色':'藍色 fallback'} / 台鐵 / 高鐵`,{inTaiwan,officialMrt:this.officialMrtReady});
+      if(!this.enabled)this.emit('off','軌道 OFF',{inTaiwan,officialMrt:this.officialMrtReady,scope:'global'});
+      else if(inTaiwan)this.emit('ready',`軌道 ON · 捷運${this.officialMrtReady?'官方線色':'藍色 fallback'} / 台鐵 / 高鐵`,{inTaiwan,officialMrt:this.officialMrtReady,scope:'taiwan'});
+      else this.emit('ready','軌道 ON · 全球捷運 / 鐵路 · Overture',{inTaiwan,officialMrt:this.officialMrtReady,scope:'global'});
     }
 
     setEnabled(enabled){
@@ -237,5 +258,5 @@
     }
   }
 
-  window.TaipeiMapsTransitLayer={TransitLayer,TAIWAN_BOUNDS,SOURCE_ID,SOURCE_LAYER,TAIPEI_MRT_SOURCE_ID,TAIPEI_MRT_GEOJSON_URL,MRT_COLORS,LAYERS,validateOfficialMrt};
+  window.TaipeiMapsTransitLayer={TransitLayer,TAIWAN_BOUNDS,SOURCE_ID,SOURCE_LAYER,TAIPEI_MRT_SOURCE_ID,TAIPEI_MRT_GEOJSON_URL,MRT_COLORS,GLOBAL_METRO_COLOR,GLOBAL_RAIL_COLOR,TAIWAN_TRA_COLOR,TAIWAN_THSR_COLOR,LAYERS,GLOBAL_LAYER_IDS,TAIWAN_ONLY_LAYER_IDS,validateOfficialMrt};
 })();

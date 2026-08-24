@@ -3,9 +3,8 @@
   const SOURCE_ID='overture-transportation';
   const SOURCE_LAYER='segment';
   const TAIPEI_MRT_SOURCE_ID='taipei-mrt-official';
-  const TAIPEI_MRT_GEOJSON_URL='https://data.taipei/api/frontstage/tpeod/dataset/resource.download?rid=1139b06e-8128-4a07-8148-f27f038bd8b4';
+  const TAIPEI_MRT_GEOJSON_URL='/generated/taipei_mrt_lines_official.geojson';
 
-  // Taipei Metro / TDX line-color convention.
   const MRT_COLORS={
     BR:'#c48c31',
     R:'#e3002c',
@@ -14,18 +13,7 @@
     BL:'#0070bd',
     Y:'#ffdb00'
   };
-
-  // DORTS GIS uses the historical physical-line names rather than today's
-  // through-service names. Map those authoritative geometries to the current
-  // passenger-facing line colors.
-  const MRT_ROUTE_TO_LINE={
-    '木柵線':'BR','內湖線':'BR',
-    '淡水線':'R','信義線':'R',
-    '新店線':'G','松山線':'G','小南門線':'G',
-    '中和線':'O','蘆洲線':'O','新莊線':'O',
-    '板橋線':'BL','南港線':'BL',
-    '環狀線':'Y'
-  };
+  const EXPECTED_MRT_COLORS=new Set(Object.values(MRT_COLORS));
 
   const LAYERS={
     mrtCasing:'transit-mrt-casing',mrt:'transit-mrt',
@@ -87,55 +75,19 @@
     };
   }
 
-  // Inverse TWD97 TM2 zone 121 (EPSG:3826) -> WGS84. Keeping this tiny
-  // conversion local avoids adding another runtime library just for one
-  // government GeoJSON source.
-  function twd97ToWgs84(x,y){
-    const a=6378137.0,b=6356752.314245,k0=.9999,dx=250000.0,lon0=121*Math.PI/180;
-    const e2=1-(b*b)/(a*a),sqrt1=Math.sqrt(1-e2),e1=(1-sqrt1)/(1+sqrt1);
-    const M=y/k0;
-    const mu=M/(a*(1-e2/4-3*e2*e2/64-5*e2*e2*e2/256));
-    const J1=3*e1/2-27*e1*e1*e1/32;
-    const J2=21*e1*e1/16-55*e1*e1*e1*e1/32;
-    const J3=151*e1*e1*e1/96;
-    const J4=1097*e1*e1*e1*e1/512;
-    const fp=mu+J1*Math.sin(2*mu)+J2*Math.sin(4*mu)+J3*Math.sin(6*mu)+J4*Math.sin(8*mu);
-    const ep2=e2/(1-e2),sinFp=Math.sin(fp),cosFp=Math.cos(fp),tanFp=Math.tan(fp);
-    const C1=ep2*cosFp*cosFp,T1=tanFp*tanFp;
-    const N1=a/Math.sqrt(1-e2*sinFp*sinFp);
-    const R1=a*(1-e2)/Math.pow(1-e2*sinFp*sinFp,1.5);
-    const D=(x-dx)/(N1*k0);
-    const D2=D*D,D3=D2*D,D4=D2*D2,D5=D4*D,D6=D3*D3;
-    const lat=fp-(N1*tanFp/R1)*(D2/2-(5+3*T1+10*C1-4*C1*C1-9*ep2)*D4/24+(61+90*T1+298*C1+45*T1*T1-252*ep2-3*C1*C1)*D6/720);
-    const lon=lon0+(D-(1+2*T1+C1)*D3/6+(5-2*C1+28*T1-3*C1*C1+8*ep2+24*T1*T1)*D5/120)/cosFp;
-    return [lon*180/Math.PI,lat*180/Math.PI];
-  }
-
-  function transformGeometry(geometry){
-    if(!geometry)return null;
-    if(geometry.type==='LineString')return {...geometry,coordinates:geometry.coordinates.map(([x,y])=>twd97ToWgs84(Number(x),Number(y)))};
-    if(geometry.type==='MultiLineString')return {...geometry,coordinates:geometry.coordinates.map(line=>line.map(([x,y])=>twd97ToWgs84(Number(x),Number(y))))};
-    return null;
-  }
-
-  function normalizeOfficialMrt(raw){
-    const crs=String(raw?.crs?.properties?.name||'');
-    if(crs&&!crs.includes('3826'))throw new Error(`Unexpected Taipei MRT CRS: ${crs}`);
-    const features=[];
-    for(const feature of raw?.features||[]){
-      const routeName=String(feature?.properties?.RouteName||'').trim();
-      const lineCode=MRT_ROUTE_TO_LINE[routeName];
-      if(!lineCode)continue;
-      const geometry=transformGeometry(feature.geometry);
-      if(!geometry)continue;
-      features.push({
-        type:'Feature',
-        id:feature.id,
-        geometry,
-        properties:{route_name:routeName,line_code:lineCode,line_color:MRT_COLORS[lineCode]}
-      });
+  function validateOfficialMrt(data){
+    if(data?.type!=='FeatureCollection')throw new Error(`Local Taipei MRT dataset has unexpected type: ${data?.type}`);
+    const features=(data.features||[]).filter(feature=>['LineString','MultiLineString'].includes(feature?.geometry?.type));
+    if(features.length<10)throw new Error(`Local Taipei MRT geometry unexpectedly small: ${features.length}`);
+    const lineCodes=new Set();
+    for(const feature of features){
+      const code=String(feature?.properties?.line_code||'');
+      const color=String(feature?.properties?.line_color||'').toLowerCase();
+      if(!MRT_COLORS[code])throw new Error(`Unexpected Taipei MRT line code: ${code||'(missing)'}`);
+      if(!EXPECTED_MRT_COLORS.has(color))throw new Error(`Unexpected Taipei MRT line color: ${color||'(missing)'}`);
+      lineCodes.add(code);
     }
-    if(features.length<10)throw new Error(`Official Taipei MRT geometry unexpectedly small: ${features.length}`);
+    for(const code of Object.keys(MRT_COLORS))if(!lineCodes.has(code))throw new Error(`Local Taipei MRT dataset missing line group ${code}`);
     return {type:'FeatureCollection',features};
   }
 
@@ -183,11 +135,15 @@
       this.map.fire('taipei-maps-transitchange',{state,message,enabled:this.enabled,...extra});
     }
 
+    setFallbackMetroAppearance(officialReady){
+      if(this.map.getLayer(LAYERS.mrtCasing))this.map.setPaintProperty(LAYERS.mrtCasing,'line-opacity',officialReady?.18:.88);
+      if(this.map.getLayer(LAYERS.mrt))this.map.setPaintProperty(LAYERS.mrt,'line-opacity',officialReady?.22:.96);
+    }
+
     async loadOfficialTaipeiMrt(beforeId){
-      const response=await fetch(TAIPEI_MRT_GEOJSON_URL,{cache:'force-cache'});
-      if(!response.ok)throw new Error(`Taipei MRT GIS HTTP ${response.status}`);
-      const raw=await response.json();
-      const data=normalizeOfficialMrt(raw);
+      const response=await fetch(TAIPEI_MRT_GEOJSON_URL,{cache:'no-store'});
+      if(!response.ok)throw new Error(`Local Taipei MRT GIS HTTP ${response.status}; run start-transit-overlay-smoke.bat to build it`);
+      const data=validateOfficialMrt(await response.json());
       if(!this.map.getSource(TAIPEI_MRT_SOURCE_ID)){
         this.map.addSource(TAIPEI_MRT_SOURCE_ID,{type:'geojson',data,attribution:'© 臺北市政府捷運工程局'});
       }
@@ -195,6 +151,7 @@
         if(!this.map.getLayer(layer.id))this.map.addLayer(layer,beforeId);
       }
       this.officialMrtReady=true;
+      this.setFallbackMetroAppearance(true);
       return data.features.length;
     }
 
@@ -218,10 +175,10 @@
         const traFilter=railFilter(['narrow_gauge']);
         const thsrFilter=railFilter(['standard_gauge']);
         const layers=[
-          // Overture remains a muted fallback for metro/LRT segments that are
-          // outside or absent from the Taipei government network dataset.
-          lineLayer(LAYERS.mrtCasing,mrtFilter,'rgba(255,255,255,.78)',true,.58),
-          lineLayer(LAYERS.mrt,mrtFilter,'#78909c',false,.58),
+          // Blue Overture metro is a safe fallback. Once the local official
+          // Taipei MRT dataset loads, this fades back and official line colors dominate.
+          lineLayer(LAYERS.mrtCasing,mrtFilter,'rgba(255,255,255,.96)',true,.88),
+          lineLayer(LAYERS.mrt,mrtFilter,'#1976d2',false,.96),
           lineLayer(LAYERS.traCasing,traFilter,'rgba(255,255,255,.96)',true),
           lineLayer(LAYERS.tra,traFilter,'#2e7d32'),
           lineLayer(LAYERS.thsrCasing,thsrFilter,'rgba(255,255,255,.96)',true),
@@ -232,9 +189,10 @@
 
         try{
           const count=await this.loadOfficialTaipeiMrt(beforeId);
-          console.info(`Taipei official MRT geometry ready: ${count} feature(s)`);
+          console.info(`Taipei official MRT local geometry ready: ${count} feature(s)`);
         }catch(error){
-          console.warn('Official Taipei MRT geometry unavailable; keeping Overture metro fallback',error);
+          this.setFallbackMetroAppearance(false);
+          console.warn('Local official Taipei MRT geometry unavailable; keeping blue Overture metro fallback',error);
         }
 
         this.initialized=true;
@@ -260,7 +218,7 @@
       this.control?.update({inTaiwan});
       if(!this.enabled)this.emit('off','軌道 OFF',{inTaiwan,officialMrt:this.officialMrtReady});
       else if(!inTaiwan)this.emit('outside','軌道僅在台灣顯示',{inTaiwan,officialMrt:this.officialMrtReady});
-      else this.emit('ready',`軌道 ON · 捷運${this.officialMrtReady?'官方線色':' fallback'} / 台鐵 / 高鐵`,{inTaiwan,officialMrt:this.officialMrtReady});
+      else this.emit('ready',`軌道 ON · 捷運${this.officialMrtReady?'官方線色':'藍色 fallback'} / 台鐵 / 高鐵`,{inTaiwan,officialMrt:this.officialMrtReady});
     }
 
     setEnabled(enabled){
@@ -279,5 +237,5 @@
     }
   }
 
-  window.TaipeiMapsTransitLayer={TransitLayer,TAIWAN_BOUNDS,SOURCE_ID,SOURCE_LAYER,TAIPEI_MRT_SOURCE_ID,TAIPEI_MRT_GEOJSON_URL,MRT_COLORS,MRT_ROUTE_TO_LINE,LAYERS,twd97ToWgs84,normalizeOfficialMrt};
+  window.TaipeiMapsTransitLayer={TransitLayer,TAIWAN_BOUNDS,SOURCE_ID,SOURCE_LAYER,TAIPEI_MRT_SOURCE_ID,TAIPEI_MRT_GEOJSON_URL,MRT_COLORS,LAYERS,validateOfficialMrt};
 })();

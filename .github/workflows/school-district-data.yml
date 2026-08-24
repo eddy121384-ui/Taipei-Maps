@@ -10,12 +10,16 @@ on:
       - 'public/school-districts-115/**'
       - 'public/school-district-data-guard.js'
       - 'public/school-district-layer.js'
+      - 'public/school-location-layer.js'
       - 'public/mobile-preview.html'
+      - 'public/maplibre-pmtiles-provider-spike.html'
+      - 'start-desktop-full-stack-smoke.bat'
       - 'tools/data/build_taipei_school_districts.py'
       - 'tools/data/generate_taipei_school_district_shards.py'
       - 'tools/data/compare_taipei_school_district_semantics.mjs'
       - 'tools/data/validate_taipei_school_districts.mjs'
       - 'tools/data/validate_taipei_school_district_geometry.mjs'
+      - 'tools/data/validate_school_layer_performance.mjs'
       - 'tools/data/taipei-school-district-geometry-reconciliations.json'
       - 'tools/data/requirements-school-districts.txt'
       - '.github/workflows/school-district-data.yml'
@@ -50,5 +54,7 @@ jobs:
           /tmp/school-districts-115
       - name: Validate committed runtime dataset
         run: node tools/data/validate_taipei_school_districts.mjs
+      - name: Validate school-layer pagination and viewport caches
+        run: node tools/data/validate_school_layer_performance.mjs
       - name: Validate assignment joins against official neighbor geometry
         run: node tools/data/validate_taipei_school_district_geometry.mjs

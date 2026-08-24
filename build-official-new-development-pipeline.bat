@@ -24,6 +24,8 @@ set "MOI_RAW_DIR=%CACHE_DIR%\moi-source-bytes"
 set "MOI_ENCODING_MANIFEST=%CACHE_DIR%\moi-encoding-manifest.json"
 set "HIST_XML=%CACHE_DIR%\taipei-permits-historical.xml"
 set "CURR_XML=%CACHE_DIR%\taipei-permits-current.xml"
+set "PERMIT_RAW_DIR=%CACHE_DIR%\taipei-permit-source-bytes"
+set "PERMIT_ENCODING_MANIFEST=%CACHE_DIR%\taipei-permit-encoding-manifest.json"
 set "REFRESH=0"
 if /I "%~1"=="refresh" set "REFRESH=1"
 
@@ -37,49 +39,55 @@ if "%REFRESH%"=="1" (
   if exist "%MOI_ENCODING_MANIFEST%" del /q "%MOI_ENCODING_MANIFEST%"
   if exist "%HIST_XML%" del /q "%HIST_XML%"
   if exist "%CURR_XML%" del /q "%CURR_XML%"
+  if exist "%PERMIT_RAW_DIR%" rmdir /s /q "%PERMIT_RAW_DIR%"
+  if exist "%PERMIT_ENCODING_MANIFEST%" del /q "%PERMIT_ENCODING_MANIFEST%"
 )
 
-echo [1/7] Validating pipeline scripts...
+echo [1/8] Validating pipeline scripts...
 "%NODE_CMD%" --check tools\data\build_official_new_development_pipeline.mjs || goto :fail
 "%NODE_CMD%" --check tools\data\normalize_moi_buildcase_encoding.mjs || goto :fail
+"%NODE_CMD%" --check tools\data\normalize_taipei_permit_xml_encoding.mjs || goto :fail
 "%NODE_CMD%" --check tools\data\augment_new_development_audit_encoding.mjs || goto :fail
 "%NODE_CMD%" tools\data\validate_official_new_development_pipeline.mjs || goto :fail
 
 if not exist "%MOI_ZIP%" (
-  echo [2/7] Downloading MOI presale project filing CSV ZIP...
+  echo [2/8] Downloading MOI presale project filing CSV ZIP...
   powershell -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; $s=ConvertFrom-Json (Get-Content -Raw -LiteralPath 'tools/data/new-development-sources.json'); Invoke-WebRequest -UseBasicParsing -Uri $s.sources.moi_presale_projects.download_url -OutFile '%MOI_ZIP%.part'; Move-Item -Force '%MOI_ZIP%.part' '%MOI_ZIP%'" || goto :fail
 ) else (
-  echo [2/7] MOI ZIP cache found. Use: build-official-new-development-pipeline.bat refresh  to re-download.
+  echo [2/8] MOI ZIP cache found. Use: build-official-new-development-pipeline.bat refresh  to re-download.
 )
 
 if not exist "%MOI_DIR%" (
-  echo [3/7] Extracting MOI CSV ZIP...
+  echo [3/8] Extracting MOI CSV ZIP...
   powershell -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; Expand-Archive -LiteralPath '%MOI_ZIP%' -DestinationPath '%MOI_DIR%' -Force" || goto :fail
 ) else (
-  echo [3/7] MOI extracted cache found.
+  echo [3/8] MOI extracted cache found.
 )
 
-echo [4/7] Detecting and normalizing MOI CSV encoding...
+echo [4/8] Detecting and normalizing MOI BUILDCASE CSV scope/encoding...
 "%NODE_CMD%" tools\data\normalize_moi_buildcase_encoding.mjs || goto :fail
 
 if not exist "%HIST_XML%" (
-  echo [5/7] Downloading Taipei historical construction permits - large XML...
+  echo [5/8] Downloading Taipei historical construction permits - large XML...
   powershell -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; $s=ConvertFrom-Json (Get-Content -Raw -LiteralPath 'tools/data/new-development-sources.json'); Invoke-WebRequest -UseBasicParsing -Uri $s.sources.taipei_construction_permits_historical.download_url -OutFile '%HIST_XML%.part'; Move-Item -Force '%HIST_XML%.part' '%HIST_XML%'" || goto :fail
 ) else (
-  echo [5/7] Historical Taipei permit cache found.
+  echo [5/8] Historical Taipei permit cache found.
 )
 
 if not exist "%CURR_XML%" (
-  echo [5/7] Downloading Taipei current-year construction permits...
+  echo [5/8] Downloading Taipei current-year construction permits...
   powershell -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; $s=ConvertFrom-Json (Get-Content -Raw -LiteralPath 'tools/data/new-development-sources.json'); Invoke-WebRequest -UseBasicParsing -Uri $s.sources.taipei_construction_permits_current.download_url -OutFile '%CURR_XML%.part'; Move-Item -Force '%CURR_XML%.part' '%CURR_XML%'" || goto :fail
 ) else (
-  echo [5/7] Current Taipei permit cache found.
+  echo [5/8] Current Taipei permit cache found.
 )
 
-echo [6/7] Building canonical Taipei new-development dataset...
+echo [6/8] Detecting and normalizing Taipei permit XML encoding...
+"%NODE_CMD%" tools\data\normalize_taipei_permit_xml_encoding.mjs || goto :fail
+
+echo [7/8] Building canonical Taipei new-development dataset...
 "%NODE_CMD%" tools\data\build_official_new_development_pipeline.mjs || goto :fail
 
-echo [7/7] Attaching source encoding provenance to audit...
+echo [8/8] Attaching source encoding provenance to audit...
 "%NODE_CMD%" tools\data\augment_new_development_audit_encoding.mjs || goto :fail
 
 echo.

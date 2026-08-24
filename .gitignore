@@ -5,5 +5,8 @@
 /public/generated/taipei_building_height_*.json
 /public/generated/taipei_building_height_*.tsv.gz
 
+# Runtime-generated official new-development data
+/public/generated/taipei_new_developments_official*.json
+
 # Downloaded local build tooling / portable runtimes
 /.cache/

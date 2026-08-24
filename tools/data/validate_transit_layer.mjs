@@ -10,7 +10,9 @@ const builder=await readFile(builderPath,'utf8');
 
 new vm.Script(transit,{filename:transitPath});
 new vm.Script(core,{filename:corePath,importModuleDynamically:()=>{}});
-new vm.SourceTextModule(builder,{identifier:builderPath});
+// The builder is ESM. Strip import declarations only for a no-execution syntax
+// parse so validation does not depend on experimental vm module flags.
+new vm.Script(builder.replace(/^import .*$/gm,''),{filename:builderPath});
 
 const requiredTransitTokens=[
   "transportation.pmtiles",

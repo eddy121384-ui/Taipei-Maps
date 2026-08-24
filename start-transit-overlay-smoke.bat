@@ -14,7 +14,7 @@ if not defined NODE_CMD (
 
 echo ==========================================================
 echo   Taipei-Maps - Rail transit overlay smoke
-echo   MRT + TRA + THSR
+echo   Official Taipei MRT colors + TRA + THSR + North button
 echo ==========================================================
 echo.
 echo [1/2] Validating shared rail overlay contract...
@@ -25,13 +25,14 @@ echo.
 echo [2/2] Starting the existing desktop full-stack smoke page...
 echo.
 echo Visual checklist:
-echo   - Taiwan: rail lines appear automatically
-echo   - blue = MRT / metro
+echo   - Taipei MRT uses official line colors: brown / red / green / orange / blue / yellow
 echo   - green = TRA
 echo   - orange = THSR
+echo   - muted gray metro line is only the Overture fallback under official Taipei MRT geometry
 echo   - top-right subway icon toggles all rail lines
+echo   - top-right N button returns bearing to 0 degrees but keeps the current 3D pitch
 echo   - Banqiao still shows Taiwan rail lines
-echo   - Shanghai / Tokyo hide this Taiwan-specific overlay
+echo   - Shanghai / Tokyo hide this Taiwan-specific rail overlay
 echo   - existing school / terrain / aerial / 3D behavior remains normal
 echo.
 call start-desktop-full-stack-smoke.bat

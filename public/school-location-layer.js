@@ -5,9 +5,7 @@
   const CATCHMENT_FILL_ID='school-catchment-fill';
   const EMPTY={type:'FeatureCollection',features:[]};
   const TWIN_CITY_BOUNDS={west:121.20,south:24.78,east:121.90,north:25.35};
-  // Keep this fallback palette aligned with school-district-layer.js. The preferred marker color is
-  // always sampled from the rendered catchment polygon under the school point, so shared catchments
-  // inherit the exact same group color. This palette is only a fail-safe while polygons are loading.
+  const CACHE_REUSE_FRACTION=.28;
   const PALETTE=['#8e6bbf','#4f8ecb','#50a987','#d08b48','#c85f71','#798f3f','#4b9ca8','#b56eae','#7c79c5','#be7a52','#5e9a68','#a1794f'];
 
   function inTwinCity(lng,lat){
@@ -43,7 +41,6 @@
       .replace(/國民小學|國民中學|國小|國中/g,'')
       .replace(/^[·・\s]+|[·・\s]+$/g,'')
       .trim();
-    // Known official-name aliases used by the 115學年度 catchment table.
     if(/國立臺北教育大學附設實驗/.test(key))key='國北教大附小';
     return key||shortName(name)||String(name||'');
   }
@@ -90,6 +87,13 @@
     return out;
   }
 
+  function distanceMeters(aLng,aLat,bLng,bLat){
+    const rad=Math.PI/180;
+    const lat1=aLat*rad,lat2=bLat*rad,dLat=(bLat-aLat)*rad,dLng=(bLng-aLng)*rad;
+    const h=Math.sin(dLat/2)**2+Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLng/2)**2;
+    return 6371000*2*Math.atan2(Math.sqrt(h),Math.sqrt(1-h));
+  }
+
   function popupHtml(p){
     const safe=s=>String(s||'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[ch]));
     const level=p.level==='junior'?'國中':'國小';
@@ -104,8 +108,10 @@
       this.level='elementary';
       this.abortController=null;
       this.timer=null;
-      this.lastKey='';
       this.features=[];
+      this.allFeatures=[];
+      this.queryCenter=null;
+      this.queryRadiusM=0;
       this.boundMove=()=>this.schedule();
       this.boundIdle=()=>this.syncDistrictColors();
     }
@@ -146,18 +152,34 @@
 
     setLevel(level){
       if(!['elementary','junior'].includes(level))return;
-      this.level=level;this.lastKey='';
+      this.level=level;
       for(const id of [POINT_ID,LABEL_ID])if(this.map.getLayer(id))this.map.setFilter(id,['==',['get','level'],this.level]);
-      if(this.enabled)this.refresh(true);
+      if(this.enabled){
+        if(this.allFeatures.length){this.applyLevelFeatures('快取');}
+        else this.refresh(true);
+      }
     }
 
     syncVisibility(){
       for(const id of [POINT_ID,LABEL_ID])if(this.map.getLayer(id))this.map.setLayoutProperty(id,'visibility',this.enabled?'visible':'none');
     }
 
-    schedule(){if(!this.enabled)return;clearTimeout(this.timer);this.timer=setTimeout(()=>this.refresh(false),220);}
+    schedule(){if(!this.enabled)return;clearTimeout(this.timer);this.timer=setTimeout(()=>this.refresh(false),260);}
 
     queryRadius(){const z=this.map.getZoom();return z>=15?3200:z>=13?4500:5000;}
+
+    cacheUsable(center,radius){
+      if(!this.queryCenter||!this.allFeatures.length||radius>this.queryRadiusM)return false;
+      const moved=distanceMeters(this.queryCenter.lng,this.queryCenter.lat,center.lng,center.lat);
+      return moved<=this.queryRadiusM*CACHE_REUSE_FRACTION;
+    }
+
+    applyLevelFeatures(provenance='快取'){
+      this.features=this.allFeatures.filter(f=>f.properties.level===this.level);
+      const source=this.map.getSource(SOURCE_ID);if(source)source.setData({type:'FeatureCollection',features:this.features});
+      requestAnimationFrame(()=>this.syncDistrictColors());
+      this.emit('ready',`${this.level==='junior'?'國中':'國小'}校點 · ${this.features.length} 所 · ${provenance} · 色彩跟隨學區`);
+    }
 
     syncDistrictColors(){
       if(!this.enabled||!this.features.length||!this.map.isStyleLoaded()||!this.map.getLayer(CATCHMENT_FILL_ID))return;
@@ -184,11 +206,14 @@
     async refresh(force=false){
       if(!this.enabled||!this.map.isStyleLoaded())return;
       const c=this.map.getCenter();
-      if(!inTwinCity(c.lng,c.lat)){this.clear();this.emit('outside','校點目前只載入雙北');return;}
-      if(this.map.getZoom()<12.8){this.clear();this.emit('zoom','再放大一點即可顯示學校位置');return;}
+      if(!inTwinCity(c.lng,c.lat)){this.clearVisible();this.emit('outside','校點目前只載入雙北');return;}
+      if(this.map.getZoom()<12.8){this.clearVisible();this.emit('zoom','再放大一點即可顯示學校位置');return;}
       const radius=this.queryRadius();
-      const key=`${this.level}:${c.lng.toFixed(3)}:${c.lat.toFixed(3)}:${radius}`;
-      if(!force&&key===this.lastKey)return;this.lastKey=key;
+      if(this.cacheUsable(c,radius)){
+        this.applyLevelFeatures('快取');
+        return;
+      }
+
       this.abortController?.abort();this.abortController=new AbortController();
       this.emit('loading',`${this.level==='junior'?'國中':'國小'}校點載入中…`);
       const url=`https://api.nlsc.gov.tw/other/MarkBufferAnlys/edu/${c.lng.toFixed(6)}/${c.lat.toFixed(6)}/${radius}`;
@@ -198,21 +223,18 @@
         const text=await response.text();
         let payload;try{payload=JSON.parse(text);}catch{throw new Error('NLSC 回傳格式不是 JSON');}
         const records=flattenResponse(payload);
-        this.features=dedupe(records.map(normalizeRecord).filter(Boolean).filter(f=>f.properties.level===this.level));
-        const source=this.map.getSource(SOURCE_ID);if(source)source.setData({type:'FeatureCollection',features:this.features});
-        // District and point requests settle independently. A first pass now plus the idle listener lets
-        // markers adopt the exact rendered catchment color as soon as both layers are ready.
-        requestAnimationFrame(()=>this.syncDistrictColors());
-        this.emit('ready',`${this.level==='junior'?'國中':'國小'}校點 · ${this.features.length} 所 · 色彩跟隨學區`);
+        this.allFeatures=dedupe(records.map(normalizeRecord).filter(Boolean));
+        this.queryCenter={lng:c.lng,lat:c.lat};this.queryRadiusM=radius;
+        this.applyLevelFeatures('網路');
       }catch(e){
         if(e?.name==='AbortError')return;
-        console.warn('School location layer failed',e);this.clear();this.emit('error',`校點暫時載入失敗 · ${e?.message||e}`);
+        console.warn('School location layer failed',e);this.clearVisible();this.emit('error',`校點暫時載入失敗 · ${e?.message||e}`);
       }
     }
 
-    clear(){this.features=[];const source=this.map.getSource(SOURCE_ID);if(source)source.setData(EMPTY);}
+    clearVisible(){this.features=[];const source=this.map.getSource(SOURCE_ID);if(source)source.setData(EMPTY);}
     emit(state,message){this.onState({state,message,level:this.level,count:this.features.length});}
   }
 
-  window.TaipeiMapsSchoolLocationLayer={SchoolLocationLayer,TWIN_CITY_BOUNDS};
+  window.TaipeiMapsSchoolLocationLayer={SchoolLocationLayer,TWIN_CITY_BOUNDS,distanceMeters,CACHE_REUSE_FRACTION};
 })();

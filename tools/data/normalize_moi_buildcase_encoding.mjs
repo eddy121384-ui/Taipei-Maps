@@ -1,13 +1,15 @@
 import { createHash } from 'node:crypto';
-import { mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 const CACHE_DIR = path.resolve(process.env.NEW_DEV_CACHE_DIR || '.cache/new-development');
 const MOI_DIR = path.join(CACHE_DIR, 'moi');
 const RAW_DIR = path.join(CACHE_DIR, 'moi-source-bytes');
+const IGNORED_DIR = path.join(CACHE_DIR, 'moi-ignored-non-buildcase');
 const MANIFEST_PATH = path.join(CACHE_DIR, 'moi-encoding-manifest.json');
 const ZIP_PATH = path.join(CACHE_DIR, 'lvr_buildcasecsv.zip');
 const REQUIRED_HEADERS = ['TOWN', 'BUILDCASE', 'BUILDINGPERMITNO'];
+const BUILDCASE_FILE_RE = /_lvr_buildcase\.csv$/i;
 
 function sha256(buffer) {
   return createHash('sha256').update(buffer).digest('hex');
@@ -24,6 +26,15 @@ async function filesRecursive(root) {
   }
   await visit(root);
   return out;
+}
+
+async function fileExists(filePath) {
+  try {
+    await stat(filePath);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function parseCsv(input) {
@@ -213,20 +224,46 @@ function decodeOfficialCsv(buffer, filePath) {
   throw new Error(`${filePath}: no safe decode path succeeded (${failures.join('; ')})`);
 }
 
-async function fileExists(filePath) {
-  try {
-    await stat(filePath);
-    return true;
-  } catch {
-    return false;
+async function isolateNonBuildcaseCsv(allCsvFiles) {
+  const nonBuildcase = allCsvFiles.filter(file => !BUILDCASE_FILE_RE.test(path.basename(file)));
+
+  // A fresh extraction contains the sibling MOI tables again. Reset the isolation
+  // directory so its manifest always corresponds to the current extracted ZIP.
+  if (nonBuildcase.length) {
+    await rm(IGNORED_DIR, { recursive: true, force: true });
+    await mkdir(IGNORED_DIR, { recursive: true });
+
+    for (const filePath of nonBuildcase) {
+      const rel = path.relative(MOI_DIR, filePath);
+      const target = path.join(IGNORED_DIR, rel);
+      await mkdir(path.dirname(target), { recursive: true });
+      await rename(filePath, target);
+    }
   }
+
+  if (!(await fileExists(IGNORED_DIR))) return [];
+  const isolatedFiles = (await filesRecursive(IGNORED_DIR)).filter(file => file.toLowerCase().endsWith('.csv')).sort();
+  return Promise.all(isolatedFiles.map(async filePath => {
+    const bytes = await readFile(filePath);
+    return {
+      file: path.relative(IGNORED_DIR, filePath).replaceAll('\\', '/'),
+      source_bytes_sha256: sha256(bytes),
+      source_bytes: bytes.length,
+      reason: 'non_buildcase_sibling_table',
+    };
+  }));
 }
 
 async function main() {
+  const allFiles = await filesRecursive(MOI_DIR);
+  const allCsvFiles = allFiles.filter(file => file.toLowerCase().endsWith('.csv')).sort();
+  if (!allCsvFiles.length) throw new Error(`No CSV files found under ${MOI_DIR}`);
+
+  const ignoredNonBuildcaseFiles = await isolateNonBuildcaseCsv(allCsvFiles);
   const csvFiles = (await filesRecursive(MOI_DIR))
-    .filter(file => file.toLowerCase().endsWith('.csv'))
+    .filter(file => BUILDCASE_FILE_RE.test(path.basename(file)))
     .sort();
-  if (!csvFiles.length) throw new Error(`No CSV files found under ${MOI_DIR}`);
+  if (!csvFiles.length) throw new Error(`No *_lvr_buildcase.csv files found under ${MOI_DIR}`);
 
   await mkdir(RAW_DIR, { recursive: true });
   const rows = [];
@@ -271,26 +308,31 @@ async function main() {
 
   const zipBytes = await readFile(ZIP_PATH);
   const manifest = {
-    schema_version: 2,
+    schema_version: 3,
     generated_at: new Date().toISOString(),
     declared_encoding: 'UTF-8',
+    scope_policy: 'Only *_lvr_buildcase.csv belongs to the presale project filing pipeline. Other CSV sibling tables from the official ZIP are preserved outside parser scope and explicitly audited.',
     policy: 'Strict UTF-8 first; strict Big5 compatibility fallback; if the declared UTF-8 byte stream has isolated malformed sequences, quarantine entire affected CSV records rather than guessing replacement characters.',
     moi_zip_sha256: sha256(zipBytes),
     counts,
     total_replacement_sequence_count: totalReplacementCount,
     total_quarantined_row_count: totalQuarantinedRows,
+    ignored_non_buildcase_file_count: ignoredNonBuildcaseFiles.length,
+    ignored_non_buildcase_files: ignoredNonBuildcaseFiles,
     files: rows,
   };
   await writeFile(MANIFEST_PATH, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
 
-  console.log(`MOI CSV encoding normalization: ${rows.length} file(s)`);
+  console.log(`MOI BUILDCASE CSV normalization: ${rows.length} file(s)`);
+  console.log(`  Non-BUILDCASE sibling CSVs isolated: ${ignoredNonBuildcaseFiles.length}`);
   for (const [encoding, count] of Object.entries(counts)) {
     console.log(`  ${encoding}: ${count} file(s)`);
   }
   console.log(`  Replacement sequences detected: ${totalReplacementCount}`);
-  console.log(`  Entire CSV rows quarantined: ${totalQuarantinedRows}`);
-  console.log(`  Raw source bytes preserved: ${RAW_DIR}`);
-  console.log(`  Encoding manifest: ${MANIFEST_PATH}`);
+  console.log(`  Entire BUILDCASE CSV rows quarantined: ${totalQuarantinedRows}`);
+  console.log(`  Raw BUILDCASE source bytes preserved: ${RAW_DIR}`);
+  console.log(`  Ignored sibling tables preserved: ${IGNORED_DIR}`);
+  console.log(`  Encoding/scope manifest: ${MANIFEST_PATH}`);
 }
 
 await main();

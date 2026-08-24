@@ -88,7 +88,8 @@
           lineLayer(LAYERS.thsrCasing,thsrFilter,'rgba(255,255,255,.96)',true),
           lineLayer(LAYERS.thsr,thsrFilter,'#f57c00')
         ];
-        for(const layer of layers)if(!this.map.getLayer(layer.id))this.map.addLayer(layer);
+        const beforeId=this.map.getLayer('building')?'building':undefined;
+        for(const layer of layers)if(!this.map.getLayer(layer.id))this.map.addLayer(layer,beforeId);
 
         this.initialized=true;
         this.map.on('moveend',this._moveHandler);

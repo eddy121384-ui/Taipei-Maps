@@ -1,0 +1,21 @@
+schema_name: Taipei Official Building Footprint Centroid Audit z16
+schema_description: Temporary source-id-preserving z16 centroid-only control archive for Issue #31.
+attribution: Taipei City Government City Dashboard public WFS
+version: 0.1
+is_overlay: true
+
+sources:
+  taipei_buildings_audit:
+    type: geojson
+    local_path: public/generated/taipei_building_height_footprint_audit.geojson
+    projection: EPSG:4326
+
+layers:
+  - id: building_height_audit_centroid
+    features:
+      - source: taipei_buildings_audit
+        geometry: polygon_centroid
+        min_zoom: 16
+        max_zoom: 16
+        attributes:
+          - key: source_id

@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Taipei-Maps · Full-stack desktop validation</title>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" />
+  <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+  <script src="https://unpkg.com/pmtiles@4.4.1/dist/pmtiles.js"></script>
+  <script src="./shared-map-core.js"></script>
+  <script src="./taipei-school-districts-115.js"></script>
+  <script src="./school-districts-115/松山.js"></script>
+  <script src="./school-districts-115/信義.js"></script>
+  <script src="./school-districts-115/大安.js"></script>
+  <script src="./school-districts-115/中山.js"></script>
+  <script src="./school-districts-115/中正.js"></script>
+  <script src="./school-districts-115/大同.js"></script>
+  <script src="./school-districts-115/萬華.js"></script>
+  <script src="./school-districts-115/文山.js"></script>
+  <script src="./school-districts-115/南港.js"></script>
+  <script src="./school-districts-115/內湖.js"></script>
+  <script src="./school-districts-115/士林.js"></script>
+  <script src="./school-districts-115/北投.js"></script>
+  <script src="./school-district-data-guard.js"></script>
+  <script src="./school-district-layer.js"></script>
+  <script src="./school-location-layer.js"></script>
+  <style>
+    html,body,#map{width:100%;height:100%;margin:0}body{font-family:Inter,system-ui,sans-serif;overflow:hidden}#map{background:#9fd5f6}
+    .panel{position:absolute;z-index:5;top:14px;left:14px;width:min(560px,calc(100vw - 28px));max-height:calc(100vh - 28px);overflow:auto;padding:14px;border:1px solid #ccd3d9;border-radius:14px;background:rgba(255,255,255,.96);box-shadow:0 10px 28px rgba(0,0,0,.14)}
+    .eyebrow{font-size:11px;font-weight:800;letter-spacing:.12em;color:#68727d}h1{font-size:20px;margin:5px 0}.sub,.note{font-size:11.5px;color:#5e6872;line-height:1.45}
+    .controls{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}button{border:1px solid #c8d0d7;border-radius:9px;padding:7px 9px;background:#fff;font-weight:700;cursor:pointer}.active{background:#25313b;color:#fff}.mode-active{background:#edf3f7;border-color:#96a7b4;color:#26323c}
+    .metrics{display:grid;grid-template-columns:1fr auto;gap:4px 10px;border-top:1px solid #dde2e7;border-bottom:1px solid #dde2e7;padding:9px 0;margin:9px 0;font-size:12px}.metrics span:nth-child(odd){color:#66717b}.metrics span:nth-child(even){font-weight:800;font-variant-numeric:tabular-nums}
+    .status{font-size:12px;font-weight:700;line-height:1.45;margin-top:4px}.error{color:#b42318}.good{color:#137333}.muted{color:#68727d;font-weight:500}
+  </style>
+</head>
+<body>
+<div id="map"></div>
+<section class="panel">
+  <div id="eyebrow" class="eyebrow">PR #32 · FULL-STACK DESKTOP VALIDATION</div>
+  <h1>台北地圖：官方建築 + 地形 + 航照 + 學區</h1>
+  <div class="sub">同一個 MapLibre canvas 同時驗證全球 Overture、台北官方 PMTiles、terrain、航照與 115 學年度國小／國中學區。離開台北後，Local PMTiles 與學區消失是正常的；全球底圖與 Overture 不得黑屏。</div>
+  <div class="controls">
+    <button class="city active" data-city="daan">大安</button><button class="city" data-city="songshan">松山</button><button class="city" data-city="xinyi">信義</button><button class="city" data-city="neihu">內湖</button><button class="city" data-city="beitou">北投</button><button class="city" data-city="yangmingshan">陽明山</button><button class="city" data-city="wenshan">文山</button><button class="city" data-city="banqiao">板橋</button><button class="city" data-city="shanghai">上海</button><button class="city" data-city="tokyo">東京</button>
+  </div>
+  <div class="controls">
+    <button id="basemapMap" class="active">🗺 地圖</button><button id="basemapPhoto">🛰 航照</button>
+    <button id="toggleLocal" class="active">Local PMTiles ON</button><button id="toggle3d" class="active">3D ON</button><button id="toggleTerrain" class="active">Terrain ON</button>
+  </div>
+  <div class="controls">
+    <button id="districtBtn">🎓 學區 OFF</button><button id="elementaryBtn" class="mode-active">國小</button><button id="juniorBtn">國中</button><button id="schoolPointBtn" class="mode-active">🏫 校點 ON</button>
+  </div>
+  <div class="metrics">
+    <span>Map engine</span><span>Shared MapLibre core</span>
+    <span>Validation mode</span><span id="mode">—</span>
+    <span>Basemap</span><span id="basemapState">OSM map</span>
+    <span>Terrain</span><span id="terrainState">Mapterhorn DEM ON</span>
+    <span>Overture release</span><span id="release">—</span>
+    <span>Local source-layer</span><span id="localLayer">—</span>
+    <span>Local archive size</span><span id="localSize">—</span>
+    <span>Visible fragments</span><span id="visibleCount">—</span>
+    <span>Last move → idle</span><span id="lastIdle">—</span>
+  </div>
+  <div id="status" class="status">Booting full-stack desktop validation…</div>
+  <div id="districtStatus" class="status muted">學區 OFF · 精確里鄰學區，不以距離猜測。</div>
+  <div id="schoolPointStatus" class="status muted">校點待學區開啟 · 只顯示目前選擇的國小或國中。</div>
+  <div id="note" class="note"></div>
+</section>
+<script>
+(async()=>{
+  const $=s=>document.querySelector(s),status=$('#status'),districtStatus=$('#districtStatus'),schoolPointStatus=$('#schoolPointStatus');
+  const releaseEl=$('#release'),localLayerEl=$('#localLayer'),localSizeEl=$('#localSize'),visibleCountEl=$('#visibleCount'),lastIdleEl=$('#lastIdle'),modeEl=$('#mode'),terrainStateEl=$('#terrainState'),basemapStateEl=$('#basemapState');
+  const basemapMapBtn=$('#basemapMap'),basemapPhotoBtn=$('#basemapPhoto'),toggleLocalBtn=$('#toggleLocal'),toggle3dBtn=$('#toggle3d'),toggleTerrainBtn=$('#toggleTerrain');
+  const districtBtn=$('#districtBtn'),elementaryBtn=$('#elementaryBtn'),juniorBtn=$('#juniorBtn'),schoolPointBtn=$('#schoolPointBtn');
+  if(!window.maplibregl||!window.pmtiles||!window.TaipeiMapsCore||!window.TaipeiMapsSchoolDistrictDataReady||!window.TaipeiMapsSchoolDistrictData115||!window.TaipeiMapsSchoolDistrictLayer||!window.TaipeiMapsSchoolLocationLayer){
+    const dataError=window.TaipeiMapsSchoolDistrictDataError?` · ${window.TaipeiMapsSchoolDistrictDataError}`:'';
+    status.textContent=`ERROR: full-stack prerequisite 未載入${dataError}`;status.className='status error';return;
+  }
+  const core=window.TaipeiMapsCore;
+
+  const params=new URLSearchParams(location.search);
+  const citywide=params.get('mode')==='citywide';
+  const localFilename=citywide?'taipei_building_height_citywide.pmtiles':'taipei_building_height_sample.pmtiles';
+  const buildScript=citywide?'build-taipei-building-height-pmtiles-citywide.bat':'build-taipei-building-height-pmtiles-sample.bat';
+  const localUrl=new URL(`/generated/${localFilename}`,location.href).href;
+  modeEl.textContent=citywide?'CITYWIDE + SCHOOL':'3-district sample + SCHOOL';
+  $('#eyebrow').textContent=`PR #32 · ${citywide?'CITYWIDE':'SAMPLE'} FULL-STACK VALIDATION`;
+  $('#note').textContent=citywide
+    ?'驗收：台北內同時開 Local PMTiles + 3D + terrain + 學區；再去板橋／上海／東京確認全球底圖與 Overture 正常、不黑屏。'
+    :'三區 sample 主要驗證高度語意；完整桌機驗收請使用 citywide 模式。';
+
+  status.textContent='Preflighting shared Overture + local PMTiles + school data…';
+  let overture;
+  try{overture=await core.preflightOverture();}
+  catch(e){status.textContent=`ERROR: ${e?.message||e}`;status.className='status error';return;}
+
+  let localMetadata=null;
+  try{
+    const localArchive=new pmtiles.PMTiles(localUrl);
+    const [,metadata]=await Promise.all([localArchive.getHeader(),localArchive.getMetadata()]);
+    localMetadata=metadata;
+    const head=await fetch(localUrl,{method:'HEAD',cache:'no-store'});
+    const size=Number(head.headers.get('content-length'));
+    localSizeEl.textContent=Number.isFinite(size)?`${(size/1024/1024).toFixed(2)} MiB`:'—';
+  }catch(e){status.textContent=`ERROR: local PMTiles 未載入。請先執行 ${buildScript}。 ${e?.message||e}`;status.className='status error';return;}
+
+  const localLayers=(localMetadata?.vector_layers||[]).map(x=>x?.id).filter(Boolean);
+  const localSourceLayer=localLayers.includes('building_height')?'building_height':localLayers[0];
+  if(!localSourceLayer){status.textContent='ERROR: local PMTiles 沒有 vector layer';status.className='status error';return;}
+  releaseEl.textContent=overture.candidate.release;localLayerEl.textContent=localSourceLayer;
+
+  const extraSources={localOfficial:{type:'vector',url:`pmtiles://${localUrl}`,attribution:'Taipei City Government City Dashboard public WFS'}};
+  const extraLayers=[
+    {id:'local-official-3d',type:'fill-extrusion',source:'localOfficial','source-layer':localSourceLayer,minzoom:13,paint:{'fill-extrusion-base':0,'fill-extrusion-height':['to-number',['get','height_m'],9.6],'fill-extrusion-color':'#f7f8f9','fill-extrusion-opacity':.98,'fill-extrusion-vertical-gradient':true}},
+    {id:'local-official-flat',type:'fill',source:'localOfficial','source-layer':localSourceLayer,minzoom:13,layout:{visibility:'none'},paint:{'fill-color':'#f7f8f9','fill-opacity':.9,'fill-outline-color':'rgba(70,80,90,.3)'}}
+  ];
+  const map=core.createMap({container:'map',view:{...core.PLACES.daan,zoom:15,pitch:57},overtureUrl:overture.candidate.url,hasParts:overture.hasParts,extraSources,extraLayers});
+  map.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'top-right');
+  map.addControl(new maplibregl.ScaleControl({maxWidth:120,unit:'metric'}),'bottom-right');
+
+  let localOn=true,show3d=true,terrainOn=true,photoOn=false,moveStartedAt=null;
+  let districtOn=false,districtLevel='elementary',schoolPointsOn=true,districtLayer=null,schoolLocationLayer=null;
+
+  function syncLayers(){
+    if(!map.isStyleLoaded())return;
+    const provider=core.applyCoreVisualState(map,{photo:photoOn,show3d,terrain:terrainOn,hasParts:overture.hasParts});
+    core.vis(map,'local-official-3d',localOn&&show3d);
+    core.vis(map,'local-official-flat',localOn&&!show3d);
+    core.paint(map,'local-official-3d','fill-extrusion-opacity',photoOn?.58:.98);
+    core.paint(map,'local-official-flat','fill-opacity',photoOn?.48:.90);
+    basemapMapBtn.classList.toggle('active',!photoOn);basemapPhotoBtn.classList.toggle('active',photoOn);
+    basemapStateEl.textContent=photoOn?(provider?.label||'官方航照無覆蓋 · OSM fallback'):'OSM map';
+    toggleLocalBtn.textContent=`Local PMTiles ${localOn?'ON':'OFF'}`;toggleLocalBtn.classList.toggle('active',localOn);
+    toggle3dBtn.textContent=`3D ${show3d?'ON':'OFF'}`;toggle3dBtn.classList.toggle('active',show3d);
+    toggleTerrainBtn.textContent=`Terrain ${terrainOn?'ON':'OFF'}`;toggleTerrainBtn.classList.toggle('active',terrainOn);
+    terrainStateEl.textContent=terrainOn?'Mapterhorn DEM ON':'flat map';
+  }
+  function syncDistrictButtons(){
+    districtBtn.classList.toggle('active',districtOn);districtBtn.textContent=`🎓 學區 ${districtOn?'ON':'OFF'}`;
+    elementaryBtn.classList.toggle('mode-active',districtLevel==='elementary');juniorBtn.classList.toggle('mode-active',districtLevel==='junior');
+    schoolPointBtn.classList.toggle('mode-active',schoolPointsOn);schoolPointBtn.textContent=`🏫 校點 ${schoolPointsOn?'ON':'OFF'}`;
+  }
+  function syncSchoolLocationLayer(){
+    if(!schoolLocationLayer)return;
+    schoolLocationLayer.setLevel(districtLevel);
+    schoolLocationLayer.setEnabled(districtOn&&schoolPointsOn);
+    if(!districtOn)schoolPointStatus.textContent='校點待學區開啟 · 只顯示目前選擇的國小或國中。';
+  }
+  function setTerrain(on){terrainOn=on;core.setTerrain(map,terrainOn);syncLayers();}
+  function refreshStats(){
+    if(!map.isStyleLoaded())return;
+    const ids=[core.IDS.buildingLayer,core.IDS.partsLayer,'local-official-3d','local-official-flat'].filter(id=>map.getLayer(id));
+    try{visibleCountEl.textContent=map.queryRenderedFeatures({layers:ids}).length.toLocaleString();}catch{visibleCountEl.textContent='—';}
+  }
+
+  map.on('load',()=>{
+    syncLayers();
+    districtLayer=new TaipeiMapsSchoolDistrictLayer.SchoolDistrictLayer(map,{onState:({state,message})=>{districtStatus.textContent=message;districtStatus.className=`status ${state==='error'?'error':state==='ready'?'good':'muted'}`;}});
+    districtLayer.init();
+    schoolLocationLayer=new TaipeiMapsSchoolLocationLayer.SchoolLocationLayer(map,{onState:({state,message})=>{schoolPointStatus.textContent=message;schoolPointStatus.className=`status ${state==='error'?'error':state==='ready'?'good':'muted'}`;}});
+    schoolLocationLayer.init();
+    syncDistrictButtons();
+    status.textContent=`READY · shared core + official buildings + terrain + school layer + ${citywide?'citywide':'sample'} PMTiles`;status.className='status good';
+  });
+  map.on('movestart',()=>{moveStartedAt=performance.now();});
+  map.on('moveend',()=>{document.querySelectorAll('button.city').forEach(b=>b.classList.remove('active'));if(photoOn)syncLayers();});
+  map.on('taipei-maps-imagerychange',()=>{if(photoOn)syncLayers();});
+  map.on('idle',()=>{if(moveStartedAt!=null){lastIdleEl.textContent=`${Math.round(performance.now()-moveStartedAt)} ms`;moveStartedAt=null;}refreshStats();});
+  map.on('error',e=>console.error('Map error',e?.error||e));
+
+  basemapMapBtn.onclick=()=>{photoOn=false;syncLayers();};
+  basemapPhotoBtn.onclick=()=>{photoOn=true;syncLayers();};
+  toggleLocalBtn.onclick=()=>{localOn=!localOn;syncLayers();refreshStats();};
+  toggle3dBtn.onclick=()=>{show3d=!show3d;syncLayers();refreshStats();};
+  toggleTerrainBtn.onclick=()=>setTerrain(!terrainOn);
+  districtBtn.onclick=()=>{if(!districtLayer)return;districtOn=!districtOn;districtLayer.setEnabled(districtOn);syncSchoolLocationLayer();syncDistrictButtons();};
+  elementaryBtn.onclick=()=>{if(!districtLayer)return;districtLevel='elementary';districtLayer.setLevel('elementary');syncSchoolLocationLayer();syncDistrictButtons();};
+  juniorBtn.onclick=()=>{if(!districtLayer)return;districtLevel='junior';districtLayer.setLevel('junior');syncSchoolLocationLayer();syncDistrictButtons();};
+  schoolPointBtn.onclick=()=>{schoolPointsOn=!schoolPointsOn;syncSchoolLocationLayer();syncDistrictButtons();};
+  document.querySelectorAll('button.city').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('button.city').forEach(b=>b.classList.remove('active'));btn.classList.add('active');map.easeTo({...core.PLACES[btn.dataset.city],duration:700});}));
+})();
+</script>
+</body>
+</html>

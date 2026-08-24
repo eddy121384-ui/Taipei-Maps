@@ -1,0 +1,22 @@
+schema_name: Taipei Official Building Height PMTiles Sample
+schema_description: Three-district-scale Taipei official building-height overlay for Issue #31 PMTiles validation.
+attribution: Taipei City Government City Dashboard public WFS
+version: 0.1
+is_overlay: true
+
+sources:
+  taipei_buildings:
+    type: geojson
+    local_path: public/generated/taipei_building_height_sample.geojson
+    projection: EPSG:4326
+
+layers:
+  - id: building_height
+    features:
+      - source: taipei_buildings
+        geometry: polygon
+        min_zoom: 13
+        max_zoom: 15
+        attributes:
+          - key: height_m
+          - key: height_source

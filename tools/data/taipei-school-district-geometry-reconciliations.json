@@ -1,0 +1,99 @@
+{
+  "academicYear": 115,
+  "description": "Source-audited reconciliations between school-assignment neighbor numbers and the current Taipei Civil Affairs neighbor geometry. Entries may be historical administrative merges, documented empty neighbor numbers, stale education-table references, or exact stale geometry features. None creates inferred polygons.",
+  "sources": [
+    {
+      "authority": "臺北市南港區公所",
+      "title": "臺北市南港區111年2月及3月份區務會議紀錄",
+      "url": "https://www-ws.gov.taipei/Download.ashx?icon=..pdf&n=MTEx5bm0MuaciOWPijPmnIjku73ljZfmuK%2FljYDli5nmnIPorbDntIDpjIQucGRm&u=LzAwMS9VcGxvYWQvMzE1L3JlbGZpbGUvNjM1NjMvOTEzMDk5OS8xNDg4NTUyMy1iMWQwLTQ0OGMtYTQxYi1mY2UzNDRhMDYyMTEucGRm",
+      "evidence": "提案一：成福里調整鄰編組，第6鄰與第28鄰合併、第16鄰與第29鄰合併；主席裁示照案通過。"
+    },
+    {
+      "authority": "臺北市鄰里服務網",
+      "title": "成福里基本資料",
+      "url": "https://li.taipei/News_Content.aspx?n=8CC4391B60340D9C&s=C8F47BAF8D06AD7B&sms=D982815F3A372FF5",
+      "evidence": "原31個鄰依北市民區字第11160144481號函調整為29個鄰，自111年5月1日起生效。"
+    },
+    {
+      "authority": "臺北市大安區公所",
+      "title": "臺北市大安區公所施政報告（資料截止109年12月31日）",
+      "url": "https://www-ws.gov.taipei/Download.ashx?icon=.pdf&n=MTEw5bm05LiK5Y2K5bm05pa95pS%2F5aCx5ZGKKDEwOS4wN34xMDkuMTIpLnBkZg%3D%3D&u=LzAwMS9VcGxvYWQvMzExL3JlbGZpbGUvMTM5NjEvODM2NjM3NC8wNGI5OTUyNi1kMzA0LTRlOWQtOGJiOC0xOWQ5ZjlhZDBiMmIucGRm",
+      "evidence": "大安區53里1,030鄰中，芳和里第7鄰列為空鄰。"
+    },
+    {
+      "authority": "臺北市鄰里服務網",
+      "title": "芳和里基本資料",
+      "url": "https://li.taipei/News_Content.aspx?n=8CC4391B60340D9C&s=673AEB1A6CCC5F64",
+      "evidence": "現行芳和里統計鄰數為20鄰；現行民政鄰界亦無第7鄰 polygon。"
+    },
+    {
+      "authority": "臺北市士林區戶政事務所",
+      "title": "士林區各里戶數及人口數統計資訊（93年12月）",
+      "url": "https://slhr.gov.taipei/News_Content.aspx?n=9571B53A93548917&s=18564CDFE078BDE9&sms=94B80086DC54BEDE",
+      "evidence": "三玉里於93年12月已列21鄰；95年、98年、100年及現行官方統計亦持續為21鄰。"
+    },
+    {
+      "authority": "臺北市士林區戶政事務所",
+      "title": "臺北市士林區各里戶數及人口數統計資訊（現行）",
+      "url": "https://www-ws.gov.taipei/001/Upload/427/relfile/21145/8385319/7b086447-fb6a-4ab9-bc02-a47dd3d36ec2.pdf",
+      "evidence": "三玉里現有門牌與戶籍登記均為21鄰；民政鄰界亦只有1至21鄰。"
+    },
+    {
+      "authority": "臺北市信義區公所",
+      "title": "臺北市信義區114年8月各里人口數、戶數統計表",
+      "url": "https://www-ws.gov.taipei/Download.ashx?icon=.pdf&n=6Ie65YyX5biC5L%2Bh576p5Y2AMTE05bm0OOaciOWQhOmHjOS6uuWPo%2BaVuOOAgeaItuaVuOe1seioiOihqC5wZGY%3D&u=LzAwMS9VcGxvYWQvNDE4L3JlbGZpbGUvMjA3MjkvOTQ2ODEyOC9kNTMyNGQ0Yi0zMjFkLTRmMTEtODA1Ni1mZmU3NDBjNzZlMmUucGRm",
+      "evidence": "富台里現行鄰數為18鄰。"
+    },
+    {
+      "authority": "臺北市信義區公所",
+      "title": "臺北市信義區鄰長通訊一覽表（114年）",
+      "url": "https://www-ws.gov.taipei/Download.ashx?icon=..pdf&n=5L%2Bh576p5Y2AMTE05bm056ysMTTlsYbphLDplbfpgJroqIrkuIDopr3ooagt57ay56uZ5YWs5biD54mIMTE0MDQucGRm&u=LzAwMS9VcGxvYWQvMzE3L3JlbGZpbGUvMTI4NjEvMTM2ODIwL2U4ODNmOTY3LTU1ZjUtNGRhNS04Y2E5LTBmNDAwMGJiNzJlNC5wZGY%3D",
+      "evidence": "富台里鄰長資料只涉及現行1至18鄰；現行統計同樣為18鄰。"
+    }
+  ],
+  "merges": [
+    {
+      "district": "南港",
+      "village": "成福",
+      "retiredNeighbor": 28,
+      "mergedInto": 6,
+      "effectiveDate": "2022-05-01"
+    },
+    {
+      "district": "南港",
+      "village": "成福",
+      "retiredNeighbor": 29,
+      "mergedInto": 16,
+      "effectiveDate": "2022-05-01"
+    }
+  ],
+  "emptyNeighbors": [
+    {
+      "district": "大安",
+      "village": "芳和",
+      "neighbor": 7,
+      "reason": "Official district administration report documents this as an empty neighbor; current geometry has no polygon, so no polygon is invented."
+    }
+  ],
+  "nonCurrentAssignmentNeighbors": [
+    {
+      "district": "士林",
+      "village": "三玉",
+      "neighbor": 22,
+      "level": "junior",
+      "reason": "The 115 education table still includes neighbor 22, but official household/admin records show 三玉里 has had 21 neighbors since at least 93年 and current geometry contains only 1-21. No current polygon or remapping is inferred."
+    }
+  ],
+  "staleGeometryFeatures": [
+    {
+      "f_id": 9688,
+      "district": "信義",
+      "village": "富台",
+      "neighbor": 19,
+      "LIE_CODE": "6300200019",
+      "SDFKEY": "6300200019019",
+      "SDFNAME": "富台里19鄰",
+      "reason": "Current Xinyi official statistics report 富台里 as 18 neighbors. This exact neighbor-19 geometry record is stale and must not be treated as a current catchment polygon."
+    }
+  ]
+}

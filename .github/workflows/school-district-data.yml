@@ -1,0 +1,60 @@
+name: School district data
+
+on:
+  push:
+    branches:
+      - feat/taipei-school-district-data-layer
+  pull_request:
+    paths:
+      - 'public/taipei-school-districts-115.js'
+      - 'public/school-districts-115/**'
+      - 'public/school-district-data-guard.js'
+      - 'public/school-district-layer.js'
+      - 'public/school-location-layer.js'
+      - 'public/mobile-preview.html'
+      - 'public/maplibre-pmtiles-provider-spike.html'
+      - 'start-desktop-full-stack-smoke.bat'
+      - 'tools/data/build_taipei_school_districts.py'
+      - 'tools/data/generate_taipei_school_district_shards.py'
+      - 'tools/data/compare_taipei_school_district_semantics.mjs'
+      - 'tools/data/validate_taipei_school_districts.mjs'
+      - 'tools/data/validate_taipei_school_district_geometry.mjs'
+      - 'tools/data/validate_school_layer_performance.mjs'
+      - 'tools/data/taipei-school-district-geometry-reconciliations.json'
+      - 'tools/data/requirements-school-districts.txt'
+      - '.github/workflows/school-district-data.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile importer and shard generator
+        run: python -m py_compile tools/data/build_taipei_school_districts.py tools/data/generate_taipei_school_district_shards.py
+      - name: Install pinned PDF parser
+        run: python -m pip install -r tools/data/requirements-school-districts.txt
+      - name: Regenerate from pinned official 115 PDFs
+        run: >-
+          python tools/data/generate_taipei_school_district_shards.py
+          --bootstrap-out /tmp/taipei-school-districts-115.js
+          --shard-dir /tmp/school-districts-115
+      - name: Compare committed runtime semantics with fresh importer output
+        run: >-
+          node tools/data/compare_taipei_school_district_semantics.mjs
+          /tmp/taipei-school-districts-115.js
+          /tmp/school-districts-115
+      - name: Validate committed runtime dataset
+        run: node tools/data/validate_taipei_school_districts.mjs
+      - name: Validate school-layer pagination and viewport caches
+        run: node tools/data/validate_school_layer_performance.mjs
+      - name: Validate assignment joins against official neighbor geometry
+        run: node tools/data/validate_taipei_school_district_geometry.mjs

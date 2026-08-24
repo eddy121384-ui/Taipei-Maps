@@ -34,15 +34,21 @@ if not exist tools\dev\probe_listing_provider_coordinates.mjs (
 )
 
 set "DISTRICT=%~1"
-if "%DISTRICT%"=="" set "DISTRICT=大安"
-
-echo Probe district: %DISTRICT%
+if "%DISTRICT%"=="" (
+  echo Probe district: default ^(Da-an^)
+) else (
+  echo Probe district argument: %DISTRICT%
+)
 echo.
 echo This makes at most one list GET and one detail GET per provider.
 echo It does NOT log in, bypass CAPTCHA/Cloudflare, or persist inventory.
 echo.
 
-"%NODE_CMD%" tools\dev\probe_listing_provider_coordinates.mjs "%DISTRICT%"
+if "%DISTRICT%"=="" (
+  "%NODE_CMD%" tools\dev\probe_listing_provider_coordinates.mjs
+) else (
+  "%NODE_CMD%" tools\dev\probe_listing_provider_coordinates.mjs "%DISTRICT%"
+)
 
 echo.
 echo ==========================================================

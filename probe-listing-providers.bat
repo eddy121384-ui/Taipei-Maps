@@ -25,7 +25,7 @@ if not exist "%NODE_CMD%" (
   exit /b 1
 )
 
-if not exist tools\dev\probe_listing_provider_coordinates.mjs (
+if not exist tools\dev\probe_listing_provider_coordinates_ascii.mjs (
   echo [ERROR] Provider probe script is missing.
   echo Pull the latest feat/nearby-listing-links-experiment branch first.
   echo.
@@ -40,14 +40,15 @@ if "%DISTRICT%"=="" (
   echo Probe district argument: %DISTRICT%
 )
 echo.
+echo Optional ASCII aliases: daan, xinyi, wenshan, neihu, beitou, etc.
 echo This makes at most one list GET and one detail GET per provider.
 echo It does NOT log in, bypass CAPTCHA/Cloudflare, or persist inventory.
 echo.
 
 if "%DISTRICT%"=="" (
-  "%NODE_CMD%" tools\dev\probe_listing_provider_coordinates.mjs
+  "%NODE_CMD%" tools\dev\probe_listing_provider_coordinates_ascii.mjs
 ) else (
-  "%NODE_CMD%" tools\dev\probe_listing_provider_coordinates.mjs "%DISTRICT%"
+  "%NODE_CMD%" tools\dev\probe_listing_provider_coordinates_ascii.mjs "%DISTRICT%"
 )
 
 echo.

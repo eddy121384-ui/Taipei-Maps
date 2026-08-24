@@ -7,6 +7,7 @@ const MOI_DIR = path.join(CACHE_DIR, 'moi');
 const RAW_DIR = path.join(CACHE_DIR, 'moi-source-bytes');
 const MANIFEST_PATH = path.join(CACHE_DIR, 'moi-encoding-manifest.json');
 const ZIP_PATH = path.join(CACHE_DIR, 'lvr_buildcasecsv.zip');
+const REQUIRED_HEADERS = ['TOWN', 'BUILDCASE', 'BUILDINGPERMITNO'];
 
 function sha256(buffer) {
   return createHash('sha256').update(buffer).digest('hex');
@@ -25,26 +26,191 @@ async function filesRecursive(root) {
   return out;
 }
 
+function parseCsv(input) {
+  const rows = [];
+  let row = [];
+  let field = '';
+  let quoted = false;
+
+  for (let i = 0; i < input.length; i += 1) {
+    const ch = input[i];
+    if (quoted) {
+      if (ch === '"') {
+        if (input[i + 1] === '"') {
+          field += '"';
+          i += 1;
+        } else {
+          quoted = false;
+        }
+      } else {
+        field += ch;
+      }
+      continue;
+    }
+
+    if (ch === '"') quoted = true;
+    else if (ch === ',') {
+      row.push(field);
+      field = '';
+    } else if (ch === '\n') {
+      row.push(field.replace(/\r$/, ''));
+      rows.push(row);
+      row = [];
+      field = '';
+    } else {
+      field += ch;
+    }
+  }
+
+  if (quoted) throw new Error('CSV ended inside a quoted field');
+  if (field.length || row.length) {
+    row.push(field.replace(/\r$/, ''));
+    rows.push(row);
+  }
+  return rows;
+}
+
+function csvField(value) {
+  const s = String(value ?? '');
+  if (!/[",\r\n]/.test(s)) return s;
+  return `"${s.replaceAll('"', '""')}"`;
+}
+
+function serializeCsv(rows) {
+  return `${rows.map(row => row.map(csvField).join(',')).join('\r\n')}\r\n`;
+}
+
+function normalizedHeader(value) {
+  return String(value ?? '').replace(/^\uFEFF/, '').trim().replace(/[\s_\-]/g, '').toUpperCase();
+}
+
+function findHeader(rows) {
+  for (let i = 0; i < Math.min(rows.length, 20); i += 1) {
+    const normalized = rows[i].map(normalizedHeader);
+    if (REQUIRED_HEADERS.every(name => normalized.includes(name))) {
+      const index = new Map();
+      rows[i].forEach((value, column) => index.set(normalizedHeader(value), column));
+      return { rowIndex: i, index };
+    }
+  }
+  return null;
+}
+
+function replacementCount(text) {
+  let count = 0;
+  for (const ch of text) if (ch === '\uFFFD') count += 1;
+  return count;
+}
+
 function decodeStrict(buffer, encoding) {
   const decoded = new TextDecoder(encoding, { fatal: true }).decode(buffer).replace(/^\uFEFF/, '');
   if (decoded.includes('\uFFFD')) throw new Error(`${encoding} decode produced U+FFFD`);
   return decoded;
 }
 
+function validateExpectedHeader(decoded) {
+  const rows = parseCsv(decoded);
+  const header = findHeader(rows);
+  if (!header) throw new Error('decoded text does not expose expected MOI BUILDCASE headers');
+  return { rows, header };
+}
+
+function quarantineMalformedUtf8(buffer, filePath) {
+  // data.gov.tw declares this resource UTF-8. If the byte stream contains isolated
+  // malformed sequences, never guess replacement characters. Decode with U+FFFD only
+  // to locate affected CSV records, then remove those entire records from parser input.
+  const decoded = new TextDecoder('utf-8', { fatal: false }).decode(buffer).replace(/^\uFEFF/, '');
+  const replacements = replacementCount(decoded);
+  if (!replacements) throw new Error(`${filePath}: strict UTF-8 failed but lenient UTF-8 found no replacement marker`);
+
+  const { rows, header } = validateExpectedHeader(decoded);
+  if (rows[header.rowIndex].some(value => value.includes('\uFFFD'))) {
+    throw new Error(`${filePath}: malformed UTF-8 touches the schema header; refusing to guess`);
+  }
+
+  const kept = rows.slice(0, header.rowIndex + 1);
+  const quarantined = [];
+  const projectCol = header.index.get('BUILDCASE');
+  const permitCol = header.index.get('BUILDINGPERMITNO');
+
+  for (let i = header.rowIndex + 1; i < rows.length; i += 1) {
+    const row = rows[i];
+    if (!row.some(value => value.includes('\uFFFD'))) {
+      kept.push(row);
+      continue;
+    }
+    quarantined.push({
+      csv_row_number_1_based: i + 1,
+      replacement_count: replacementCount(row.join('\u001f')),
+      project_name_with_replacement: projectCol === undefined ? null : row[projectCol] || null,
+      building_permit_no_with_replacement: permitCol === undefined ? null : row[permitCol] || null,
+    });
+  }
+
+  const dataRowCount = Math.max(0, rows.length - header.rowIndex - 1);
+  const quarantineRate = dataRowCount ? quarantined.length / dataRowCount : 0;
+  const maxAllowedRows = Math.max(25, Math.ceil(dataRowCount * 0.005));
+  if (quarantined.length > maxAllowedRows) {
+    throw new Error(
+      `${filePath}: declared UTF-8 contains ${replacements} replacement sequence(s) across ${quarantined.length}/${dataRowCount} data row(s) ` +
+      `(${(quarantineRate * 100).toFixed(3)}%); exceeds safety gate ${maxAllowedRows} rows`,
+    );
+  }
+
+  return {
+    encoding: 'utf-8-declared-with-row-quarantine',
+    text: serializeCsv(kept),
+    replacement_count: replacements,
+    quarantined_rows: quarantined.length,
+    source_data_rows: dataRowCount,
+    quarantine_rate: quarantineRate,
+    quarantined_samples: quarantined.slice(0, 25),
+  };
+}
+
 function decodeOfficialCsv(buffer, filePath) {
   const failures = [];
-  for (const encoding of ['utf-8', 'big5']) {
-    try {
-      const text = decodeStrict(buffer, encoding);
-      if (!text.includes('BUILDCASE') || !text.includes('BUILDINGPERMITNO')) {
-        throw new Error('decoded text does not expose expected MOI BUILDCASE headers');
-      }
-      return { encoding, text };
-    } catch (error) {
-      failures.push(`${encoding}: ${error?.message ?? error}`);
-    }
+  try {
+    const text = decodeStrict(buffer, 'utf-8');
+    validateExpectedHeader(text);
+    return {
+      encoding: 'utf-8',
+      text,
+      replacement_count: 0,
+      quarantined_rows: 0,
+      source_data_rows: null,
+      quarantine_rate: 0,
+      quarantined_samples: [],
+    };
+  } catch (error) {
+    failures.push(`utf-8: ${error?.message ?? error}`);
   }
-  throw new Error(`${filePath}: neither strict UTF-8 nor strict Big5 decode succeeded (${failures.join('; ')})`);
+
+  // Retain a strict Big5 compatibility check because legacy MOI real-estate files
+  // have historically appeared in Big5. Never use a lossy Big5 decode.
+  try {
+    const text = decodeStrict(buffer, 'big5');
+    validateExpectedHeader(text);
+    return {
+      encoding: 'big5',
+      text,
+      replacement_count: 0,
+      quarantined_rows: 0,
+      source_data_rows: null,
+      quarantine_rate: 0,
+      quarantined_samples: [],
+    };
+  } catch (error) {
+    failures.push(`big5: ${error?.message ?? error}`);
+  }
+
+  try {
+    return quarantineMalformedUtf8(buffer, filePath);
+  } catch (error) {
+    failures.push(`declared-utf8-quarantine: ${error?.message ?? error}`);
+  }
+
+  throw new Error(`${filePath}: no safe decode path succeeded (${failures.join('; ')})`);
 }
 
 async function fileExists(filePath) {
@@ -64,7 +230,9 @@ async function main() {
 
   await mkdir(RAW_DIR, { recursive: true });
   const rows = [];
-  const counts = { 'utf-8': 0, big5: 0 };
+  const counts = {};
+  let totalQuarantinedRows = 0;
+  let totalReplacementCount = 0;
 
   for (const filePath of csvFiles) {
     const rel = path.relative(MOI_DIR, filePath);
@@ -82,7 +250,9 @@ async function main() {
     const decoded = decodeOfficialCsv(rawBytes, filePath);
     const normalizedBytes = Buffer.from(decoded.text, 'utf8');
     await writeFile(filePath, normalizedBytes);
-    counts[decoded.encoding] += 1;
+    counts[decoded.encoding] = (counts[decoded.encoding] ?? 0) + 1;
+    totalQuarantinedRows += decoded.quarantined_rows;
+    totalReplacementCount += decoded.replacement_count;
 
     rows.push({
       file: rel.replaceAll('\\', '/'),
@@ -91,23 +261,34 @@ async function main() {
       normalized_utf8_sha256: sha256(normalizedBytes),
       source_bytes: rawBytes.length,
       normalized_utf8_bytes: normalizedBytes.length,
+      replacement_sequence_count: decoded.replacement_count,
+      quarantined_row_count: decoded.quarantined_rows,
+      source_data_rows: decoded.source_data_rows,
+      quarantine_rate: decoded.quarantine_rate,
+      quarantined_samples: decoded.quarantined_samples,
     });
   }
 
   const zipBytes = await readFile(ZIP_PATH);
   const manifest = {
-    schema_version: 1,
+    schema_version: 2,
     generated_at: new Date().toISOString(),
-    policy: 'Strict UTF-8 first, strict Big5 fallback; original source bytes preserved before normalization.',
+    declared_encoding: 'UTF-8',
+    policy: 'Strict UTF-8 first; strict Big5 compatibility fallback; if the declared UTF-8 byte stream has isolated malformed sequences, quarantine entire affected CSV records rather than guessing replacement characters.',
     moi_zip_sha256: sha256(zipBytes),
     counts,
+    total_replacement_sequence_count: totalReplacementCount,
+    total_quarantined_row_count: totalQuarantinedRows,
     files: rows,
   };
   await writeFile(MANIFEST_PATH, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
 
   console.log(`MOI CSV encoding normalization: ${rows.length} file(s)`);
-  console.log(`  UTF-8 source files: ${counts['utf-8']}`);
-  console.log(`  Big5 source files: ${counts.big5}`);
+  for (const [encoding, count] of Object.entries(counts)) {
+    console.log(`  ${encoding}: ${count} file(s)`);
+  }
+  console.log(`  Replacement sequences detected: ${totalReplacementCount}`);
+  console.log(`  Entire CSV rows quarantined: ${totalQuarantinedRows}`);
   console.log(`  Raw source bytes preserved: ${RAW_DIR}`);
   console.log(`  Encoding manifest: ${MANIFEST_PATH}`);
 }

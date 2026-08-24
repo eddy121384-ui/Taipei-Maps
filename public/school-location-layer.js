@@ -154,10 +154,7 @@
       if(!['elementary','junior'].includes(level))return;
       this.level=level;
       for(const id of [POINT_ID,LABEL_ID])if(this.map.getLayer(id))this.map.setFilter(id,['==',['get','level'],this.level]);
-      if(this.enabled){
-        if(this.allFeatures.length){this.applyLevelFeatures('快取');}
-        else this.refresh(true);
-      }
+      if(this.enabled)this.refresh(true);
     }
 
     syncVisibility(){

@@ -36,7 +36,7 @@ audit.provenance_notes = [
   ...(Array.isArray(audit.provenance_notes) ? audit.provenance_notes : []),
   'MOI BUILDCASE CSV files are parsed from UTF-8 normalized copies. Non-BUILDCASE sibling tables are physically isolated from this pipeline rather than being interpreted as project rows.',
   'If the officially-declared UTF-8 MOI stream contains isolated malformed byte sequences, the pipeline quarantines the entire affected CSV record instead of guessing characters; quarantined counts and samples are recorded in source_encodings.',
-  'Taipei permit XML honors its BOM/XML encoding declaration. Original XML bytes are preserved before UTF-8 normalization; if declared/default UTF-8 contains isolated malformed bytes, the entire repeated XML record containing them is quarantined. Markup corruption or excessive quarantines fail closed.',
+  'Taipei permit XML honors its BOM/XML encoding declaration. Original XML bytes are preserved before UTF-8 normalization. A byte-valid UTF-8 source that already contains literal U+FFFD markers is not treated as clean; the entire repeated permit record containing each marker is quarantined rather than guessing the missing character. Markup corruption or excessive quarantines fail closed.',
 ];
 
 await writeFile(AUDIT_PATH, `${JSON.stringify(audit, null, 2)}\n`, 'utf8');
@@ -48,6 +48,6 @@ console.log(`  MOI replacement sequences detected: ${moiManifest.total_replaceme
 console.log(`  MOI BUILDCASE rows quarantined: ${moiManifest.total_quarantined_row_count ?? 0}`);
 console.log(`  MOI sibling tables isolated: ${moiManifest.ignored_non_buildcase_file_count ?? 0}`);
 for (const file of permitManifest.files || []) {
-  console.log(`  ${file.source}: ${file.decode_mode}; replacements=${file.replacement_sequence_count}; quarantined records=${file.quarantined_record_count}`);
+  console.log(`  ${file.source}: ${file.decode_mode}; U+FFFD markers=${file.replacement_sequence_count}; quarantined records=${file.quarantined_record_count}; postwrite=${file.post_write_verified_no_ufffd ? 'PASS' : 'UNKNOWN'}`);
 }
 console.log(`  Original MOI ZIP SHA-256: ${moiManifest.moi_zip_sha256}`);

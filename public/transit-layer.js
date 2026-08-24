@@ -47,6 +47,33 @@
     };
   }
 
+  class TransitToggleControl{
+    constructor(layer){this.layer=layer;this.container=null;this.button=null;}
+    onAdd(){
+      const container=document.createElement('div');
+      container.className='maplibregl-ctrl maplibregl-ctrl-group';
+      const button=document.createElement('button');
+      button.type='button';
+      button.setAttribute('aria-label','切換捷運、台鐵與高鐵路線');
+      button.textContent='🚇';
+      button.style.fontSize='16px';
+      button.style.lineHeight='1';
+      button.onclick=()=>this.layer.setEnabled(!this.layer.enabled);
+      container.appendChild(button);
+      this.container=container;this.button=button;
+      this.update();
+      return container;
+    }
+    onRemove(){this.container?.remove();this.container=null;this.button=null;}
+    update({inTaiwan=centerInsideTaiwan(this.layer.map)}={}){
+      if(!this.button)return;
+      this.button.style.opacity=inTaiwan?'1':'.42';
+      this.button.style.background=this.layer.enabled&&inTaiwan?'#e8f1f8':'';
+      this.button.title=!inTaiwan?'軌道路線僅在台灣顯示':`軌道 ${this.layer.enabled?'ON':'OFF'} · 捷運 / 台鐵 / 高鐵`;
+      this.button.setAttribute('aria-pressed',this.layer.enabled&&inTaiwan?'true':'false');
+    }
+  }
+
   class TransitLayer{
     constructor(map,{overtureBuildingUrl=null,release=null,enabled=true,onState=null}={}){
       this.map=map;
@@ -54,11 +81,13 @@
       this.onState=typeof onState==='function'?onState:()=>{};
       this.url=transportationUrl(overtureBuildingUrl,release);
       this.initialized=false;
+      this.control=null;
       this._moveHandler=()=>this.sync();
     }
 
     emit(state,message,extra={}){
       this.onState({state,message,...extra});
+      this.map.fire('taipei-maps-transitchange',{state,message,enabled:this.enabled,...extra});
     }
 
     async init(){
@@ -93,6 +122,8 @@
 
         this.initialized=true;
         this.map.on('moveend',this._moveHandler);
+        this.control=new TransitToggleControl(this);
+        this.map.addControl(this.control,'top-right');
         this.sync();
         return true;
       }catch(error){
@@ -109,9 +140,10 @@
       for(const id of ALL_LAYER_IDS){
         if(this.map.getLayer(id))this.map.setLayoutProperty(id,'visibility',visible?'visible':'none');
       }
-      if(!this.enabled)this.emit('off','軌道 OFF');
-      else if(!inTaiwan)this.emit('outside','軌道僅在台灣顯示');
-      else this.emit('ready','軌道 ON · 捷運 / 台鐵 / 高鐵');
+      this.control?.update({inTaiwan});
+      if(!this.enabled)this.emit('off','軌道 OFF',{inTaiwan});
+      else if(!inTaiwan)this.emit('outside','軌道僅在台灣顯示',{inTaiwan});
+      else this.emit('ready','軌道 ON · 捷運 / 台鐵 / 高鐵',{inTaiwan});
     }
 
     setEnabled(enabled){
@@ -121,6 +153,7 @@
 
     destroy(){
       this.map.off('moveend',this._moveHandler);
+      if(this.control){try{this.map.removeControl(this.control);}catch{}this.control=null;}
       for(const id of [...ALL_LAYER_IDS].reverse())if(this.map.getLayer(id))this.map.removeLayer(id);
       if(this.map.getSource(SOURCE_ID))this.map.removeSource(SOURCE_ID);
       this.initialized=false;

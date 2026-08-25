@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>卜居 · 臺北醫療院所 smoke</title>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" />
+  <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+  <script src="https://unpkg.com/pmtiles@4.4.1/dist/pmtiles.js"></script>
+  <script src="./shared-map-core.js"></script>
+  <script src="./healthcare-layer.js"></script>
+  <style>
+    html,body,#map{width:100%;height:100%;margin:0}body{font-family:Inter,system-ui,sans-serif;overflow:hidden}#map{background:#9fd5f6}
+    .panel{position:absolute;z-index:5;top:14px;left:14px;width:min(460px,calc(100vw - 28px));padding:14px;border:1px solid #ccd3d9;border-radius:14px;background:rgba(255,255,255,.96);box-shadow:0 10px 28px rgba(0,0,0,.14)}
+    .eyebrow{font-size:11px;font-weight:800;letter-spacing:.12em;color:#68727d}h1{font-size:20px;margin:5px 0}.sub{font-size:11.5px;color:#5e6872;line-height:1.5}.controls{display:flex;gap:6px;flex-wrap:wrap;margin:9px 0}button{border:1px solid #c8d0d7;border-radius:9px;padding:7px 9px;background:#fff;font-weight:700;cursor:pointer}.status{font-size:12px;font-weight:700;line-height:1.45;margin-top:7px}.good{color:#137333}.error{color:#b42318}.muted{color:#68727d}.legend{display:flex;gap:14px;font-size:12px;margin-top:9px}.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.18)}
+  </style>
+</head>
+<body>
+<div id="map"></div>
+<section class="panel">
+  <div class="eyebrow">ISSUE #52 · HEALTHCARE POI SMOKE</div>
+  <h1>醫院／診所生活機能層</h1>
+  <div class="sub">資料：臺北市政府衛生局「臺北市公私立醫療院所」。紅色大點是醫院、藍綠小點是診所；放大後顯示名稱，點一下看地址。右上角紅色 ✚ 可切換整個醫療層。</div>
+  <div class="controls"><button data-place="daan">大安</button><button data-place="xinyi">信義</button><button data-place="beitou">北投</button><button data-place="wenshan">文山</button><button data-place="banqiao">板橋</button></div>
+  <div class="legend"><span><i class="dot" style="background:#c62828"></i>醫院</span><span><i class="dot" style="background:#00838f"></i>診所</span></div>
+  <div id="status" class="status muted">Booting…</div>
+</section>
+<script>
+(async()=>{
+  const status=document.querySelector('#status');
+  if(!window.maplibregl||!window.pmtiles||!window.TaipeiMapsCore||!window.TaipeiMapsHealthcareLayer){status.textContent='ERROR: prerequisite 未載入';status.className='status error';return;}
+  const core=window.TaipeiMapsCore;
+  let overture;try{overture=await core.preflightOverture();}catch(e){status.textContent=`ERROR: ${e?.message||e}`;status.className='status error';return;}
+  const map=core.createMap({container:'map',view:{...core.PLACES.daan,zoom:14.2,pitch:45},overtureUrl:overture.candidate.url,hasParts:overture.hasParts});
+  map.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'top-right');
+  map.addControl(new maplibregl.ScaleControl({maxWidth:120,unit:'metric'}),'bottom-right');
+  map.on('taipei-maps-healthcarechange',e=>{status.textContent=e.message;status.className=`status ${e.state==='error'?'error':e.state==='ready'?'good':'muted'}`;});
+  map.on('load',async()=>{
+    const layer=new TaipeiMapsHealthcareLayer.HealthcareLayer(map,{enabled:true});
+    map.__taipeiMapsHealthcareLayer=layer;
+    await layer.init();
+  });
+  for(const button of document.querySelectorAll('[data-place]'))button.onclick=()=>{const view=core.PLACES[button.dataset.place];if(view)map.easeTo({...view,duration:650});};
+})();
+</script>
+</body>
+</html>

@@ -4,7 +4,7 @@ cd /d "%~dp0"
 
 echo ==========================================================
 echo   Taipei-Maps - Desktop full-stack smoke test
-echo   Map + 3D + schools + transit + healthcare
+echo   Flat 2D default + optional 3D/terrain + full overlays
 echo ==========================================================
 echo.
 
@@ -83,7 +83,11 @@ echo.
 echo [10/10] Opening desktop full-stack validation page...
 echo.
 echo Smoke checklist:
-echo   - Daan / Xinyi: Local PMTiles + 3D + Terrain + school ON
+echo   - initial view: OSM map, top-down north-up, 3D OFF, Terrain OFF
+echo   - initial Terrain status reads flat map
+echo   - Local PMTiles remains ON and renders flat building footprints
+echo   - turn 3D ON: building extrusion layers still work
+echo   - turn Terrain ON/OFF: Mapterhorn terrain still toggles correctly
 echo   - school: switch Elementary / Junior and click catchment popup
 echo   - school: pan around same district; status should show cache hits
 echo   - healthcare: red hospital-campus points + teal clinic points appear in Taipei

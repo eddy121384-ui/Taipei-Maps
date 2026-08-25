@@ -4,10 +4,14 @@ import { HOSPITAL_CAMPUS_REGISTRY } from './taipei_hospital_campuses.mjs';
 
 const layerPath='public/healthcare-layer.js';
 const builderPath='tools/data/build_taipei_healthcare.mjs';
+const corePath='public/shared-map-core.js';
+const smokePath='public/healthcare-layer-smoke.html';
 const dataPath='public/generated/taipei_healthcare_facilities.geojson';
 const auditPath='public/generated/taipei_healthcare_facilities.audit.json';
 const layer=await readFile(layerPath,'utf8');
 const builder=await readFile(builderPath,'utf8');
+const core=await readFile(corePath,'utf8');
+const smoke=await readFile(smokePath,'utf8');
 const data=JSON.parse(await readFile(dataPath,'utf8'));
 const audit=JSON.parse(await readFile(auditPath,'utf8'));
 
@@ -29,7 +33,21 @@ const builderTokens=[
   "CACHE_SCHEMA_VERSION=3","reconcileHospitalCampuses","campus_reconciliation","physical hospital sites"
 ];
 for(const token of builderTokens)if(!builder.includes(token))throw new Error(`Healthcare builder contract missing: ${token}`);
-if(layer.includes('google.com')||builder.includes('google.com'))throw new Error('Healthcare layer must not depend on Google Maps/Places content');
+
+const coreTokens=[
+  "HEALTHCARE_MODULE_URL=new URL('./healthcare-layer.js',CORE_SCRIPT_URL).href",
+  'async function bootstrapHealthcare(map)',
+  'window.TaipeiMapsHealthcareLayer',
+  'map.__taipeiMapsHealthcareLayer=healthcare',
+  'bootstrapHealthcare(map);',
+  "map.fire('taipei-maps-healthcarechange'"
+];
+for(const token of coreTokens)if(!core.includes(token))throw new Error(`Shared core healthcare integration missing: ${token}`);
+if(!smoke.includes('<script src="./shared-map-core.js"></script>'))throw new Error('Healthcare smoke must load shared-map-core.js');
+if(smoke.includes('<script src="./healthcare-layer.js"></script>'))throw new Error('Healthcare smoke must not bypass shared-core dynamic healthcare bootstrap');
+if(smoke.includes('new TaipeiMapsHealthcareLayer.HealthcareLayer'))throw new Error('Healthcare smoke must not initialize a second HealthcareLayer instance');
+
+if(layer.includes('google.com')||builder.includes('google.com')||core.includes('google.com'))throw new Error('Healthcare layer must not depend on Google Maps/Places content');
 
 if(Number(audit?.schema_version)<3)throw new Error(`Healthcare audit cache schema is stale: ${audit?.schema_version}`);
 if(!Array.isArray(audit?.campus_reconciliation))throw new Error('Healthcare audit missing campus reconciliation lineage');
@@ -78,6 +96,7 @@ console.log(JSON.stringify({
   status:'PASS',source:'Taipei City Department of Health + official physical-campus reconciliation',
   counts:{hospital_sites:hospitals,clinic:clinics,total:features.length},
   campus_groups:groupResults,
+  shared_core:{healthcare_bootstrap:true,smoke_uses_shared_core:true,double_init:false},
   fuyou_campus:{status:'present',address:fuyou.properties.address,coordinates:fuyou.geometry.coordinates},
   tingzhou_campus:{status:'present',address:tingzhou.properties.address,coordinates:tingzhou.geometry.coordinates},
   marker_style:{hospital:'red point',clinic:'teal point'},hospital_point_minzoom:10.0,hospital_label_minzoom:11.2,clinic_point_minzoom:12.2,clinic_label_minzoom:13.7,google_dependency:false

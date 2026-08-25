@@ -14,40 +14,43 @@ if not defined NODE_CMD (
 
 echo ==========================================================
 echo   Taipei-Maps - Rail transit overlay smoke
-echo   Taipei MRT + New Taipei LRT/MRT + Airport MRT + TRA/THSR
+echo   MRT/LRT + TRA stations + explicit THSR + station names
 echo ==========================================================
 echo.
-echo [1/5] Preparing local Taipei City official MRT line GIS...
+echo [1/6] Preparing local Taipei City official MRT line GIS...
 "%NODE_CMD%" tools\data\build_taipei_mrt_official.mjs --if-missing
 if errorlevel 1 goto :fail
 
 echo.
-echo [2/5] Preparing local Taipei City official MRT station GIS...
+echo [2/6] Preparing local Taipei City official MRT station GIS...
 "%NODE_CMD%" tools\data\build_taipei_mrt_stations_official.mjs --if-missing
 if errorlevel 1 goto :fail
 
 echo.
-echo [3/5] Preparing route-specific North Taiwan urban rail cache via OSM core API...
+echo [3/6] Preparing route-specific North Taiwan urban rail cache via OSM core API...
 "%NODE_CMD%" tools\data\build_north_taiwan_urban_rail.mjs --if-missing
 if errorlevel 1 goto :fail
 
 echo.
-echo [4/5] Validating shared rail overlay contract...
+echo [4/6] Preparing Taiwan intercity rail cache: TRA stations + explicit THSR geometry/stations...
+"%NODE_CMD%" tools\data\build_taiwan_intercity_rail.mjs --if-missing
+if errorlevel 1 goto :fail
+
+echo.
+echo [5/6] Validating shared rail overlay contract...
 "%NODE_CMD%" tools\data\validate_transit_layer.mjs
 if errorlevel 1 goto :fail
 
 echo.
-echo [5/5] Starting the existing desktop full-stack smoke page...
+echo [6/6] Starting the existing desktop full-stack smoke page...
 echo.
 echo Visual checklist:
-echo   - Taipei MRT uses official line colors: brown / red / green / orange / blue / yellow
-echo   - Taipei MRT station dots + Chinese station names remain present
-echo   - Danhai LRT V uses red route color + station dots / names
-echo   - Ankeng LRT K uses khaki route color + station dots / names
-echo   - Sanying LB uses light-blue route color + station dots / names
-echo   - Taoyuan Airport MRT A uses purple route color + station dots / names
-echo   - interchange / duplicate platform station labels should avoid obvious collisions
-echo   - green = TRA, orange = THSR
+echo   - Taipei MRT uses official line colors and station names
+echo   - Danhai V / Ankeng K / Sanying LB / Airport MRT A retain route colors + station names
+echo   - conventional Taiwan rail base is GREEN; standard_gauge must NOT automatically mean THSR
+echo   - THSR is a distinct ORANGE overlay, clearly different from TRA
+echo   - TRA station dots appear at local zoom and Chinese station names appear when closer
+echo   - THSR station dots appear earlier; names such as 高鐵台北站 / 高鐵板橋站 / 高鐵桃園站 are visible
 echo   - top-right subway icon toggles all rail lines, station dots, and station names
 echo   - top-right N button returns bearing to north-up while preserving 3D pitch
 echo   - Kaohsiung keeps generic metro contrast; Taipei readiness must not fade all Taiwan metro

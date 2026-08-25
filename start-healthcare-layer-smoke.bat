@@ -14,7 +14,7 @@ if not defined NODE_CMD (
 
 echo ==========================================================
 echo   Buju / Taipei-Maps - Healthcare POI smoke
-echo   Taipei hospitals + clinics from Department of Health
+echo   Taipei hospital campuses + clinics
 echo ==========================================================
 echo.
 echo [1/3] Preparing Taipei healthcare local cache...
@@ -22,7 +22,7 @@ echo [1/3] Preparing Taipei healthcare local cache...
 if errorlevel 1 goto :fail
 
 echo.
-echo [2/3] Validating healthcare data + rendering contract...
+echo [2/3] Validating healthcare data + physical-campus contract...
 "%NODE_CMD%" tools\data\validate_healthcare_layer.mjs
 if errorlevel 1 goto :fail
 
@@ -30,13 +30,14 @@ echo.
 echo [3/3] Opening healthcare smoke page...
 echo.
 echo Visual checklist:
-echo   - red larger points = hospitals; teal smaller points = clinics
+echo   - red larger points = physical hospital campuses; teal smaller points = clinics
+echo   - click Heping + Fuyou: BOTH Heping (Zhonghua Rd.) and Fuyou (Fuzhou St. 12) must exist
+echo   - Taipei City Hospital is reconciled into 9 distinct physical sites
 echo   - hospital points appear earlier when zooming in; clinic points appear at neighborhood zoom
 echo   - labels avoid obvious overlap; clinic labels appear only closer in
 echo   - click a hospital/clinic: popup shows type, name, district/address
 echo   - top-right red + toggles the entire healthcare layer
 echo   - Banqiao: Taipei healthcare points disappear; base map / transit remain normal
-echo   - data audit: multi-campus hospitals are a known source-semantic gap until physical-campus enrichment is added
 echo   - no provider failure may black-screen the map
 echo.
 echo Keep this window open. Press Ctrl+C to stop the local server.

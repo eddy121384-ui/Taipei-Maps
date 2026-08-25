@@ -44,7 +44,7 @@
   </div>
   <div class="controls">
     <button id="basemapMap" class="active">🗺 地圖</button><button id="basemapPhoto">🛰 航照</button>
-    <button id="toggleLocal" class="active">Local PMTiles ON</button><button id="toggle3d" class="active">3D ON</button><button id="toggleTerrain" class="active">Terrain ON</button>
+    <button id="toggleLocal" class="active">Local PMTiles ON</button><button id="toggle3d">3D OFF</button><button id="toggleTerrain">Terrain OFF</button>
   </div>
   <div class="controls">
     <button id="districtBtn">🎓 學區 OFF</button><button id="elementaryBtn" class="mode-active">國小</button><button id="juniorBtn">國中</button><button id="schoolPointBtn" class="mode-active">🏫 校點 ON</button>
@@ -53,7 +53,7 @@
     <span>Map engine</span><span>Shared MapLibre core</span>
     <span>Validation mode</span><span id="mode">—</span>
     <span>Basemap</span><span id="basemapState">OSM map</span>
-    <span>Terrain</span><span id="terrainState">Mapterhorn DEM ON</span>
+    <span>Terrain</span><span id="terrainState">flat map</span>
     <span>Overture release</span><span id="release">—</span>
     <span>Local source-layer</span><span id="localLayer">—</span>
     <span>Local archive size</span><span id="localSize">—</span>
@@ -85,7 +85,7 @@
   modeEl.textContent=citywide?'CITYWIDE + SCHOOL':'3-district sample + SCHOOL';
   $('#eyebrow').textContent=`PR #32 · ${citywide?'CITYWIDE':'SAMPLE'} FULL-STACK VALIDATION`;
   $('#note').textContent=citywide
-    ?'驗收：台北內同時開 Local PMTiles + 3D + terrain + 學區；再去板橋／上海／東京確認全球底圖與 Overture 正常、不黑屏。'
+    ?'預設以 flat 2D 地圖開啟；需要時再開 3D / terrain。另驗收板橋／上海／東京全球底圖與 Overture 正常、不黑屏。'
     :'三區 sample 主要驗證高度語意；完整桌機驗收請使用 citywide 模式。';
 
   status.textContent='Preflighting shared Overture + local PMTiles + school data…';
@@ -113,11 +113,11 @@
     {id:'local-official-3d',type:'fill-extrusion',source:'localOfficial','source-layer':localSourceLayer,minzoom:13,paint:{'fill-extrusion-base':0,'fill-extrusion-height':['to-number',['get','height_m'],9.6],'fill-extrusion-color':'#f7f8f9','fill-extrusion-opacity':.98,'fill-extrusion-vertical-gradient':true}},
     {id:'local-official-flat',type:'fill',source:'localOfficial','source-layer':localSourceLayer,minzoom:13,layout:{visibility:'none'},paint:{'fill-color':'#f7f8f9','fill-opacity':.9,'fill-outline-color':'rgba(70,80,90,.3)'}}
   ];
-  const map=core.createMap({container:'map',view:{...core.PLACES.daan,zoom:15,pitch:57},overtureUrl:overture.candidate.url,hasParts:overture.hasParts,extraSources,extraLayers});
+  const map=core.createMap({container:'map',view:{...core.PLACES.daan,zoom:15,pitch:0,bearing:0},overtureUrl:overture.candidate.url,hasParts:overture.hasParts,extraSources,extraLayers});
   map.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'top-right');
   map.addControl(new maplibregl.ScaleControl({maxWidth:120,unit:'metric'}),'bottom-right');
 
-  let localOn=true,show3d=true,terrainOn=true,photoOn=false,moveStartedAt=null;
+  let localOn=true,show3d=false,terrainOn=false,photoOn=false,moveStartedAt=null;
   let districtOn=false,districtLevel='elementary',schoolPointsOn=true,districtLayer=null,schoolLocationLayer=null;
 
   function syncLayers(){
@@ -153,13 +153,14 @@
   }
 
   map.on('load',()=>{
+    core.setTerrain(map,terrainOn);
     syncLayers();
     districtLayer=new TaipeiMapsSchoolDistrictLayer.SchoolDistrictLayer(map,{onState:({state,message})=>{districtStatus.textContent=message;districtStatus.className=`status ${state==='error'?'error':state==='ready'?'good':'muted'}`;}});
     districtLayer.init();
     schoolLocationLayer=new TaipeiMapsSchoolLocationLayer.SchoolLocationLayer(map,{onState:({state,message})=>{schoolPointStatus.textContent=message;schoolPointStatus.className=`status ${state==='error'?'error':state==='ready'?'good':'muted'}`;}});
     schoolLocationLayer.init();
     syncDistrictButtons();
-    status.textContent=`READY · shared core + official buildings + terrain + school layer + ${citywide?'citywide':'sample'} PMTiles`;status.className='status good';
+    status.textContent=`READY · shared core + official buildings + optional terrain + school layer + ${citywide?'citywide':'sample'} PMTiles`;status.className='status good';
   });
   map.on('movestart',()=>{moveStartedAt=performance.now();});
   map.on('moveend',()=>{document.querySelectorAll('button.city').forEach(b=>b.classList.remove('active'));if(photoOn)syncLayers();});

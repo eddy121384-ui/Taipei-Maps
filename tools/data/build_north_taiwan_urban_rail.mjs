@@ -14,21 +14,25 @@ const ifMissing=process.argv.includes('--if-missing');
 const BOUNDS={south:24.80,west:121.12,north:25.33,east:121.86};
 const OVERPASS_ENDPOINTS=[
   'https://overpass-api.de/api/interpreter',
-  'https://overpass.kumi.systems/api/interpreter'
+  'https://overpass.kumi.systems/api/interpreter',
+  'https://overpass.private.coffee/api/interpreter',
+  'https://overpass.nchc.org.tw/api/interpreter'
 ];
+const REQUEST_TIMEOUT_MS=30000;
 
 // Passenger-facing line identities. Relation colours are preferred whenever
 // OSM supplies a valid colour; these values are deterministic fallbacks only.
 const SYSTEMS={
-  V:{system:'new_taipei',line_code:'V',line_name:'淡海輕軌',line_color:'#e5554f',aliases:['淡海輕軌','Danhai']},
-  K:{system:'new_taipei',line_code:'K',line_name:'安坑輕軌',line_color:'#c4a46b',aliases:['安坑輕軌','Ankeng']},
-  LB:{system:'new_taipei',line_code:'LB',line_name:'三鶯線',line_color:'#6ec4e8',aliases:['三鶯線','Sanying']},
-  A:{system:'taoyuan',line_code:'A',line_name:'桃園機場捷運',line_color:'#8246af',aliases:['桃園機場捷運','機場捷運','Taoyuan Airport MRT','Airport MRT']}
+  V:{system:'new_taipei',line_code:'V',line_name:'淡海輕軌',line_color:'#e5554f',aliases:['淡海輕軌','Danhai'],queryRegex:'淡海|Danhai',stationRefRegex:'^V[0-9]'},
+  K:{system:'new_taipei',line_code:'K',line_name:'安坑輕軌',line_color:'#c4a46b',aliases:['安坑輕軌','Ankeng'],queryRegex:'安坑|Ankeng',stationRefRegex:'^K[0-9]'},
+  LB:{system:'new_taipei',line_code:'LB',line_name:'三鶯線',line_color:'#6ec4e8',aliases:['三鶯線','Sanying'],queryRegex:'三鶯|Sanying',stationRefRegex:'^LB[0-9]'},
+  A:{system:'taoyuan',line_code:'A',line_name:'桃園機場捷運',line_color:'#8246af',aliases:['桃園機場捷運','機場捷運','Taoyuan Airport MRT','Airport MRT'],queryRegex:'機場捷運|桃園捷運|Taoyuan Airport|Airport MRT',stationRefRegex:'^A(?:14A|[0-9])'}
 };
 const EXPECTED_CODES=new Set(Object.keys(SYSTEMS));
 
 function exists(filePath){return access(filePath).then(()=>true,()=>false);}
 function clean(value){return String(value??'').trim();}
+function sleep(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
 function normalizeHex(value){
   const v=clean(value).toLowerCase();
   if(/^#[0-9a-f]{6}$/.test(v))return v;
@@ -126,28 +130,78 @@ function dedupeStations(features){
   })).sort((a,b)=>a.properties.line_code.localeCompare(b.properties.line_code)||a.properties.station_name.localeCompare(b.properties.station_name,'zh-Hant'));
 }
 
-function buildQuery(){
+// Keep each Overpass request tiny. The old implementation asked for every rail
+// route relation in North Taiwan in one shot, which made public Overpass nodes
+// return 504/500 during smoke. Here each V/K/LB/A request only asks for route
+// names belonging to that system plus directly ref-tagged station nodes.
+function buildQuery(config){
   const b=BOUNDS;
-  return `[out:json][timeout:120];\n(\n  relation["type"="route"]["route"~"subway|light_rail|train"](${b.south},${b.west},${b.north},${b.east});\n)->.routes;\n.routes out tags geom;\nnode(r.routes);\nout tags;`;
+  const bbox=`${b.south},${b.west},${b.north},${b.east}`;
+  const nameRegex=config.queryRegex;
+  return `[out:json][timeout:45];\n(\n  relation["type"="route"]["route"~"subway|light_rail|train"]["name"~"${nameRegex}",i](${bbox});\n  relation["type"="route"]["route"~"subway|light_rail|train"]["name:zh"~"${nameRegex}",i](${bbox});\n)->.routes;\n.routes out tags geom;\nnode(r.routes);\nout tags;\nnode["ref"~"${config.stationRefRegex}"](${bbox});\nout tags;`;
+}
+
+async function postOverpass(endpoint,query){
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),REQUEST_TIMEOUT_MS);
+  try{
+    const response=await fetch(endpoint,{
+      method:'POST',signal:controller.signal,
+      headers:{'content-type':'application/x-www-form-urlencoded;charset=UTF-8','user-agent':'Taipei-Maps urban-rail builder'},
+      body:new URLSearchParams({data:query})
+    });
+    if(!response.ok)throw new Error(`HTTP ${response.status}`);
+    const payload=await response.json();
+    if(!Array.isArray(payload?.elements)||!payload.elements.length)throw new Error('empty Overpass payload');
+    return payload;
+  }finally{
+    clearTimeout(timer);
+  }
+}
+
+async function fetchSystem(config){
+  const query=buildQuery(config);
+  const errors=[];
+  for(let round=1;round<=2;round++){
+    for(const endpoint of OVERPASS_ENDPOINTS){
+      try{
+        console.log(`  ${config.line_code}: ${endpoint}${round>1?' (retry)':''}`);
+        const payload=await postOverpass(endpoint,query);
+        return {payload,endpoint,round};
+      }catch(error){
+        const message=error?.name==='AbortError'?`timeout after ${REQUEST_TIMEOUT_MS/1000}s`:(error?.message||String(error));
+        errors.push(`${endpoint} [attempt ${round}]: ${message}`);
+      }
+    }
+    if(round===1)await sleep(1200);
+  }
+  throw new Error(`${config.line_code} Overpass failed: ${errors.join(' | ')}`);
+}
+
+function mergePayloads(rows){
+  const seen=new Set();
+  const elements=[];
+  for(const row of rows){
+    for(const element of row.payload.elements||[]){
+      const key=`${element.type}:${element.id}`;
+      if(seen.has(key))continue;
+      seen.add(key);
+      elements.push(element);
+    }
+  }
+  return {elements};
 }
 
 async function fetchOverpass(){
-  const query=buildQuery();
-  const errors=[];
-  for(const endpoint of OVERPASS_ENDPOINTS){
-    try{
-      const response=await fetch(endpoint,{
-        method:'POST',
-        headers:{'content-type':'application/x-www-form-urlencoded;charset=UTF-8','user-agent':'Taipei-Maps urban-rail builder'},
-        body:new URLSearchParams({data:query})
-      });
-      if(!response.ok)throw new Error(`HTTP ${response.status}`);
-      const payload=await response.json();
-      if(!Array.isArray(payload?.elements)||!payload.elements.length)throw new Error('empty Overpass payload');
-      return {payload,endpoint};
-    }catch(error){errors.push(`${endpoint}: ${error?.message||error}`);}
+  const rows=[];
+  for(const config of Object.values(SYSTEMS)){
+    console.log(`Downloading ${config.line_name} (${config.line_code})…`);
+    rows.push(await fetchSystem(config));
   }
-  throw new Error(`North Taiwan rail Overpass failed: ${errors.join(' | ')}`);
+  return {
+    payload:mergePayloads(rows),
+    endpoints:Object.fromEntries(rows.map((row,index)=>[Object.values(SYSTEMS)[index].line_code,{endpoint:row.endpoint,attempt:row.round}]))
+  };
 }
 
 function normalize(payload){
@@ -230,20 +284,21 @@ async function main(){
     return;
   }
 
-  console.log('Downloading North Taiwan urban rail route relations…');
-  const {payload,endpoint}=await fetchOverpass();
+  console.log('Downloading North Taiwan urban rail route relations in small per-line requests…');
+  const {payload,endpoints}=await fetchOverpass();
   const {lineFeatures,stations,relationCounts,rawStationCount}=normalize(payload);
   validate(lineFeatures,stations);
 
   await writeFile(lineOutputPath,JSON.stringify({type:'FeatureCollection',features:lineFeatures}),'utf8');
   await writeFile(stationOutputPath,JSON.stringify({type:'FeatureCollection',features:stations}),'utf8');
   const audit={
-    schema_version:1,
+    schema_version:2,
     source_name:'OpenStreetMap route relations (local build-time cache)',
-    source_endpoint:endpoint,
+    source_endpoints:endpoints,
     fetched_at:new Date().toISOString(),
     output_crs:'EPSG:4326',
     bounds:BOUNDS,
+    request_strategy:'per-line narrowed Overpass queries with multi-endpoint retry',
     line_feature_count:lineFeatures.length,
     station_feature_count:stations.length,
     raw_station_candidate_count:rawStationCount,

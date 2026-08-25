@@ -1,6 +1,7 @@
 (()=>{
   const CORE_SCRIPT_URL=document.currentScript?.src||location.href;
   const TRANSIT_MODULE_URL=new URL('./transit-layer.js',CORE_SCRIPT_URL).href;
+  const HEALTHCARE_MODULE_URL=new URL('./healthcare-layer.js',CORE_SCRIPT_URL).href;
 
   const PLACES={
     daan:{center:[121.5434,25.0268],zoom:15.15,pitch:58,bearing:-24},
@@ -134,6 +135,20 @@
     }
   }
 
+  async function bootstrapHealthcare(map){
+    try{
+      if(!window.TaipeiMapsHealthcareLayer)await import(HEALTHCARE_MODULE_URL);
+      const HealthcareLayer=window.TaipeiMapsHealthcareLayer?.HealthcareLayer;
+      if(!HealthcareLayer)throw new Error('HealthcareLayer module did not register');
+      const healthcare=new HealthcareLayer(map,{enabled:true});
+      map.__taipeiMapsHealthcareLayer=healthcare;
+      await healthcare.init();
+    }catch(e){
+      console.warn('Taipei-Maps healthcare overlay bootstrap failed',e);
+      map.fire('taipei-maps-healthcarechange',{state:'error',message:`醫療院所暫時無法載入 · ${e?.message||e}`,enabled:false});
+    }
+  }
+
   class NorthUpControl{
     constructor(){this.map=null;this.container=null;this.button=null;this._rotateHandler=()=>this.update();}
     onAdd(map){
@@ -178,7 +193,10 @@
     const northControl=new NorthUpControl();
     map.addControl(northControl,'top-right');
     map.__taipeiMapsNorthControl=northControl;
-    map.on('load',()=>{bootstrapTransit(map,overtureUrl);});
+    map.on('load',()=>{
+      bootstrapTransit(map,overtureUrl);
+      bootstrapHealthcare(map);
+    });
     map.on('moveend',()=>{
       const state=map.__taipeiMapsVisualState;
       if(!state?.photo||!map.isStyleLoaded())return;

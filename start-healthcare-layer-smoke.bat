@@ -14,20 +14,45 @@ if not defined NODE_CMD (
 
 echo ==========================================================
 echo   Buju / Taipei-Maps - Healthcare POI smoke
-echo   Taipei hospital campuses + clinics
+echo   Taipei hospital campuses + clinics + transit regression
 echo ==========================================================
 echo.
-echo [1/3] Preparing Taipei healthcare local cache...
+echo [1/8] Preparing Taipei healthcare local cache...
 "%NODE_CMD%" tools\data\build_taipei_healthcare.mjs --if-missing
 if errorlevel 1 goto :fail
 
 echo.
-echo [2/3] Validating healthcare data + physical-campus contract...
+echo [2/8] Preparing Taipei official MRT line cache...
+"%NODE_CMD%" tools\data\build_taipei_mrt_official.mjs --if-missing
+if errorlevel 1 goto :fail
+
+echo.
+echo [3/8] Preparing Taipei official MRT station cache...
+"%NODE_CMD%" tools\data\build_taipei_mrt_stations_official.mjs --if-missing
+if errorlevel 1 goto :fail
+
+echo.
+echo [4/8] Preparing North Taiwan urban rail cache...
+"%NODE_CMD%" tools\data\build_north_taiwan_urban_rail.mjs --if-missing
+if errorlevel 1 goto :fail
+
+echo.
+echo [5/8] Preparing Taiwan intercity rail cache...
+"%NODE_CMD%" tools\data\build_taiwan_intercity_rail.mjs --if-missing
+if errorlevel 1 goto :fail
+
+echo.
+echo [6/8] Validating healthcare data + physical-campus contract...
 "%NODE_CMD%" tools\data\validate_healthcare_layer.mjs
 if errorlevel 1 goto :fail
 
 echo.
-echo [3/3] Opening healthcare smoke page...
+echo [7/8] Validating transit data + rendering contract...
+"%NODE_CMD%" tools\data\validate_transit_layer.mjs
+if errorlevel 1 goto :fail
+
+echo.
+echo [8/8] Opening healthcare smoke page...
 echo.
 echo Visual checklist:
 echo   - red larger points = physical hospital campuses; teal smaller points = clinics
@@ -37,6 +62,8 @@ echo   - hospital points appear earlier when zooming in; clinic points appear at
 echo   - labels avoid obvious overlap; clinic labels appear only closer in
 echo   - click a hospital/clinic: popup shows type, name, district/address
 echo   - top-right red + toggles the entire healthcare layer
+echo   - transit regression: Taipei MRT keeps official colors + station names
+echo   - transit regression: V/K/LB/A keep route colors + station names; TRA/THSR retain blue/orange semantics
 echo   - Banqiao: Taipei healthcare points disappear; base map / transit remain normal
 echo   - no provider failure may black-screen the map
 echo.
@@ -47,6 +74,6 @@ exit /b %errorlevel%
 
 :fail
 echo.
-echo [ERROR] Healthcare smoke preparation/validation failed.
+echo [ERROR] Healthcare/transit smoke preparation or validation failed.
 pause
 exit /b 1

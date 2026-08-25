@@ -31,7 +31,8 @@ const requiredTransitTokens=[
   "INTERCITY_THSR_SOURCE_ID='taiwan-intercity-thsr'","INTERCITY_STATION_SOURCE_ID='taiwan-intercity-stations'",
   "thsrOfficial:'transit-thsr-official'","traStation:'transit-tra-station'","thsrStation:'transit-thsr-station'",
   "new Set(['V','K','LB','A'])","BR:'#c48c31'","R:'#e3002c'","G:'#008659'","O:'#f8b61c'","BL:'#0070bd'","Y:'#ffdb00'",
-  "GLOBAL_METRO_COLOR='#1976d2'","GLOBAL_RAIL_COLOR='#5f6b76'","TAIWAN_TRA_COLOR='#2e7d32'","TAIWAN_THSR_COLOR='#f57c00'",
+  "GLOBAL_METRO_COLOR='#1976d2'","GLOBAL_RAIL_COLOR='#5f6b76'","TAIWAN_TRA_COLOR='#005ca8'","TAIWAN_THSR_COLOR='#f57c00'",
+  "TRA_DASH=[1.4,1.0]","THSR_DASH=[3.4,1.4]","'line-dasharray',inTaiwan?TRA_DASH:null","'line-dasharray',THSR_DASH",
   "INTERCITY_LINE_LAYER_IDS","INTERCITY_STATION_LAYER_IDS","loadIntercityThsr","loadIntercityStations","validateIntercityThsr","validateIntercityStations",
   "filter:traFilter,minzoom:10.2,stroke:TAIWAN_TRA_COLOR","filter:thsrFilter,minzoom:8.8,stroke:TAIWAN_THSR_COLOR","filter:thsrFilter,minzoom:9.7",
   "setGroup(INTERCITY_LINE_LAYER_IDS,this.enabled&&inTaiwan&&this.intercityThsrReady)","setGroup(INTERCITY_STATION_LAYER_IDS,this.enabled&&inTaiwan&&this.intercityStationsReady)",
@@ -68,7 +69,7 @@ if(northBuilder.includes('overpass-api.de/api/interpreter'))throw new Error('Nor
 const requiredIntercityBuilderTokens=[
   "TRA_STATION_URL='https://ods.railway.gov.tw/tra-ods-web/ods/download/dataResource/0518b833e8964d53bfea3f7691aea0ee'",
   "OSM_API_BASE='https://api.openstreetmap.org/api/0.6'","THSR_RELATION_IDS=[1827335,4500369,4500371]",
-  "TRA_COLOR='#2e7d32'","THSR_COLOR='#f57c00'","taiwan_intercity_thsr_lines.geojson","taiwan_intercity_stations.geojson","taiwan_intercity_rail.audit.json",
+  "TRA_COLOR='#005ca8'","THSR_COLOR='#f57c00'","taiwan_intercity_thsr_lines.geojson","taiwan_intercity_stations.geojson","taiwan_intercity_rail.audit.json",
   "buildTraStations","buildThsr","parseGps","TRA station dataset unexpectedly small after GPS normalization","THSR line geometry unexpectedly small","THSR station set unexpectedly small",
   "'高鐵南港站'","'高鐵台北站'","'高鐵板橋站'","'高鐵桃園站'","'高鐵左營站'","source:'Taiwan Railway Corporation open data'","source:'OpenStreetMap core API relation/full'"
 ];
@@ -81,8 +82,9 @@ for(const forbidden of ['sale.591.com.tw','sinyi.com.tw','yungching.com.tw'])if(
 console.log(JSON.stringify({
   status:'PASS',rail_base:'Overture transportation.pmtiles / segment',global_transit:true,
   overseas_behavior:'blue metro + neutral generic rail; no Taiwan provider semantics',
-  taiwan_behavior:'green generic conventional-rail base + explicit orange THSR overlay + TRA/THSR station points and labels',
+  taiwan_behavior:'blue short-dashed TRA/conventional rail + explicit orange long-dashed THSR + TRA/THSR station points and labels',
   intercity_semantics:'standard_gauge is no longer equated with THSR; THSR uses explicit local route geometry',
+  intercity_style:{tra_color:'#005ca8',tra_dash:[1.4,1.0],thsr_color:'#f57c00',thsr_dash:[3.4,1.4]},
   intercity_sources:{tra_stations:'Taiwan Railway Corporation open data',thsr:'OpenStreetMap stable route relations via core API'},
   intercity_relation_ids:[1827335,4500369,4500371],intercity_station_zoom:{tra_points:10.2,tra_labels:11.2,thsr_points:8.8,thsr_labels:9.7},
   north_taiwan_behavior:'Taipei official MRT + route-specific Danhai V / Ankeng K / Sanying LB / Airport MRT A + station points/names',

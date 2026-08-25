@@ -4,6 +4,8 @@
   const SOURCE_LAYER='segment';
   const TAIPEI_MRT_SOURCE_ID='taipei-mrt-official';
   const TAIPEI_MRT_GEOJSON_URL='/generated/taipei_mrt_lines_official.geojson';
+  const TAIPEI_MRT_STATION_SOURCE_ID='taipei-mrt-stations-official';
+  const TAIPEI_MRT_STATION_GEOJSON_URL='/generated/taipei_mrt_stations_official.geojson';
 
   const MRT_COLORS={
     BR:'#c48c31',
@@ -23,10 +25,13 @@
     mrtCasing:'transit-mrt-casing',mrt:'transit-mrt',
     traCasing:'transit-tra-casing',tra:'transit-tra',
     thsrCasing:'transit-thsr-casing',thsr:'transit-thsr',
-    mrtOfficialCasing:'transit-mrt-official-casing',mrtOfficial:'transit-mrt-official'
+    mrtOfficialCasing:'transit-mrt-official-casing',mrtOfficial:'transit-mrt-official',
+    mrtStation:'transit-mrt-station',mrtStationLabel:'transit-mrt-station-label'
   };
   const GLOBAL_LAYER_IDS=[LAYERS.mrtCasing,LAYERS.mrt,LAYERS.traCasing,LAYERS.tra,LAYERS.thsrCasing,LAYERS.thsr];
-  const TAIWAN_ONLY_LAYER_IDS=[LAYERS.mrtOfficialCasing,LAYERS.mrtOfficial];
+  const TAIWAN_LINE_LAYER_IDS=[LAYERS.mrtOfficialCasing,LAYERS.mrtOfficial];
+  const TAIWAN_STATION_LAYER_IDS=[LAYERS.mrtStation,LAYERS.mrtStationLabel];
+  const TAIWAN_ONLY_LAYER_IDS=[...TAIWAN_LINE_LAYER_IDS,...TAIWAN_STATION_LAYER_IDS];
   const ALL_LAYER_IDS=[...GLOBAL_LAYER_IDS,...TAIWAN_ONLY_LAYER_IDS];
 
   function transportationUrl(buildingUrl,release){
@@ -81,6 +86,43 @@
     };
   }
 
+  function officialMrtStationLayer(){
+    return {
+      id:LAYERS.mrtStation,type:'circle',source:TAIPEI_MRT_STATION_SOURCE_ID,minzoom:10.5,
+      layout:{visibility:'none'},
+      paint:{
+        'circle-radius':['interpolate',['linear'],['zoom'],10.5,2.5,13,3.4,16,4.6],
+        'circle-color':'rgba(255,255,255,.99)',
+        'circle-opacity':.99,
+        'circle-stroke-color':'#263238',
+        'circle-stroke-width':['interpolate',['linear'],['zoom'],10.5,1.0,14,1.35,17,1.7],
+        'circle-stroke-opacity':.94
+      }
+    };
+  }
+
+  function officialMrtStationLabelLayer(){
+    return {
+      id:LAYERS.mrtStationLabel,type:'symbol',source:TAIPEI_MRT_STATION_SOURCE_ID,minzoom:11.6,
+      layout:{
+        visibility:'none',
+        'text-field':['get','station_name'],
+        'text-size':['interpolate',['linear'],['zoom'],11.6,10.5,14,11.5,17,13],
+        'text-offset':[0,1.0],
+        'text-anchor':'top',
+        'text-max-width':8,
+        'text-allow-overlap':false,
+        'text-ignore-placement':false
+      },
+      paint:{
+        'text-color':'#263238',
+        'text-halo-color':'rgba(255,255,255,.97)',
+        'text-halo-width':1.35,
+        'text-halo-blur':.25
+      }
+    };
+  }
+
   function validateOfficialMrt(data){
     if(data?.type!=='FeatureCollection')throw new Error(`Local Taipei MRT dataset has unexpected type: ${data?.type}`);
     const features=(data.features||[]).filter(feature=>['LineString','MultiLineString'].includes(feature?.geometry?.type));
@@ -94,6 +136,25 @@
       lineCodes.add(code);
     }
     for(const code of Object.keys(MRT_COLORS))if(!lineCodes.has(code))throw new Error(`Local Taipei MRT dataset missing line group ${code}`);
+    return {type:'FeatureCollection',features};
+  }
+
+  function validateOfficialMrtStations(data){
+    if(data?.type!=='FeatureCollection')throw new Error(`Local Taipei MRT station dataset has unexpected type: ${data?.type}`);
+    const features=(data.features||[]).filter(feature=>feature?.geometry?.type==='Point');
+    if(features.length<90)throw new Error(`Local Taipei MRT station geometry unexpectedly small: ${features.length}`);
+    const names=new Set();
+    for(const feature of features){
+      const [lng,lat]=feature?.geometry?.coordinates||[];
+      const name=String(feature?.properties?.station_name||'').trim();
+      if(!name)throw new Error('Local Taipei MRT station has a missing name');
+      if(!Number.isFinite(Number(lng))||!Number.isFinite(Number(lat)))throw new Error(`Local Taipei MRT station has invalid coordinates: ${name}`);
+      if(names.has(name))throw new Error(`Local Taipei MRT station dataset contains duplicate station name: ${name}`);
+      names.add(name);
+    }
+    for(const requiredName of ['台北車站','市政府站','大安站','板橋站','景平站','十四張站']){
+      if(!names.has(requiredName))throw new Error(`Local Taipei MRT station dataset missing expected station: ${requiredName}`);
+    }
     return {type:'FeatureCollection',features};
   }
 
@@ -120,7 +181,7 @@
       this.button.style.opacity='1';
       this.button.style.background=this.layer.enabled?'#e8f1f8':'';
       this.button.title=this.layer.enabled
-        ?(inTaiwan?'軌道 ON · 捷運 / 台鐵 / 高鐵':'軌道 ON · 全球捷運 / 鐵路')
+        ?(inTaiwan?'軌道 ON · 捷運站 / 捷運 / 台鐵 / 高鐵':'軌道 ON · 全球捷運 / 鐵路')
         :'軌道 OFF · 捷運 / 鐵路';
       this.button.setAttribute('aria-pressed',this.layer.enabled?'true':'false');
     }
@@ -134,6 +195,7 @@
       this.url=transportationUrl(overtureBuildingUrl,release);
       this.initialized=false;
       this.officialMrtReady=false;
+      this.officialMrtStationsReady=false;
       this.control=null;
       this._moveHandler=()=>this.sync();
     }
@@ -166,6 +228,21 @@
       }
       this.officialMrtReady=true;
       this.applyRegionalAppearance(centerInsideTaiwan(this.map));
+      return data.features.length;
+    }
+
+    async loadOfficialTaipeiMrtStations(beforeId){
+      const response=await fetch(TAIPEI_MRT_STATION_GEOJSON_URL,{cache:'no-store'});
+      if(!response.ok)throw new Error(`Local Taipei MRT station GIS HTTP ${response.status}; run start-transit-overlay-smoke.bat to build it`);
+      const data=validateOfficialMrtStations(await response.json());
+      if(!this.map.getSource(TAIPEI_MRT_STATION_SOURCE_ID)){
+        this.map.addSource(TAIPEI_MRT_STATION_SOURCE_ID,{type:'geojson',data,attribution:'© 臺北市政府捷運工程局'});
+      }
+      const stationLayer=officialMrtStationLayer();
+      if(!this.map.getLayer(stationLayer.id))this.map.addLayer(stationLayer,beforeId);
+      const labelLayer=officialMrtStationLabelLayer();
+      if(!this.map.getLayer(labelLayer.id))this.map.addLayer(labelLayer,beforeId);
+      this.officialMrtStationsReady=true;
       return data.features.length;
     }
 
@@ -212,6 +289,14 @@
           console.warn('Local official Taipei MRT geometry unavailable; keeping blue Overture metro fallback',error);
         }
 
+        try{
+          const count=await this.loadOfficialTaipeiMrtStations(beforeId);
+          console.info(`Taipei official MRT stations ready: ${count} station(s)`);
+        }catch(error){
+          this.officialMrtStationsReady=false;
+          console.warn('Local official Taipei MRT stations unavailable; keeping rail lines without station labels',error);
+        }
+
         this.initialized=true;
         this.map.on('moveend',this._moveHandler);
         this.control=new TransitToggleControl(this);
@@ -232,14 +317,18 @@
       for(const id of GLOBAL_LAYER_IDS){
         if(this.map.getLayer(id))this.map.setLayoutProperty(id,'visibility',this.enabled?'visible':'none');
       }
-      const localVisible=this.enabled&&inTaiwan&&this.officialMrtReady;
-      for(const id of TAIWAN_ONLY_LAYER_IDS){
-        if(this.map.getLayer(id))this.map.setLayoutProperty(id,'visibility',localVisible?'visible':'none');
+      const localLineVisible=this.enabled&&inTaiwan&&this.officialMrtReady;
+      for(const id of TAIWAN_LINE_LAYER_IDS){
+        if(this.map.getLayer(id))this.map.setLayoutProperty(id,'visibility',localLineVisible?'visible':'none');
+      }
+      const localStationVisible=this.enabled&&inTaiwan&&this.officialMrtStationsReady;
+      for(const id of TAIWAN_STATION_LAYER_IDS){
+        if(this.map.getLayer(id))this.map.setLayoutProperty(id,'visibility',localStationVisible?'visible':'none');
       }
       this.control?.update({inTaiwan});
-      if(!this.enabled)this.emit('off','軌道 OFF',{inTaiwan,officialMrt:this.officialMrtReady,scope:'global'});
-      else if(inTaiwan)this.emit('ready',`軌道 ON · 捷運${this.officialMrtReady?'官方線色':'藍色 fallback'} / 台鐵 / 高鐵`,{inTaiwan,officialMrt:this.officialMrtReady,scope:'taiwan'});
-      else this.emit('ready','軌道 ON · 全球捷運 / 鐵路 · Overture',{inTaiwan,officialMrt:this.officialMrtReady,scope:'global'});
+      if(!this.enabled)this.emit('off','軌道 OFF',{inTaiwan,officialMrt:this.officialMrtReady,stations:this.officialMrtStationsReady,scope:'global'});
+      else if(inTaiwan)this.emit('ready',`軌道 ON · 捷運${this.officialMrtReady?'官方線色':'藍色 fallback'}${this.officialMrtStationsReady?' + 站名':''} / 台鐵 / 高鐵`,{inTaiwan,officialMrt:this.officialMrtReady,stations:this.officialMrtStationsReady,scope:'taiwan'});
+      else this.emit('ready','軌道 ON · 全球捷運 / 鐵路 · Overture',{inTaiwan,officialMrt:this.officialMrtReady,stations:this.officialMrtStationsReady,scope:'global'});
     }
 
     setEnabled(enabled){
@@ -251,12 +340,14 @@
       this.map.off('moveend',this._moveHandler);
       if(this.control){try{this.map.removeControl(this.control);}catch{}this.control=null;}
       for(const id of [...ALL_LAYER_IDS].reverse())if(this.map.getLayer(id))this.map.removeLayer(id);
+      if(this.map.getSource(TAIPEI_MRT_STATION_SOURCE_ID))this.map.removeSource(TAIPEI_MRT_STATION_SOURCE_ID);
       if(this.map.getSource(TAIPEI_MRT_SOURCE_ID))this.map.removeSource(TAIPEI_MRT_SOURCE_ID);
       if(this.map.getSource(SOURCE_ID))this.map.removeSource(SOURCE_ID);
       this.initialized=false;
       this.officialMrtReady=false;
+      this.officialMrtStationsReady=false;
     }
   }
 
-  window.TaipeiMapsTransitLayer={TransitLayer,TAIWAN_BOUNDS,SOURCE_ID,SOURCE_LAYER,TAIPEI_MRT_SOURCE_ID,TAIPEI_MRT_GEOJSON_URL,MRT_COLORS,GLOBAL_METRO_COLOR,GLOBAL_RAIL_COLOR,TAIWAN_TRA_COLOR,TAIWAN_THSR_COLOR,LAYERS,GLOBAL_LAYER_IDS,TAIWAN_ONLY_LAYER_IDS,validateOfficialMrt};
+  window.TaipeiMapsTransitLayer={TransitLayer,TAIWAN_BOUNDS,SOURCE_ID,SOURCE_LAYER,TAIPEI_MRT_SOURCE_ID,TAIPEI_MRT_GEOJSON_URL,TAIPEI_MRT_STATION_SOURCE_ID,TAIPEI_MRT_STATION_GEOJSON_URL,MRT_COLORS,GLOBAL_METRO_COLOR,GLOBAL_RAIL_COLOR,TAIWAN_TRA_COLOR,TAIWAN_THSR_COLOR,LAYERS,GLOBAL_LAYER_IDS,TAIWAN_LINE_LAYER_IDS,TAIWAN_STATION_LAYER_IDS,TAIWAN_ONLY_LAYER_IDS,validateOfficialMrt,validateOfficialMrtStations};
 })();

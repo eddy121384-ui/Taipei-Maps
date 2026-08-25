@@ -11,7 +11,7 @@ const outDir=path.join(repoRoot,'public','generated');
 const outputPath=path.join(outDir,'taipei_healthcare_facilities.geojson');
 const auditPath=path.join(outDir,'taipei_healthcare_facilities.audit.json');
 const ifMissing=process.argv.includes('--if-missing');
-const CACHE_SCHEMA_VERSION=2;
+const CACHE_SCHEMA_VERSION=3;
 
 const DATASET_ID='ffdd5753-30db-4c38-b65f-b77892773d60';
 const SOURCES=[

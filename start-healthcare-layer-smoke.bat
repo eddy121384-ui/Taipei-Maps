@@ -30,14 +30,13 @@ echo.
 echo [3/3] Opening healthcare smoke page...
 echo.
 echo Visual checklist:
-echo   - hospitals use a RED simplified single-snake medical staff icon
-echo   - clinics use a smaller TEAL medical cross icon
-echo   - hospital icons appear earlier when zooming in; clinic icons appear at neighborhood zoom
-echo   - both icons keep a clean white badge/backing and remain readable over the basemap
+echo   - red larger points = hospitals; teal smaller points = clinics
+echo   - hospital points appear earlier when zooming in; clinic points appear at neighborhood zoom
 echo   - labels avoid obvious overlap; clinic labels appear only closer in
 echo   - click a hospital/clinic: popup shows type, name, district/address
 echo   - top-right red + toggles the entire healthcare layer
-echo   - Banqiao: Taipei healthcare icons disappear; base map / transit remain normal
+echo   - Banqiao: Taipei healthcare points disappear; base map / transit remain normal
+echo   - data audit: multi-campus hospitals are a known source-semantic gap until physical-campus enrichment is added
 echo   - no provider failure may black-screen the map
 echo.
 echo Keep this window open. Press Ctrl+C to stop the local server.

@@ -57,11 +57,20 @@ const requiredStationBuilderTokens=[
 for(const token of requiredStationBuilderTokens)if(!stationBuilder.includes(token))throw new Error(`Official MRT station builder contract missing: ${token}`);
 
 const requiredNorthBuilderTokens=[
-  "north_taiwan_urban_rail_lines.geojson","north_taiwan_urban_rail_stations.geojson","north_taiwan_urban_rail.audit.json","overpass-api.de/api/interpreter","overpass.kumi.systems/api/interpreter",
-  "V:{system:'new_taipei'","K:{system:'new_taipei'","LB:{system:'new_taipei'","A:{system:'taoyuan'","line_name:'淡海輕軌'","line_name:'安坑輕軌'","line_name:'三鶯線'","line_name:'桃園機場捷運'",
-  "node(r.routes)","source:'OpenStreetMap route relation'","source:'OpenStreetMap route member'","station_name:name","lineFeatures.length<20","stations.length<45","output_crs:'EPSG:4326'"
+  "north_taiwan_urban_rail_lines.geojson","north_taiwan_urban_rail_stations.geojson","north_taiwan_urban_rail.audit.json",
+  "overpass-api.de/api/interpreter","overpass.kumi.systems/api/interpreter","overpass.private.coffee/api/interpreter","overpass.nchc.org.tw/api/interpreter",
+  "V:{system:'new_taipei'","K:{system:'new_taipei'","LB:{system:'new_taipei'","A:{system:'taoyuan'",
+  "line_name:'淡海輕軌'","line_name:'安坑輕軌'","line_name:'三鶯線'","line_name:'桃園機場捷運'",
+  "osm_relation_id:5576487","osm_relation_id:15443527","osm_relation_id:5341250","osm_relation_id:6937084",
+  "line_color:'#dc524d'","line_color:'#9b8f5e'","line_color:'#79bce8'","line_color:'#8e47ad'",
+  ".root >> ->.tree","source:'OpenStreetMap relation tree'","source:'OpenStreetMap relation tree / station ref'",
+  "station_name:name","lineFeatures.length<20","stations.length<45","schema_version:3","output_crs:'EPSG:4326'",
+  "request_strategy:'stable per-line OSM relation ID + recursive descendants + station-ref supplement + multi-endpoint retry'"
 ];
 for(const token of requiredNorthBuilderTokens)if(!northBuilder.includes(token))throw new Error(`North Taiwan urban rail builder contract missing: ${token}`);
+if(northBuilder.includes('relation["type"="route"]["route"~"subway|light_rail|train"]')){
+  throw new Error('North Taiwan builder regression: do not rediscover routes by broad name query; use stable per-line relation IDs');
+}
 
 const requiredCoreTokens=["TRANSIT_MODULE_URL","import(TRANSIT_MODULE_URL)","TaipeiMapsTransitLayer","map.__taipeiMapsTransitLayer","bootstrapTransit(map,overtureUrl)","class NorthUpControl","button.textContent='N'","easeTo({bearing:0,duration:350})","map.addControl(northControl,'top-right')","map.__taipeiMapsNorthControl"];
 for(const token of requiredCoreTokens)if(!core.includes(token))throw new Error(`Shared core contract missing: ${token}`);
@@ -73,7 +82,9 @@ console.log(JSON.stringify({
   taiwan_behavior:'green TRA + orange THSR; generic metro retained outside North Taiwan local coverage',
   north_taiwan_behavior:'Taipei official MRT + route-specific Danhai V / Ankeng K / Sanying LB / Airport MRT A + station points/names',
   mrt_authoritative_source:'Taipei City DORTS GIS',mrt_station_authoritative_source:'Taipei City DORTS station GIS',
-  north_urban_source:'OpenStreetMap route relations cached at build time; Overture remains runtime fallback',runtime_network_dependency_for_local_routes:false,
+  north_urban_source:'Stable OpenStreetMap P402 relation trees cached at build time; Overture remains runtime fallback',
+  north_urban_relation_ids:{V:5576487,K:15443527,LB:5341250,A:6937084},
+  runtime_network_dependency_for_local_routes:false,
   station_points_minzoom:10.5,station_labels_minzoom:11.6,north_codes:['V','K','LB','A'],
   kaohsiung_regression_guard:'generic metro is not faded merely because viewport is inside Taiwan',transit_toggle_control:true,north_up_control:true,north_preserves_pitch:true
 },null,2));

@@ -47,8 +47,9 @@ echo.
 echo Visual checklist:
 echo   - Taipei MRT uses official line colors and station names
 echo   - Danhai V / Ankeng K / Sanying LB / Airport MRT A retain route colors + station names
-echo   - conventional Taiwan rail base is GREEN; standard_gauge must NOT automatically mean THSR
-echo   - THSR is a distinct ORANGE overlay, clearly different from TRA
+echo   - TRA/conventional rail is BLUE with SHORT dashes; standard_gauge must NOT automatically mean THSR
+echo   - THSR is ORANGE with LONGER dashes and remains visually distinct from TRA
+echo   - white casing remains visible through the dash gaps instead of another rail color bleeding through
 echo   - TRA station dots appear at local zoom and Chinese station names appear when closer
 echo   - THSR station dots appear earlier; names such as 高鐵台北站 / 高鐵板橋站 / 高鐵桃園站 are visible
 echo   - top-right subway icon toggles all rail lines, station dots, and station names

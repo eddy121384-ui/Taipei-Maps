@@ -26,7 +26,7 @@ const SYSTEMS={
   V:{system:'new_taipei',line_code:'V',line_name:'淡海輕軌',line_color:'#e5554f',aliases:['淡海輕軌','Danhai'],queryRegex:'淡海|Danhai',stationRefRegex:'^V[0-9]'},
   K:{system:'new_taipei',line_code:'K',line_name:'安坑輕軌',line_color:'#c4a46b',aliases:['安坑輕軌','Ankeng'],queryRegex:'安坑|Ankeng',stationRefRegex:'^K[0-9]'},
   LB:{system:'new_taipei',line_code:'LB',line_name:'三鶯線',line_color:'#6ec4e8',aliases:['三鶯線','Sanying'],queryRegex:'三鶯|Sanying',stationRefRegex:'^LB[0-9]'},
-  A:{system:'taoyuan',line_code:'A',line_name:'桃園機場捷運',line_color:'#8246af',aliases:['桃園機場捷運','機場捷運','Taoyuan Airport MRT','Airport MRT'],queryRegex:'機場捷運|桃園捷運|Taoyuan Airport|Airport MRT',stationRefRegex:'^A(?:14A|[0-9])'}
+  A:{system:'taoyuan',line_code:'A',line_name:'桃園機場捷運',line_color:'#8246af',aliases:['桃園機場捷運','機場捷運','Taoyuan Airport MRT','Airport MRT'],queryRegex:'機場捷運|桃園捷運|Taoyuan Airport|Airport MRT',stationRefRegex:'^A[0-9]'}
 };
 const EXPECTED_CODES=new Set(Object.keys(SYSTEMS));
 

@@ -14,10 +14,13 @@ new vm.Script(syntaxCopy,{filename:builderPath});
 
 const layerTokens=[
   "GEOJSON_URL='/generated/taipei_healthcare_facilities.geojson'","SOURCE_ID='taipei-healthcare'","hospital:'#c62828'","clinic:'#00838f'",
+  "hospital:'healthcare-hospital-asclepius'","clinic:'healthcare-clinic-cross'","createHospitalIcon","createClinicIcon","registerMedicalIcons",
+  "map.addImage(ICONS.hospital","map.addImage(ICONS.clinic","type:'symbol'","'icon-image':icon","ctx.bezierCurveTo","ctx.fillRect",
   "minzoom:10.0","minzoom:11.2","minzoom:12.2","minzoom:13.7","facility_type","facility_name","district","address",
   "button.textContent='✚'","切換醫院與診所","maplibregl.Popup","臺北市政府衛生局","centerInsideTaipei","醫療資料目前涵蓋臺北市"
 ];
 for(const token of layerTokens)if(!layer.includes(token))throw new Error(`Healthcare layer contract missing: ${token}`);
+if(layer.includes("type:'circle',source:SOURCE_ID"))throw new Error('Healthcare icon regression: facility markers must use medical symbol icons, not generic circle points');
 
 const builderTokens=[
   "DATASET_ID='ffdd5753-30db-4c38-b65f-b77892773d60'","rid:'3a02af7d-8c33-46c1-8226-c12a11610f6b'","rid:'04a3d195-ee97-467a-b066-e471ff99d15d'",
@@ -38,4 +41,8 @@ for(const f of features){
   if(!String(f?.properties?.facility_name||'').trim())throw new Error('Generated healthcare feature missing facility_name');
 }
 
-console.log(JSON.stringify({status:'PASS',source:'Taipei City Department of Health open data',counts:{hospital:hospitals,clinic:clinics,total:features.length},hospital_point_minzoom:10.0,hospital_label_minzoom:11.2,clinic_point_minzoom:12.2,clinic_label_minzoom:13.7,google_dependency:false},null,2));
+console.log(JSON.stringify({
+  status:'PASS',source:'Taipei City Department of Health open data',counts:{hospital:hospitals,clinic:clinics,total:features.length},
+  marker_icons:{hospital:'red simplified Rod of Asclepius',clinic:'teal medical cross'},
+  hospital_point_minzoom:10.0,hospital_label_minzoom:11.2,clinic_point_minzoom:12.2,clinic_label_minzoom:13.7,google_dependency:false
+},null,2));

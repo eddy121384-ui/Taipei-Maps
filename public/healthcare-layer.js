@@ -3,6 +3,7 @@
   const SOURCE_ID='taipei-healthcare';
   const GEOJSON_URL='/generated/taipei_healthcare_facilities.geojson';
   const COLORS={hospital:'#c62828',clinic:'#00838f'};
+  const ICONS={hospital:'healthcare-hospital-asclepius',clinic:'healthcare-clinic-cross'};
   const LAYERS={hospital:'healthcare-hospital',hospitalLabel:'healthcare-hospital-label',clinic:'healthcare-clinic',clinicLabel:'healthcare-clinic-label'};
   const ALL_LAYER_IDS=Object.values(LAYERS);
 
@@ -21,16 +22,50 @@
     }
     return {type:'FeatureCollection',features};
   }
-  function pointLayer(id,type,{minzoom,radius,color}){
-    return {id,type:'circle',source:SOURCE_ID,minzoom,filter:['==',['get','facility_type'],type],layout:{visibility:'none'},paint:{
-      'circle-radius':['interpolate',['linear'],['zoom'],minzoom,radius,15,radius+1.2,18,radius+2],
-      'circle-color':color,'circle-opacity':.94,'circle-stroke-color':'rgba(255,255,255,.98)','circle-stroke-width':['interpolate',['linear'],['zoom'],minzoom,1.2,15,1.7,18,2.0]
+
+  function iconCanvas(size=64){
+    const canvas=document.createElement('canvas');canvas.width=size;canvas.height=size;
+    const ctx=canvas.getContext('2d');ctx.clearRect(0,0,size,size);return {canvas,ctx,size};
+  }
+  function drawBadge(ctx,size,stroke){
+    const c=size/2,r=size*.425;
+    ctx.save();ctx.beginPath();ctx.arc(c,c,r,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,.98)';ctx.fill();ctx.lineWidth=size*.055;ctx.strokeStyle=stroke;ctx.stroke();ctx.restore();
+  }
+  function createHospitalIcon(){
+    const {canvas,ctx,size}=iconCanvas();const c=size/2;drawBadge(ctx,size,COLORS.hospital);
+    ctx.save();ctx.strokeStyle=COLORS.hospital;ctx.fillStyle=COLORS.hospital;ctx.lineCap='round';ctx.lineJoin='round';
+    ctx.lineWidth=size*.085;ctx.beginPath();ctx.moveTo(c,size*.20);ctx.lineTo(c,size*.80);ctx.stroke();
+    ctx.lineWidth=size*.072;ctx.beginPath();
+    ctx.moveTo(c+size*.12,size*.29);
+    ctx.bezierCurveTo(c-size*.19,size*.31,c-size*.19,size*.43,c+size*.09,size*.46);
+    ctx.bezierCurveTo(c+size*.19,size*.48,c+size*.18,size*.58,c-size*.08,size*.61);
+    ctx.bezierCurveTo(c-size*.14,size*.62,c-size*.13,size*.69,c+size*.04,size*.71);
+    ctx.stroke();
+    ctx.beginPath();ctx.arc(c+size*.125,size*.285,size*.043,0,Math.PI*2);ctx.fill();
+    ctx.restore();return canvas;
+  }
+  function createClinicIcon(){
+    const {canvas,ctx,size}=iconCanvas();const c=size/2;drawBadge(ctx,size,COLORS.clinic);
+    ctx.save();ctx.fillStyle=COLORS.clinic;
+    const arm=size*.145,long=size*.52;
+    ctx.fillRect(c-arm/2,c-long/2,arm,long);
+    ctx.fillRect(c-long/2,c-arm/2,long,arm);
+    ctx.restore();return canvas;
+  }
+  function registerMedicalIcons(map){
+    if(!map.hasImage(ICONS.hospital))map.addImage(ICONS.hospital,createHospitalIcon(),{pixelRatio:2});
+    if(!map.hasImage(ICONS.clinic))map.addImage(ICONS.clinic,createClinicIcon(),{pixelRatio:2});
+  }
+  function iconLayer(id,type,{minzoom,icon,sizeStops}){
+    return {id,type:'symbol',source:SOURCE_ID,minzoom,filter:['==',['get','facility_type'],type],layout:{visibility:'none',
+      'icon-image':icon,'icon-size':['interpolate',['linear'],['zoom'],...sizeStops],
+      'icon-allow-overlap':false,'icon-ignore-placement':false,'icon-padding':1
     }};
   }
-  function labelLayer(id,type,{minzoom,color}){
+  function labelLayer(id,type,{minzoom,color,offset=1.2}){
     return {id,type:'symbol',source:SOURCE_ID,minzoom,filter:['==',['get','facility_type'],type],layout:{visibility:'none',
       'text-field':['get','facility_name'],'text-size':['interpolate',['linear'],['zoom'],minzoom,10.5,15,11.5,18,13],
-      'text-offset':[0,1.0],'text-anchor':'top','text-max-width':9,'text-allow-overlap':false,'text-ignore-placement':false
+      'text-offset':[0,offset],'text-anchor':'top','text-max-width':9,'text-allow-overlap':false,'text-ignore-placement':false
     },paint:{'text-color':color,'text-halo-color':'rgba(255,255,255,.98)','text-halo-width':1.45,'text-halo-blur':.25}};
   }
   function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
@@ -39,7 +74,7 @@
     constructor(layer){this.layer=layer;this.container=null;this.button=null;}
     onAdd(){
       const container=document.createElement('div');container.className='maplibregl-ctrl maplibregl-ctrl-group';
-      const button=document.createElement('button');button.type='button';button.textContent='✚';button.style.fontSize='17px';button.style.fontWeight='900';button.style.lineHeight='1';button.style.color='#c62828';button.setAttribute('aria-label','切換醫院與診所');
+      const button=document.createElement('button');button.type='button';button.textContent='✚';button.style.fontSize='17px';button.style.fontWeight='900';button.style.lineHeight='1';button.style.color=COLORS.hospital;button.setAttribute('aria-label','切換醫院與診所');
       button.onclick=()=>this.layer.setEnabled(!this.layer.enabled);container.appendChild(button);this.container=container;this.button=button;this.update();return container;
     }
     onRemove(){this.container?.remove();this.container=null;this.button=null;}
@@ -60,12 +95,13 @@
         const clinics=data.features.filter(f=>f.properties.facility_type==='clinic').length;
         this.counts={hospital:hospitals,clinic:clinics,total:data.features.length};
         if(!this.map.getSource(SOURCE_ID))this.map.addSource(SOURCE_ID,{type:'geojson',data,attribution:'© 臺北市政府衛生局'});
+        registerMedicalIcons(this.map);
         const beforeId=this.map.getLayer('building')?'building':undefined;
         const layers=[
-          pointLayer(LAYERS.hospital,'hospital',{minzoom:10.0,radius:4.0,color:COLORS.hospital}),
-          labelLayer(LAYERS.hospitalLabel,'hospital',{minzoom:11.2,color:'#8e0000'}),
-          pointLayer(LAYERS.clinic,'clinic',{minzoom:12.2,radius:2.8,color:COLORS.clinic}),
-          labelLayer(LAYERS.clinicLabel,'clinic',{minzoom:13.7,color:'#005662'})
+          iconLayer(LAYERS.hospital,'hospital',{minzoom:10.0,icon:ICONS.hospital,sizeStops:[10,.74,14,.88,18,1.08]}),
+          labelLayer(LAYERS.hospitalLabel,'hospital',{minzoom:11.2,color:'#8e0000',offset:1.55}),
+          iconLayer(LAYERS.clinic,'clinic',{minzoom:12.2,icon:ICONS.clinic,sizeStops:[12.2,.52,15,.62,18,.78]}),
+          labelLayer(LAYERS.clinicLabel,'clinic',{minzoom:13.7,color:'#005662',offset:1.25})
         ];
         for(const layer of layers)if(!this.map.getLayer(layer.id))this.map.addLayer(layer,beforeId);
         for(const id of [LAYERS.hospital,LAYERS.clinic]){
@@ -101,9 +137,11 @@
       this.map.off('moveend',this._moveHandler);
       for(const id of [LAYERS.hospital,LAYERS.clinic])if(this.map.getLayer(id)){this.map.off('click',id,this._clickHandler);this.map.off('mouseenter',id,this._enterHandler);this.map.off('mouseleave',id,this._leaveHandler);}
       this.popup?.remove();this.popup=null;if(this.control){try{this.map.removeControl(this.control);}catch{}this.control=null;}
-      for(const id of [...ALL_LAYER_IDS].reverse())if(this.map.getLayer(id))this.map.removeLayer(id);if(this.map.getSource(SOURCE_ID))this.map.removeSource(SOURCE_ID);this.initialized=false;
+      for(const id of [...ALL_LAYER_IDS].reverse())if(this.map.getLayer(id))this.map.removeLayer(id);if(this.map.getSource(SOURCE_ID))this.map.removeSource(SOURCE_ID);
+      for(const icon of Object.values(ICONS))if(this.map.hasImage(icon))this.map.removeImage(icon);
+      this.initialized=false;
     }
   }
 
-  window.TaipeiMapsHealthcareLayer={HealthcareLayer,TAIPEI_BOUNDS,SOURCE_ID,GEOJSON_URL,COLORS,LAYERS,ALL_LAYER_IDS,validateHealthcare};
+  window.TaipeiMapsHealthcareLayer={HealthcareLayer,TAIPEI_BOUNDS,SOURCE_ID,GEOJSON_URL,COLORS,ICONS,LAYERS,ALL_LAYER_IDS,validateHealthcare,registerMedicalIcons};
 })();

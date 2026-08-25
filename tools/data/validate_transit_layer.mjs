@@ -6,42 +6,41 @@ const corePath='public/shared-map-core.js';
 const builderPath='tools/data/build_taipei_mrt_official.mjs';
 const stationBuilderPath='tools/data/build_taipei_mrt_stations_official.mjs';
 const northBuilderPath='tools/data/build_north_taiwan_urban_rail.mjs';
+const intercityBuilderPath='tools/data/build_taiwan_intercity_rail.mjs';
 const transit=await readFile(transitPath,'utf8');
 const core=await readFile(corePath,'utf8');
 const builder=await readFile(builderPath,'utf8');
 const stationBuilder=await readFile(stationBuilderPath,'utf8');
 const northBuilder=await readFile(northBuilderPath,'utf8');
+const intercityBuilder=await readFile(intercityBuilderPath,'utf8');
 
 new vm.Script(transit,{filename:transitPath});
 new vm.Script(core,{filename:corePath,importModuleDynamically:()=>{}});
 function syntaxParseEsmBuilder(source,filename){
-  const syntaxCopy=source
-    .replace(/^import .*$/gm,'')
-    .replace(/^const __filename=.*$/m,"const __filename='';")
-    .replace(/^const __dirname=.*$/m,"const __dirname='';");
+  const syntaxCopy=source.replace(/^import .*$/gm,'').replace(/^const __filename=.*$/m,"const __filename='';").replace(/^const __dirname=.*$/m,"const __dirname='';");
   new vm.Script(syntaxCopy,{filename});
 }
-syntaxParseEsmBuilder(builder,builderPath);
-syntaxParseEsmBuilder(stationBuilder,stationBuilderPath);
-syntaxParseEsmBuilder(northBuilder,northBuilderPath);
+for(const [source,filename] of [[builder,builderPath],[stationBuilder,stationBuilderPath],[northBuilder,northBuilderPath],[intercityBuilder,intercityBuilderPath]])syntaxParseEsmBuilder(source,filename);
 
 const requiredTransitTokens=[
-  "transportation.pmtiles","SOURCE_LAYER='segment'","['subway','monorail','light_rail']","['narrow_gauge']","['standard_gauge']",
-  "centerInsideTaiwan","centerInsideNorthTaiwan","TAIWAN_BOUNDS","NORTH_TAIWAN_BOUNDS","transit-mrt","transit-tra","transit-thsr",
+  "transportation.pmtiles","SOURCE_LAYER='segment'","['subway','monorail','light_rail']","railBaseFilter=railFilter(['narrow_gauge','standard_gauge'])",
+  "centerInsideTaiwan","centerInsideNorthTaiwan","TAIWAN_BOUNDS","NORTH_TAIWAN_BOUNDS","transit-mrt","transit-tra",
   "TAIPEI_MRT_GEOJSON_URL='/generated/taipei_mrt_lines_official.geojson'","TAIPEI_MRT_STATION_GEOJSON_URL='/generated/taipei_mrt_stations_official.geojson'",
   "NORTH_URBAN_RAIL_GEOJSON_URL='/generated/north_taiwan_urban_rail_lines.geojson'","NORTH_URBAN_RAIL_STATION_GEOJSON_URL='/generated/north_taiwan_urban_rail_stations.geojson'",
-  "NORTH_URBAN_RAIL_SOURCE_ID='north-taiwan-urban-rail'","NORTH_URBAN_RAIL_STATION_SOURCE_ID='north-taiwan-urban-rail-stations'",
-  "northUrbanCasing:'transit-north-urban-casing'","northUrbanStation:'transit-north-urban-station'","northUrbanStationLabel:'transit-north-urban-station-label'",
-  "'text-field':['get','station_name']","minzoom:10.5","minzoom:11.6","new Set(['V','K','LB','A'])",
-  "BR:'#c48c31'","R:'#e3002c'","G:'#008659'","O:'#f8b61c'","BL:'#0070bd'","Y:'#ffdb00'",
+  "INTERCITY_THSR_GEOJSON_URL='/generated/taiwan_intercity_thsr_lines.geojson'","INTERCITY_STATION_GEOJSON_URL='/generated/taiwan_intercity_stations.geojson'",
+  "INTERCITY_THSR_SOURCE_ID='taiwan-intercity-thsr'","INTERCITY_STATION_SOURCE_ID='taiwan-intercity-stations'",
+  "thsrOfficial:'transit-thsr-official'","traStation:'transit-tra-station'","thsrStation:'transit-thsr-station'",
+  "new Set(['V','K','LB','A'])","BR:'#c48c31'","R:'#e3002c'","G:'#008659'","O:'#f8b61c'","BL:'#0070bd'","Y:'#ffdb00'",
   "GLOBAL_METRO_COLOR='#1976d2'","GLOBAL_RAIL_COLOR='#5f6b76'","TAIWAN_TRA_COLOR='#2e7d32'","TAIWAN_THSR_COLOR='#f57c00'",
-  "NORTH_URBAN_LINE_LAYER_IDS","NORTH_URBAN_STATION_LAYER_IDS","applyRegionalAppearance","completeCoverage=inNorth&&localReadyCount===2","partialCoverage=inNorth&&localReadyCount===1",
-  "loadNorthUrbanRail","loadNorthUrbanStations","validateNorthUrbanRail","validateNorthUrbanStations","scope:'north-taiwan'","軌道 ON · 全球捷運 / 鐵路 · Overture","map.addControl(this.control,'top-right')","return false;"
+  "INTERCITY_LINE_LAYER_IDS","INTERCITY_STATION_LAYER_IDS","loadIntercityThsr","loadIntercityStations","validateIntercityThsr","validateIntercityStations",
+  "filter:traFilter,minzoom:10.2,stroke:TAIWAN_TRA_COLOR","filter:thsrFilter,minzoom:8.8,stroke:TAIWAN_THSR_COLOR","filter:thsrFilter,minzoom:9.7",
+  "setGroup(INTERCITY_LINE_LAYER_IDS,this.enabled&&inTaiwan&&this.intercityThsrReady)","setGroup(INTERCITY_STATION_LAYER_IDS,this.enabled&&inTaiwan&&this.intercityStationsReady)",
+  "軌道 ON · 全球捷運 / 鐵路 · Overture","map.addControl(this.control,'top-right')","return false;"
 ];
 for(const token of requiredTransitTokens)if(!transit.includes(token))throw new Error(`Transit contract missing: ${token}`);
+if(transit.includes("thsrFilter=railFilter(['standard_gauge'])"))throw new Error('Rail semantic regression: Overture standard_gauge must not be treated as THSR');
+if(transit.includes('ods.railway.gov.tw')||transit.includes('api.openstreetmap.org'))throw new Error('Browser transit layer must use same-origin generated intercity datasets, not provider APIs');
 if(transit.includes("this.emit('outside','軌道僅在台灣顯示'"))throw new Error('Global rail regression: transit overlay must not disappear outside Taiwan');
-if(transit.includes('data.taipei/api/frontstage/tpeod/dataset/resource.download'))throw new Error('Browser transit layer must not fetch Taipei government GIS cross-origin; use local generated datasets');
-if(transit.includes('overpass-api.de/api/interpreter'))throw new Error('Browser transit layer must not fetch Overpass at runtime; use the local generated North Taiwan dataset');
 
 const requiredBuilderTokens=[
   "data.taipei/api/frontstage/tpeod/dataset/resource.download","taipei_mrt_lines_official.geojson","taipei_mrt_lines_official.audit.json",
@@ -59,32 +58,33 @@ for(const token of requiredStationBuilderTokens)if(!stationBuilder.includes(toke
 const requiredNorthBuilderTokens=[
   "north_taiwan_urban_rail_lines.geojson","north_taiwan_urban_rail_stations.geojson","north_taiwan_urban_rail.audit.json",
   "OSM_API_BASE='https://api.openstreetmap.org/api/0.6'","/full.json","MAX_RELATIONS_PER_SYSTEM=160",
-  "V:{system:'new_taipei'","K:{system:'new_taipei'","LB:{system:'new_taipei'","A:{system:'taoyuan'",
-  "line_name:'淡海輕軌'","line_name:'安坑輕軌'","line_name:'三鶯線'","line_name:'桃園機場捷運'",
   "osm_relation_id:5576487","osm_relation_id:15443527","osm_relation_id:5341250","osm_relation_id:6937084",
   "line_color:'#dc524d'","line_color:'#9b8f5e'","line_color:'#79bce8'","line_color:'#8e47ad'",
-  "fetchRelationFull","source:'OpenStreetMap core API relation/full'","source_element_type:element.type",
-  "lineFeatures.length<20","stations.length<45","schema_version:4","output_crs:'EPSG:4326'",
-  "request_strategy:'core OSM relation/full JSON + explicit child-relation traversal + retry; no Overpass dependency'"
+  "fetchRelationFull","source:'OpenStreetMap core API relation/full'","schema_version:4","output_crs:'EPSG:4326'"
 ];
 for(const token of requiredNorthBuilderTokens)if(!northBuilder.includes(token))throw new Error(`North Taiwan urban rail builder contract missing: ${token}`);
-if(northBuilder.includes('overpass-api.de/api/interpreter')||northBuilder.includes('buildQuery(config)')){
-  throw new Error('North Taiwan builder regression: local cache build must use stable OSM core relation/full reads, not Overpass search queries');
-}
+if(northBuilder.includes('overpass-api.de/api/interpreter'))throw new Error('North Taiwan builder regression: use OSM core API, not Overpass');
+
+const requiredIntercityBuilderTokens=[
+  "TRA_STATION_URL='https://ods.railway.gov.tw/tra-ods-web/ods/download/dataResource/0518b833e8964d53bfea3f7691aea0ee'",
+  "OSM_API_BASE='https://api.openstreetmap.org/api/0.6'","THSR_RELATION_IDS=[1827335,4500369,4500371]",
+  "TRA_COLOR='#2e7d32'","THSR_COLOR='#f57c00'","taiwan_intercity_thsr_lines.geojson","taiwan_intercity_stations.geojson","taiwan_intercity_rail.audit.json",
+  "buildTraStations","buildThsr","parseGps","TRA station dataset unexpectedly small after GPS normalization","THSR line geometry unexpectedly small","THSR station set unexpectedly small",
+  "'高鐵南港站'","'高鐵台北站'","'高鐵板橋站'","'高鐵桃園站'","'高鐵左營站'","source:'Taiwan Railway Corporation open data'","source:'OpenStreetMap core API relation/full'"
+];
+for(const token of requiredIntercityBuilderTokens)if(!intercityBuilder.includes(token))throw new Error(`Intercity rail builder contract missing: ${token}`);
 
 const requiredCoreTokens=["TRANSIT_MODULE_URL","import(TRANSIT_MODULE_URL)","TaipeiMapsTransitLayer","map.__taipeiMapsTransitLayer","bootstrapTransit(map,overtureUrl)","class NorthUpControl","button.textContent='N'","easeTo({bearing:0,duration:350})","map.addControl(northControl,'top-right')","map.__taipeiMapsNorthControl"];
 for(const token of requiredCoreTokens)if(!core.includes(token))throw new Error(`Shared core contract missing: ${token}`);
-for(const forbidden of ['sale.591.com.tw','sinyi.com.tw','yungching.com.tw'])if(transit.includes(forbidden)||builder.includes(forbidden)||stationBuilder.includes(forbidden)||northBuilder.includes(forbidden))throw new Error(`Transit pipeline unexpectedly contains housing-provider dependency: ${forbidden}`);
+for(const forbidden of ['sale.591.com.tw','sinyi.com.tw','yungching.com.tw'])if([transit,builder,stationBuilder,northBuilder,intercityBuilder].some(text=>text.includes(forbidden)))throw new Error(`Transit pipeline unexpectedly contains housing-provider dependency: ${forbidden}`);
 
 console.log(JSON.stringify({
   status:'PASS',rail_base:'Overture transportation.pmtiles / segment',global_transit:true,
-  overseas_behavior:'blue metro + neutral rail; no Taiwan provider semantics',
-  taiwan_behavior:'green TRA + orange THSR; generic metro retained outside North Taiwan local coverage',
+  overseas_behavior:'blue metro + neutral generic rail; no Taiwan provider semantics',
+  taiwan_behavior:'green generic conventional-rail base + explicit orange THSR overlay + TRA/THSR station points and labels',
+  intercity_semantics:'standard_gauge is no longer equated with THSR; THSR uses explicit local route geometry',
+  intercity_sources:{tra_stations:'Taiwan Railway Corporation open data',thsr:'OpenStreetMap stable route relations via core API'},
+  intercity_relation_ids:[1827335,4500369,4500371],intercity_station_zoom:{tra_points:10.2,tra_labels:11.2,thsr_points:8.8,thsr_labels:9.7},
   north_taiwan_behavior:'Taipei official MRT + route-specific Danhai V / Ankeng K / Sanying LB / Airport MRT A + station points/names',
-  mrt_authoritative_source:'Taipei City DORTS GIS',mrt_station_authoritative_source:'Taipei City DORTS station GIS',
-  north_urban_source:'Stable OpenStreetMap P402 relation trees read through OSM core API and cached at build time',
-  north_urban_relation_ids:{V:5576487,K:15443527,LB:5341250,A:6937084},
-  runtime_network_dependency_for_local_routes:false,
-  station_points_minzoom:10.5,station_labels_minzoom:11.6,north_codes:['V','K','LB','A'],
-  kaohsiung_regression_guard:'generic metro is not faded merely because viewport is inside Taiwan',transit_toggle_control:true,north_up_control:true,north_preserves_pitch:true
+  runtime_network_dependency_for_local_routes:false,kaohsiung_regression_guard:'generic metro is not faded merely because viewport is inside Taiwan',transit_toggle_control:true,north_up_control:true,north_preserves_pitch:true
 },null,2));

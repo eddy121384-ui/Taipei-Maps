@@ -1,4 +1,7 @@
 (()=>{
+  const CORE_SCRIPT_URL=document.currentScript?.src||location.href;
+  const TRANSIT_MODULE_URL=new URL('./transit-layer.js',CORE_SCRIPT_URL).href;
+
   const PLACES={
     daan:{center:[121.5434,25.0268],zoom:15.15,pitch:58,bearing:-24},
     songshan:{center:[121.5608,25.0525],zoom:15.15,pitch:58,bearing:18},
@@ -39,14 +42,8 @@
   IDS.photoLayer=IDS.nlscPhotoLayer;
 
   const IMAGERY_PROVIDERS=[
-    {
-      id:'tw-nlsc',label:'台灣 NLSC PHOTO2',sourceId:IDS.nlscPhotoSource,layerId:IDS.nlscPhotoLayer,
-      regions:[[118,21.5,123,26.7]]
-    },
-    {
-      id:'jp-gsi',label:'日本 GSI 全国最新写真',sourceId:IDS.gsiPhotoSource,layerId:IDS.gsiPhotoLayer,
-      regions:[[129,30,146.5,46.5],[122.5,23,132,31.5],[136,20,143,30]]
-    }
+    {id:'tw-nlsc',label:'台灣 NLSC PHOTO2',sourceId:IDS.nlscPhotoSource,layerId:IDS.nlscPhotoLayer,regions:[[118,21.5,123,26.7]]},
+    {id:'jp-gsi',label:'日本 GSI 全国最新写真',sourceId:IDS.gsiPhotoSource,layerId:IDS.gsiPhotoLayer,regions:[[129,30,146.5,46.5],[122.5,23,132,31.5],[136,20,143,30]]}
   ];
 
   const height=['case',['>', ['to-number',['get','height'],0],0],['to-number',['get','height'],0],['>', ['to-number',['get','num_floors'],0],0],['*',['to-number',['get','num_floors'],0],3.2],9.6];
@@ -76,8 +73,6 @@
   function coreSources(overtureUrl){
     return {
       [IDS.osmSource]:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,attribution:'© OpenStreetMap contributors',maxzoom:19},
-      // GSI seamless orthophoto is z14-18. GSI's own nationwide Landsat mosaic (z2-13)
-      // is the correct low-zoom photographic companion and avoids the brown NASA mismatch.
       [IDS.imageryFallbackSource]:{type:'raster',tiles:[GSI_LANDSAT_TILE],tileSize:256,attribution:'© 国土地理院 GSI / Landsat mosaic',minzoom:2,maxzoom:13,bounds:[122,20,154,47]},
       [IDS.nlscPhotoSource]:{type:'raster',tiles:[NLSC_PHOTO_TILE],tileSize:256,attribution:'© 內政部國土測繪中心 NLSC',maxzoom:19,bounds:[118,21.5,123,26.7]},
       [IDS.gsiPhotoSource]:{type:'raster',tiles:[GSI_PHOTO_TILE],tileSize:256,attribution:'© 国土地理院 GSI',minzoom:14,maxzoom:18,bounds:[122,20,154,47]},
@@ -101,19 +96,13 @@
     return layers;
   }
 
-  function pointInRegion(lng,lat,[west,south,east,north]){
-    return lng>=west&&lng<=east&&lat>=south&&lat<=north;
-  }
-
+  function pointInRegion(lng,lat,[west,south,east,north]){return lng>=west&&lng<=east&&lat>=south&&lat<=north;}
   function imageryProviderForLngLat(lngLat){
     const lng=Array.isArray(lngLat)?lngLat[0]:lngLat.lng;
     const lat=Array.isArray(lngLat)?lngLat[1]:lngLat.lat;
     return IMAGERY_PROVIDERS.find(provider=>provider.regions.some(region=>pointInRegion(lng,lat,region)))||null;
   }
-
-  function imageryProviderForMap(map){
-    return imageryProviderForLngLat(map.getCenter());
-  }
+  function imageryProviderForMap(map){return imageryProviderForLngLat(map.getCenter());}
 
   const vis=(map,id,on)=>map.getLayer(id)&&map.setLayoutProperty(id,'visibility',on?'visible':'none');
   const paint=(map,id,p,v)=>map.getLayer(id)&&map.setPaintProperty(id,p,v);
@@ -124,13 +113,60 @@
     for(const provider of IMAGERY_PROVIDERS)vis(map,provider.layerId,false);
     const provider=photo?imageryProviderForMap(map):null;
     if(provider){
-      // Only Japan needs a low-zoom companion because GSI seamlessphoto starts at z14.
-      // Keep the fallback from the same GSI stack so zoom transitions stay photographic and coherent.
       if(provider.id==='jp-gsi')vis(map,IDS.imageryFallbackLayer,true);
       vis(map,provider.layerId,true);
     }
     map.__taipeiMapsImageryProvider=provider;
     return provider;
+  }
+
+  async function bootstrapTransit(map,overtureUrl){
+    try{
+      if(!window.TaipeiMapsTransitLayer)await import(TRANSIT_MODULE_URL);
+      const TransitLayer=window.TaipeiMapsTransitLayer?.TransitLayer;
+      if(!TransitLayer)throw new Error('TransitLayer module did not register');
+      const transit=new TransitLayer(map,{overtureBuildingUrl:overtureUrl,enabled:true});
+      map.__taipeiMapsTransitLayer=transit;
+      await transit.init();
+    }catch(e){
+      console.warn('Taipei-Maps transit overlay bootstrap failed',e);
+      map.fire('taipei-maps-transitchange',{state:'error',message:`軌道交通暫時無法載入 · ${e?.message||e}`,enabled:false});
+    }
+  }
+
+  class NorthUpControl{
+    constructor(){this.map=null;this.container=null;this.button=null;this._rotateHandler=()=>this.update();}
+    onAdd(map){
+      this.map=map;
+      const container=document.createElement('div');
+      container.className='maplibregl-ctrl maplibregl-ctrl-group';
+      const button=document.createElement('button');
+      button.type='button';
+      button.textContent='N';
+      button.style.fontWeight='900';
+      button.style.fontSize='13px';
+      button.style.lineHeight='1';
+      button.setAttribute('aria-label','正北朝上');
+      button.onclick=()=>this.map?.easeTo({bearing:0,duration:350});
+      container.appendChild(button);
+      this.container=container;this.button=button;
+      map.on('rotate',this._rotateHandler);
+      this.update();
+      return container;
+    }
+    update(){
+      if(!this.map||!this.button)return;
+      const bearing=this.map.getBearing();
+      const north=Math.abs(bearing)<.5;
+      this.button.style.background=north?'#e8f1f8':'';
+      this.button.title=north?'目前正北朝上':`回正北 · 目前 ${bearing.toFixed(0)}°`;
+      this.button.setAttribute('aria-pressed',north?'true':'false');
+    }
+    onRemove(){
+      if(this.map)this.map.off('rotate',this._rotateHandler);
+      this.container?.remove();
+      this.map=null;this.container=null;this.button=null;
+    }
   }
 
   function createMap({container,view,overtureUrl,hasParts,extraSources={},extraLayers=[],maxZoom=18}){
@@ -139,6 +175,10 @@
       container,...view,maxPitch:85,maxZoom,antialias:true,
       style:{version:8,sky:SKY,sources:{...coreSources(overtureUrl),...extraSources},layers:[...coreLayers(hasParts),...extraLayers],terrain:{source:IDS.terrainSource,exaggeration:1}}
     });
+    const northControl=new NorthUpControl();
+    map.addControl(northControl,'top-right');
+    map.__taipeiMapsNorthControl=northControl;
+    map.on('load',()=>{bootstrapTransit(map,overtureUrl);});
     map.on('moveend',()=>{
       const state=map.__taipeiMapsVisualState;
       if(!state?.photo||!map.isStyleLoaded())return;
@@ -168,6 +208,6 @@
   window.TaipeiMapsCore={
     PLACES,IDS,SKY,OVERTURE_CANDIDATES,TERRAIN_TILEJSON,NLSC_PHOTO_TILE,GSI_PHOTO_TILE,GSI_LANDSAT_TILE,IMAGERY_PROVIDERS,
     preflightOverture,ensurePmtilesProtocol,createMap,applyCoreVisualState,setTerrain,vis,paint,
-    imageryProviderForLngLat,imageryProviderForMap,syncImageryForViewport
+    imageryProviderForLngLat,imageryProviderForMap,syncImageryForViewport,NorthUpControl
   };
 })();

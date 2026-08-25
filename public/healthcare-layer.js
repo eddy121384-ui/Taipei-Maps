@@ -25,14 +25,14 @@
 
   function iconCanvas(size=64){
     const canvas=document.createElement('canvas');canvas.width=size;canvas.height=size;
-    const ctx=canvas.getContext('2d');ctx.clearRect(0,0,size,size);return {canvas,ctx,size};
+    const ctx=canvas.getContext('2d');ctx.clearRect(0,0,size,size);return {ctx,size};
   }
   function drawBadge(ctx,size,stroke){
     const c=size/2,r=size*.425;
     ctx.save();ctx.beginPath();ctx.arc(c,c,r,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,.98)';ctx.fill();ctx.lineWidth=size*.055;ctx.strokeStyle=stroke;ctx.stroke();ctx.restore();
   }
   function createHospitalIcon(){
-    const {canvas,ctx,size}=iconCanvas();const c=size/2;drawBadge(ctx,size,COLORS.hospital);
+    const {ctx,size}=iconCanvas();const c=size/2;drawBadge(ctx,size,COLORS.hospital);
     ctx.save();ctx.strokeStyle=COLORS.hospital;ctx.fillStyle=COLORS.hospital;ctx.lineCap='round';ctx.lineJoin='round';
     ctx.lineWidth=size*.085;ctx.beginPath();ctx.moveTo(c,size*.20);ctx.lineTo(c,size*.80);ctx.stroke();
     ctx.lineWidth=size*.072;ctx.beginPath();
@@ -42,15 +42,15 @@
     ctx.bezierCurveTo(c-size*.14,size*.62,c-size*.13,size*.69,c+size*.04,size*.71);
     ctx.stroke();
     ctx.beginPath();ctx.arc(c+size*.125,size*.285,size*.043,0,Math.PI*2);ctx.fill();
-    ctx.restore();return canvas;
+    ctx.restore();return ctx.getImageData(0,0,size,size);
   }
   function createClinicIcon(){
-    const {canvas,ctx,size}=iconCanvas();const c=size/2;drawBadge(ctx,size,COLORS.clinic);
+    const {ctx,size}=iconCanvas();const c=size/2;drawBadge(ctx,size,COLORS.clinic);
     ctx.save();ctx.fillStyle=COLORS.clinic;
     const arm=size*.145,long=size*.52;
     ctx.fillRect(c-arm/2,c-long/2,arm,long);
     ctx.fillRect(c-long/2,c-arm/2,long,arm);
-    ctx.restore();return canvas;
+    ctx.restore();return ctx.getImageData(0,0,size,size);
   }
   function registerMedicalIcons(map){
     if(!map.hasImage(ICONS.hospital))map.addImage(ICONS.hospital,createHospitalIcon(),{pixelRatio:2});

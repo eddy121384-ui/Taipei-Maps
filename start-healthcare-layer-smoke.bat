@@ -56,8 +56,10 @@ echo [8/8] Opening healthcare smoke page...
 echo.
 echo Visual checklist:
 echo   - red larger points = physical hospital campuses; teal smaller points = clinics
-echo   - click Heping + Fuyou: BOTH Heping (Zhonghua Rd.) and Fuyou (Fuzhou St. 12) must exist
+echo   - Heping + Fuyou: BOTH Heping (Zhonghua Rd.) and Fuyou (Fuzhou St. 12) must exist
 echo   - Taipei City Hospital is reconciled into 9 distinct physical sites
+echo   - Tri-Service: BOTH Neihu (Chenggong Rd. Sec. 2 No. 325) and Tingzhou (Tingzhou Rd. Sec. 3 No. 40) must exist
+echo   - use the dedicated TSGH Tingzhou / Neihu buttons for quick visual verification
 echo   - hospital points appear earlier when zooming in; clinic points appear at neighborhood zoom
 echo   - labels avoid obvious overlap; clinic labels appear only closer in
 echo   - click a hospital/clinic: popup shows type, name, district/address

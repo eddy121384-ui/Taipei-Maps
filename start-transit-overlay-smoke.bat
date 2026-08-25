@@ -27,7 +27,7 @@ echo [2/5] Preparing local Taipei City official MRT station GIS...
 if errorlevel 1 goto :fail
 
 echo.
-echo [3/5] Preparing route-specific North Taiwan urban rail cache...
+echo [3/5] Preparing route-specific North Taiwan urban rail cache via OSM core API...
 "%NODE_CMD%" tools\data\build_north_taiwan_urban_rail.mjs --if-missing
 if errorlevel 1 goto :fail
 
@@ -40,17 +40,18 @@ echo.
 echo [5/5] Starting the existing desktop full-stack smoke page...
 echo.
 echo Visual checklist:
-echo   - Taipei MRT still uses official line colors and station names
-echo   - Danhai LRT (V), Ankeng LRT (K), Sanying Line (LB), and Airport MRT (A) are no longer faint generic blue lines
-echo   - New Taipei / Taoyuan station dots appear at the same neighborhood zoom as Taipei MRT
-echo   - Chinese station labels use the same size, halo, and collision behavior as Taipei MRT
-echo   - Hongshulin / Shisizhang / Yingge / Taoyuan HSR areas make the nearest station visually obvious
-echo   - generic Overture metro remains only a subdued fallback in North Taiwan when local route datasets are ready
-echo   - Kaohsiung / other Taiwan cities keep normal generic metro contrast; they must NOT be faded by Taipei readiness
+echo   - Taipei MRT uses official line colors: brown / red / green / orange / blue / yellow
+echo   - Taipei MRT station dots + Chinese station names remain present
+echo   - Danhai LRT V uses red route color + station dots / names
+echo   - Ankeng LRT K uses khaki route color + station dots / names
+echo   - Sanying LB uses light-blue route color + station dots / names
+echo   - Taoyuan Airport MRT A uses purple route color + station dots / names
+echo   - interchange / duplicate platform station labels should avoid obvious collisions
 echo   - green = TRA, orange = THSR
 echo   - top-right subway icon toggles all rail lines, station dots, and station names
 echo   - top-right N button returns bearing to north-up while preserving 3D pitch
-echo   - Shanghai / Tokyo preserve global generic rail and hide North Taiwan station overlays
+echo   - Kaohsiung keeps generic metro contrast; Taipei readiness must not fade all Taiwan metro
+echo   - Shanghai / Tokyo preserve generic global rail
 echo   - existing school / terrain / aerial / 3D behavior remains normal
 echo.
 call start-desktop-full-stack-smoke.bat

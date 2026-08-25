@@ -20,15 +20,17 @@ const OVERPASS_ENDPOINTS=[
 ];
 const REQUEST_TIMEOUT_MS=30000;
 
-// Passenger-facing line identities. Relation colours are preferred whenever
-// OSM supplies a valid colour; these values are deterministic fallbacks only.
+// Stable OpenStreetMap relation IDs are linked from Wikidata P402 for each
+// passenger line. We fetch those exact relation trees instead of guessing
+// route relations from localized names, endpoint names, or operator tags.
 const SYSTEMS={
-  V:{system:'new_taipei',line_code:'V',line_name:'淡海輕軌',line_color:'#e5554f',aliases:['淡海輕軌','Danhai'],queryRegex:'淡海|Danhai',stationRefRegex:'^V[0-9]'},
-  K:{system:'new_taipei',line_code:'K',line_name:'安坑輕軌',line_color:'#c4a46b',aliases:['安坑輕軌','Ankeng'],queryRegex:'安坑|Ankeng',stationRefRegex:'^K[0-9]'},
-  LB:{system:'new_taipei',line_code:'LB',line_name:'三鶯線',line_color:'#6ec4e8',aliases:['三鶯線','Sanying'],queryRegex:'三鶯|Sanying',stationRefRegex:'^LB[0-9]'},
-  A:{system:'taoyuan',line_code:'A',line_name:'桃園機場捷運',line_color:'#8246af',aliases:['桃園機場捷運','機場捷運','Taoyuan Airport MRT','Airport MRT'],queryRegex:'機場捷運|桃園捷運|Taoyuan Airport|Airport MRT',stationRefRegex:'^A[0-9]'}
+  V:{system:'new_taipei',line_code:'V',line_name:'淡海輕軌',line_color:'#dc524d',osm_relation_id:5576487,stationRefRegex:'^V(?:[0-9]{2})$'},
+  K:{system:'new_taipei',line_code:'K',line_name:'安坑輕軌',line_color:'#9b8f5e',osm_relation_id:15443527,stationRefRegex:'^K(?:[0-9]{2})$'},
+  LB:{system:'new_taipei',line_code:'LB',line_name:'三鶯線',line_color:'#79bce8',osm_relation_id:5341250,stationRefRegex:'^LB(?:[0-9]{2})$'},
+  A:{system:'taoyuan',line_code:'A',line_name:'桃園機場捷運',line_color:'#8e47ad',osm_relation_id:6937084,stationRefRegex:'^A(?:14A|[0-9]{1,2})$'}
 };
 const EXPECTED_CODES=new Set(Object.keys(SYSTEMS));
+const ACTIVE_RAILWAY_VALUES=new Set(['rail','light_rail','subway','tram','monorail']);
 
 function exists(filePath){return access(filePath).then(()=>true,()=>false);}
 function clean(value){return String(value??'').trim();}
@@ -41,75 +43,34 @@ function normalizeHex(value){
   return null;
 }
 
-function classifyText(text){
-  const t=clean(text).toLowerCase();
-  for(const config of Object.values(SYSTEMS)){
-    if(config.aliases.some(alias=>t.includes(alias.toLowerCase())))return config;
-  }
-  return null;
-}
-
-function classifyRef(ref){
-  const r=clean(ref).replace(/\s+/g,'').toUpperCase();
-  if(/^LB\d+/.test(r))return SYSTEMS.LB;
-  if(/^V\d+/.test(r))return SYSTEMS.V;
-  if(/^K\d+/.test(r))return SYSTEMS.K;
-  if(/^A(?:14A|\d+)/.test(r))return SYSTEMS.A;
-  return null;
-}
-
-function relationConfig(element){
-  const t=element?.tags||{};
-  return classifyText([t.name,t['name:zh'],t.network,t.operator,t.ref,t.description].filter(Boolean).join(' | '));
-}
-
-function lineCoordinatesFromRelation(element){
-  const lines=[];
-  for(const member of element?.members||[]){
-    if(member?.type!=='way'||!Array.isArray(member.geometry)||member.geometry.length<2)continue;
-    const coordinates=member.geometry
-      .map(point=>[Number(point.lon),Number(point.lat)])
-      .filter(([lng,lat])=>Number.isFinite(lng)&&Number.isFinite(lat));
-    if(coordinates.length>=2)lines.push({memberRef:member.ref,coordinates});
-  }
-  return lines;
-}
-
-function segmentDistanceSquared(point,a,b){
-  const latScale=Math.cos(point[1]*Math.PI/180);
-  const px=point[0]*latScale,py=point[1];
-  const ax=a[0]*latScale,ay=a[1],bx=b[0]*latScale,by=b[1];
-  const vx=bx-ax,vy=by-ay,wx=px-ax,wy=py-ay;
-  const len=vx*vx+vy*vy;
-  const t=len?Math.max(0,Math.min(1,(wx*vx+wy*vy)/len)):0;
-  const dx=px-(ax+t*vx),dy=py-(ay+t*vy);
-  return dx*dx+dy*dy;
-}
-
-function nearestSystem(point,lineFeatures){
-  let best=null,bestD=Infinity;
-  for(const feature of lineFeatures){
-    const coords=feature.geometry?.coordinates||[];
-    for(let i=1;i<coords.length;i++){
-      const d=segmentDistanceSquared(point,coords[i-1],coords[i]);
-      if(d<bestD){bestD=d;best=SYSTEMS[feature.properties.line_code];}
-    }
-  }
-  // ~700 m at northern Taiwan latitudes. Deliberately generous for platform
-  // nodes that sit slightly off the route centreline, but still excludes most
-  // unrelated Taipei MRT stations.
-  return bestD<=0.00005?best:null;
-}
-
 function stationCandidate(element){
   if(element?.type!=='node')return false;
   const t=element.tags||{};
   if(!clean(t.name)&&!clean(t['name:zh']))return false;
-  return ['station','halt','tram_stop'].includes(t.railway)||['stop_position','platform','station'].includes(t.public_transport);
+  return ['station','halt','tram_stop','stop'].includes(clean(t.railway).toLowerCase())||
+    ['stop_position','platform','station'].includes(clean(t.public_transport).toLowerCase());
 }
 
 function stationName(tags){
-  return clean(tags?.['name:zh']||tags?.name).replace(/\s*站$/,'')+'站';
+  const raw=clean(tags?.['name:zh']||tags?.name);
+  if(!raw)return '';
+  return raw.replace(/\s*站$/,'')+'站';
+}
+
+function railWayCandidate(element){
+  if(element?.type!=='way'||!Array.isArray(element.geometry)||element.geometry.length<2)return false;
+  const t=element.tags||{};
+  const railway=clean(t.railway).toLowerCase();
+  if(!ACTIVE_RAILWAY_VALUES.has(railway))return false;
+  if(clean(t.construction)||clean(t.proposed)||clean(t.disused)||clean(t.abandoned)||clean(t.razed))return false;
+  if(['construction','proposed','disused','abandoned','razed'].includes(railway))return false;
+  return true;
+}
+
+function wayCoordinates(element){
+  return (element.geometry||[])
+    .map(point=>[Number(point.lon),Number(point.lat)])
+    .filter(([lng,lat])=>Number.isFinite(lng)&&Number.isFinite(lat));
 }
 
 function dedupeStations(features){
@@ -126,19 +87,23 @@ function dedupeStations(features){
   return [...groups.values()].map(row=>({
     ...row.feature,
     geometry:{type:'Point',coordinates:[row.sumLng/row.count,row.sumLat/row.count]},
-    properties:{...row.feature.properties,station_id:[...row.refs].sort().join('/')||row.feature.properties.station_id,source_point_count:row.count}
-  })).sort((a,b)=>a.properties.line_code.localeCompare(b.properties.line_code)||a.properties.station_name.localeCompare(b.properties.station_name,'zh-Hant'));
+    properties:{
+      ...row.feature.properties,
+      station_id:[...row.refs].sort().join('/')||row.feature.properties.station_id,
+      source_point_count:row.count
+    }
+  })).sort((a,b)=>a.properties.line_code.localeCompare(b.properties.line_code)||
+    a.properties.station_name.localeCompare(b.properties.station_name,'zh-Hant'));
 }
 
-// Keep each Overpass request tiny. The old implementation asked for every rail
-// route relation in North Taiwan in one shot, which made public Overpass nodes
-// return 504/500 during smoke. Here each V/K/LB/A request only asks for route
-// names belonging to that system plus directly ref-tagged station nodes.
 function buildQuery(config){
   const b=BOUNDS;
   const bbox=`${b.south},${b.west},${b.north},${b.east}`;
-  const nameRegex=config.queryRegex;
-  return `[out:json][timeout:45];\n(\n  relation["type"="route"]["route"~"subway|light_rail|train"]["name"~"${nameRegex}",i](${bbox});\n  relation["type"="route"]["route"~"subway|light_rail|train"]["name:zh"~"${nameRegex}",i](${bbox});\n)->.routes;\n.routes out tags geom;\nnode(r.routes);\nout tags;\nnode["ref"~"${config.stationRefRegex}"](${bbox});\nout tags;`;
+  return `[out:json][timeout:45];\n`+
+    `relation(${config.osm_relation_id})->.root;\n`+
+    `.root >> ->.tree;\n`+
+    `(\n  .root;\n  .tree;\n  node["ref"~"${config.stationRefRegex}"](${bbox});\n);\n`+
+    `out body geom;`;
 }
 
 async function postOverpass(endpoint,query){
@@ -167,7 +132,7 @@ async function fetchSystem(config){
       try{
         console.log(`  ${config.line_code}: ${endpoint}${round>1?' (retry)':''}`);
         const payload=await postOverpass(endpoint,query);
-        return {payload,endpoint,round};
+        return {config,payload,endpoint,round};
       }catch(error){
         const message=error?.name==='AbortError'?`timeout after ${REQUEST_TIMEOUT_MS/1000}s`:(error?.message||String(error));
         errors.push(`${endpoint} [attempt ${round}]: ${message}`);
@@ -178,90 +143,87 @@ async function fetchSystem(config){
   throw new Error(`${config.line_code} Overpass failed: ${errors.join(' | ')}`);
 }
 
-function mergePayloads(rows){
-  const seen=new Set();
-  const elements=[];
-  for(const row of rows){
-    for(const element of row.payload.elements||[]){
-      const key=`${element.type}:${element.id}`;
-      if(seen.has(key))continue;
-      seen.add(key);
-      elements.push(element);
-    }
-  }
-  return {elements};
-}
-
 async function fetchOverpass(){
   const rows=[];
   for(const config of Object.values(SYSTEMS)){
-    console.log(`Downloading ${config.line_name} (${config.line_code})…`);
+    console.log(`Downloading ${config.line_name} (${config.line_code}) relation ${config.osm_relation_id}…`);
     rows.push(await fetchSystem(config));
   }
-  return {
-    payload:mergePayloads(rows),
-    endpoints:Object.fromEntries(rows.map((row,index)=>[Object.values(SYSTEMS)[index].line_code,{endpoint:row.endpoint,attempt:row.round}]))
-  };
+  return rows;
 }
 
-function normalize(payload){
+function normalize(rows){
   const lineFeatures=[];
-  const waySeen=new Set();
-  const relationCounts={V:0,K:0,LB:0,A:0};
-  for(const element of payload.elements||[]){
-    if(element?.type!=='relation')continue;
-    const config=relationConfig(element);
-    if(!config)continue;
-    relationCounts[config.line_code]++;
-    const relationColor=normalizeHex(element.tags?.colour)||normalizeHex(element.tags?.color)||config.line_color;
-    for(const line of lineCoordinatesFromRelation(element)){
-      const key=`${config.line_code}|${line.memberRef}`;
+  const rawStations=[];
+  const lineCounts={V:0,K:0,LB:0,A:0};
+  const stationCandidateCounts={V:0,K:0,LB:0,A:0};
+
+  for(const row of rows){
+    const {config,payload}=row;
+    const waySeen=new Set();
+    for(const element of payload.elements||[]){
+      if(!railWayCandidate(element))continue;
+      const coordinates=wayCoordinates(element);
+      if(coordinates.length<2)continue;
+      const key=`${config.line_code}|${element.id}`;
       if(waySeen.has(key))continue;
       waySeen.add(key);
       lineFeatures.push({
         type:'Feature',
-        geometry:{type:'LineString',coordinates:line.coordinates},
+        geometry:{type:'LineString',coordinates},
         properties:{
-          system:config.system,line_code:config.line_code,line_name:config.line_name,
-          line_color:relationColor,route_name:clean(element.tags?.['name:zh']||element.tags?.name)||config.line_name,
-          source:'OpenStreetMap route relation',source_relation_id:element.id
+          system:config.system,
+          line_code:config.line_code,
+          line_name:config.line_name,
+          line_color:config.line_color,
+          route_name:config.line_name,
+          source:'OpenStreetMap relation tree',
+          source_relation_id:config.osm_relation_id,
+          source_way_id:element.id
         }
       });
+      lineCounts[config.line_code]++;
+    }
+
+    for(const element of payload.elements||[]){
+      if(!stationCandidate(element))continue;
+      const lng=Number(element.lon),lat=Number(element.lat);
+      if(!Number.isFinite(lng)||!Number.isFinite(lat))continue;
+      const tags=element.tags||{};
+      const name=stationName(tags);
+      if(!name||name==='站')continue;
+      rawStations.push({
+        type:'Feature',
+        geometry:{type:'Point',coordinates:[lng,lat]},
+        properties:{
+          system:config.system,
+          line_code:config.line_code,
+          line_name:config.line_name,
+          line_color:config.line_color,
+          station_id:clean(tags.ref),
+          station_name:name,
+          source:'OpenStreetMap relation tree / station ref',
+          source_relation_id:config.osm_relation_id,
+          source_node_id:element.id
+        }
+      });
+      stationCandidateCounts[config.line_code]++;
     }
   }
 
-  const rawStations=[];
-  for(const element of payload.elements||[]){
-    if(!stationCandidate(element))continue;
-    const lng=Number(element.lon),lat=Number(element.lat);
-    if(!Number.isFinite(lng)||!Number.isFinite(lat))continue;
-    const tags=element.tags||{};
-    let config=classifyRef(tags.ref)||classifyText([tags.network,tags.operator,tags.line,tags.route,tags.description].filter(Boolean).join(' | '));
-    if(!config)config=nearestSystem([lng,lat],lineFeatures);
-    if(!config)continue;
-    const name=stationName(tags);
-    if(!name||name==='站')continue;
-    rawStations.push({
-      type:'Feature',
-      geometry:{type:'Point',coordinates:[lng,lat]},
-      properties:{
-        system:config.system,line_code:config.line_code,line_name:config.line_name,line_color:config.line_color,
-        station_id:clean(tags.ref),station_name:name,
-        source:'OpenStreetMap route member',source_node_id:element.id
-      }
-    });
-  }
-
   const stations=dedupeStations(rawStations);
-  return {lineFeatures,stations,relationCounts,rawStationCount:rawStations.length};
+  const stationCounts={V:0,K:0,LB:0,A:0};
+  for(const feature of stations)stationCounts[feature.properties.line_code]++;
+
+  return {lineFeatures,stations,lineCounts,stationCounts,stationCandidateCounts,rawStationCount:rawStations.length};
 }
 
-function validate(lineFeatures,stations){
+function validate(lineFeatures,stations,lineCounts,stationCounts){
   const lineCodes=new Set(lineFeatures.map(f=>f.properties.line_code));
   const stationCodes=new Set(stations.map(f=>f.properties.line_code));
   for(const code of EXPECTED_CODES){
-    if(!lineCodes.has(code))throw new Error(`North Taiwan rail output missing line geometry for ${code}`);
-    if(!stationCodes.has(code))throw new Error(`North Taiwan rail output missing station points for ${code}`);
+    if(!lineCodes.has(code))throw new Error(`North Taiwan rail output missing line geometry for ${code} (OSM relation ${SYSTEMS[code].osm_relation_id}; ways=${lineCounts[code]||0})`);
+    if(!stationCodes.has(code))throw new Error(`North Taiwan rail output missing station points for ${code} (OSM relation ${SYSTEMS[code].osm_relation_id}; stations=${stationCounts[code]||0})`);
   }
   if(lineFeatures.length<20)throw new Error(`North Taiwan rail line geometry unexpectedly small: ${lineFeatures.length}`);
   if(stations.length<45)throw new Error(`North Taiwan rail station set unexpectedly small: ${stations.length}`);
@@ -272,7 +234,9 @@ function validate(lineFeatures,stations){
   }
   for(const feature of stations){
     const [lng,lat]=feature.geometry.coordinates;
-    if(lng<BOUNDS.west||lng>BOUNDS.east||lat<BOUNDS.south||lat>BOUNDS.north)throw new Error(`Station outside north Taiwan build bounds: ${feature.properties.station_name}`);
+    if(lng<BOUNDS.west||lng>BOUNDS.east||lat<BOUNDS.south||lat>BOUNDS.north){
+      throw new Error(`Station outside north Taiwan build bounds: ${feature.properties.station_name}`);
+    }
   }
 }
 
@@ -284,33 +248,44 @@ async function main(){
     return;
   }
 
-  console.log('Downloading North Taiwan urban rail route relations in small per-line requests…');
-  const {payload,endpoints}=await fetchOverpass();
-  const {lineFeatures,stations,relationCounts,rawStationCount}=normalize(payload);
-  validate(lineFeatures,stations);
+  console.log('Downloading North Taiwan urban rail by stable OSM relation IDs…');
+  const rows=await fetchOverpass();
+  const {lineFeatures,stations,lineCounts,stationCounts,stationCandidateCounts,rawStationCount}=normalize(rows);
+
+  for(const code of EXPECTED_CODES){
+    console.log(`  ${code}: ${lineCounts[code]} rail way(s), ${stationCounts[code]} station(s) after dedupe`);
+  }
+
+  validate(lineFeatures,stations,lineCounts,stationCounts);
 
   await writeFile(lineOutputPath,JSON.stringify({type:'FeatureCollection',features:lineFeatures}),'utf8');
   await writeFile(stationOutputPath,JSON.stringify({type:'FeatureCollection',features:stations}),'utf8');
   const audit={
-    schema_version:2,
-    source_name:'OpenStreetMap route relations (local build-time cache)',
-    source_endpoints:endpoints,
+    schema_version:3,
+    source_name:'OpenStreetMap stable relation trees (P402 IDs linked from Wikidata; local build-time cache)',
+    source_endpoints:Object.fromEntries(rows.map(row=>[row.config.line_code,{endpoint:row.endpoint,attempt:row.round}])),
     fetched_at:new Date().toISOString(),
     output_crs:'EPSG:4326',
     bounds:BOUNDS,
-    request_strategy:'per-line narrowed Overpass queries with multi-endpoint retry',
+    request_strategy:'stable per-line OSM relation ID + recursive descendants + station-ref supplement + multi-endpoint retry',
     line_feature_count:lineFeatures.length,
     station_feature_count:stations.length,
     raw_station_candidate_count:rawStationCount,
-    matched_relation_counts:relationCounts,
-    systems:Object.fromEntries(Object.entries(SYSTEMS).map(([code,row])=>[code,{system:row.system,line_name:row.line_name,fallback_line_color:row.line_color}]))
+    line_counts:lineCounts,
+    station_counts:stationCounts,
+    raw_station_candidate_counts:stationCandidateCounts,
+    systems:Object.fromEntries(Object.entries(SYSTEMS).map(([code,row])=>[code,{
+      system:row.system,
+      line_name:row.line_name,
+      line_color:row.line_color,
+      osm_relation_id:row.osm_relation_id
+    }]))
   };
   await writeFile(auditPath,JSON.stringify(audit,null,2)+'\n','utf8');
 
   console.log('North Taiwan urban rail local dataset: PASS');
   console.log(`  Lines: ${lineFeatures.length}`);
   console.log(`  Stations: ${stations.length}`);
-  console.log(`  Relation groups: ${Object.entries(relationCounts).map(([k,v])=>`${k}=${v}`).join(', ')}`);
   console.log(`  Output: ${lineOutputPath}`);
 }
 

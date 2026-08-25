@@ -29,7 +29,7 @@
   }
   function labelLayer(id,type,{minzoom,color}){
     return {id,type:'symbol',source:SOURCE_ID,minzoom,filter:['==',['get','facility_type'],type],layout:{visibility:'none',
-      'text-field':['get','facility_name'],'text-size':['interpolate',['linear'],['zoom'],minzoom,10.5,15,11.5,18,13],
+      'text-field':['coalesce',['get','map_label'],['get','facility_name']],'text-size':['interpolate',['linear'],['zoom'],minzoom,10.5,15,11.5,18,13],
       'text-offset':[0,1.0],'text-anchor':'top','text-max-width':9,'text-allow-overlap':false,'text-ignore-placement':false
     },paint:{'text-color':color,'text-halo-color':'rgba(255,255,255,.98)','text-halo-width':1.45,'text-halo-blur':.25}};
   }
@@ -59,7 +59,7 @@
         const hospitals=data.features.filter(f=>f.properties.facility_type==='hospital').length;
         const clinics=data.features.filter(f=>f.properties.facility_type==='clinic').length;
         this.counts={hospital:hospitals,clinic:clinics,total:data.features.length};
-        if(!this.map.getSource(SOURCE_ID))this.map.addSource(SOURCE_ID,{type:'geojson',data,attribution:'© 臺北市政府衛生局'});
+        if(!this.map.getSource(SOURCE_ID))this.map.addSource(SOURCE_ID,{type:'geojson',data,attribution:'© 臺北市政府衛生局 / official campus sources'});
         const beforeId=this.map.getLayer('building')?'building':undefined;
         const layers=[
           pointLayer(LAYERS.hospital,'hospital',{minzoom:10.0,radius:4.0,color:COLORS.hospital}),
@@ -74,7 +74,7 @@
         this.map.on('moveend',this._moveHandler);
         this.control=new HealthcareToggleControl(this);this.map.addControl(this.control,'top-right');
         this.initialized=true;this.sync();
-        console.info(`Taipei healthcare ready: ${hospitals} hospital(s), ${clinics} clinic(s)`);
+        console.info(`Taipei healthcare ready: ${hospitals} hospital site(s), ${clinics} clinic(s)`);
         return true;
       }catch(error){console.warn('Taipei healthcare overlay unavailable',error);this.emit('error',`醫療院所暫時無法載入 · ${error?.message||error}`);return false;}
     }
@@ -84,7 +84,8 @@
       const type=p.facility_type_zh|| (p.facility_type==='hospital'?'醫院':'診所');
       const district=p.district?`<div style="margin-top:4px;color:#455a64">${escapeHtml(p.district)}</div>`:'';
       const address=p.address?`<div style="margin-top:2px;color:#455a64">${escapeHtml(p.address)}</div>`:'';
-      const html=`<div style="min-width:190px"><div style="font-size:11px;font-weight:800;color:${p.facility_type==='hospital'?COLORS.hospital:COLORS.clinic}">${escapeHtml(type)}</div><div style="font-size:14px;font-weight:800;margin-top:2px">${escapeHtml(p.facility_name)}</div>${district}${address}<div style="font-size:10px;color:#78909c;margin-top:7px">資料：臺北市政府衛生局</div></div>`;
+      const source=p.campus_group_id?'臺北市政府衛生局＋醫院官方院區資料':'臺北市政府衛生局';
+      const html=`<div style="min-width:190px"><div style="font-size:11px;font-weight:800;color:${p.facility_type==='hospital'?COLORS.hospital:COLORS.clinic}">${escapeHtml(type)}</div><div style="font-size:14px;font-weight:800;margin-top:2px">${escapeHtml(p.facility_name)}</div>${district}${address}<div style="font-size:10px;color:#78909c;margin-top:7px">資料：${escapeHtml(source)}</div></div>`;
       this.popup?.remove();this.popup=new maplibregl.Popup({offset:10,maxWidth:'320px'}).setLngLat([lng,lat]).setHTML(html).addTo(this.map);
     }
     sync(){
@@ -93,7 +94,7 @@
       for(const id of ALL_LAYER_IDS)if(this.map.getLayer(id))this.map.setLayoutProperty(id,'visibility',show?'visible':'none');
       this.control?.update({inTaipei});
       if(!this.enabled)this.emit('off','醫療 OFF',{inTaipei,counts:this.counts});
-      else if(inTaipei)this.emit('ready',`醫療 ON · ${this.counts?.hospital||0} 醫院 / ${this.counts?.clinic||0} 診所`,{inTaipei,counts:this.counts});
+      else if(inTaipei)this.emit('ready',`醫療 ON · ${this.counts?.hospital||0} 醫院院區 / ${this.counts?.clinic||0} 診所`,{inTaipei,counts:this.counts});
       else this.emit('outside','醫療資料目前涵蓋臺北市',{inTaipei,counts:this.counts});
     }
     setEnabled(enabled){this.enabled=Boolean(enabled);this.sync();}

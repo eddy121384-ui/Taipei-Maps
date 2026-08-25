@@ -1,12 +1,17 @@
 // Physical-campus reconciliation registry for hospital entities whose licensing record
 // does not map 1:1 to real-world hospital sites.
 //
-// Facility/address authority for Taipei City Hospital:
+// Taipei City Hospital campus authority:
 // https://tpech.gov.taipei/News_Content.aspx?n=D1EF97D8120E41D7&s=FB0F86FF28525604&sms=87415A8B9CE81B16
 //
-// Coordinates are curated WGS84 point locations cross-checked against Taipei City / MOHW
-// public datasets. The authoritative semantic fact is the official campus address; these
-// coordinates exist only to place that address on the buyer-research map.
+// Tri-Service General Hospital multi-campus authority (MOHW 108-114 accreditation list):
+// https://www.mohw.gov.tw/dl-99552-9299c250-c16f-4227-b655-506ad172b598.html
+// The current MOHW row for facility code 0501110514 explicitly lists both Neihu
+// (成功路二段325號) and Tingzhou (汀州路三段40號).
+//
+// Coordinates are curated WGS84 point locations cross-checked against public-sector
+// address/POI records. The authoritative semantic fact is the official campus address;
+// these coordinates exist only to place that address on the buyer-research map.
 
 export const HOSPITAL_CAMPUS_REGISTRY=[
   {
@@ -25,6 +30,17 @@ export const HOSPITAL_CAMPUS_REGISTRY=[
       {campus_id:'fuyou',facility_name:'臺北市立聯合醫院婦幼院區',map_label:'聯醫婦幼院區',district:'中正區',address:'臺北市中正區福州街12號',coordinates:[121.5192888224,25.0290783959]},
       {campus_id:'linsen',facility_name:'臺北市立聯合醫院林森院區',map_label:'聯醫林森院區',district:'中山區',address:'臺北市中山區林森北路530號',coordinates:[121.5254745483,25.0634632111]},
       {campus_id:'kunming-tcm',facility_name:'臺北市立聯合醫院昆明院區／中醫中心',map_label:'聯醫昆明／中醫中心',district:'萬華區',address:'臺北市萬華區昆明街100號',coordinates:[121.50463,25.04431]}
+    ]
+  },
+  {
+    group_id:'tri-service-general-hospital',
+    parent_name:'三軍總醫院附設民眾診療服務處',
+    parent_facility_code:'0501110514',
+    official_campus_source:'https://www.mohw.gov.tw/dl-99552-9299c250-c16f-4227-b655-506ad172b598.html',
+    match_name_contains:['三軍總醫院附設民眾診療服務處'],
+    campuses:[
+      {campus_id:'neihu',facility_name:'三軍總醫院內湖院區',map_label:'三總內湖院區',district:'內湖區',address:'臺北市內湖區成功路二段325號',coordinates:[121.592611,25.0717589]},
+      {campus_id:'tingzhou',facility_name:'三軍總醫院汀州院區',map_label:'三總汀州院區',district:'中正區',address:'臺北市中正區汀州路三段40號',coordinates:[121.5268825,25.0177184]}
     ]
   }
 ];
@@ -56,7 +72,7 @@ function campusFeature(group,campus,{datasetId,hospitalResourceId}){
       campus_group_id:group.group_id,
       campus_id:campus.campus_id,
       physical_campus:true,
-      source:'臺北市政府衛生局開放資料 + 醫院官方院區資料',
+      source:'臺北市政府衛生局開放資料 + 醫院／衛福部官方院區資料',
       source_dataset_id:datasetId,
       source_resource_id:hospitalResourceId,
       source_campus_url:group.official_campus_source

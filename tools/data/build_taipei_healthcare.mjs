@@ -1,7 +1,8 @@
-import { access, mkdir, writeFile } from 'node:fs/promises';
+import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import crypto from 'node:crypto';
+import { reconcileHospitalCampuses } from './taipei_hospital_campuses.mjs';
 
 const __filename=fileURLToPath(import.meta.url);
 const __dirname=path.dirname(__filename);
@@ -10,6 +11,7 @@ const outDir=path.join(repoRoot,'public','generated');
 const outputPath=path.join(outDir,'taipei_healthcare_facilities.geojson');
 const auditPath=path.join(outDir,'taipei_healthcare_facilities.audit.json');
 const ifMissing=process.argv.includes('--if-missing');
+const CACHE_SCHEMA_VERSION=2;
 
 const DATASET_ID='ffdd5753-30db-4c38-b65f-b77892773d60';
 const SOURCES=[
@@ -26,6 +28,14 @@ function normalizeHeader(value){return clean(value).replace(/[\s＿_()（）/／
 function sleep(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
 function inTaipei(lng,lat){return lng>=TAIPEI_BOUNDS.west&&lng<=TAIPEI_BOUNDS.east&&lat>=TAIPEI_BOUNDS.south&&lat<=TAIPEI_BOUNDS.north;}
 function sha256(buffer){return crypto.createHash('sha256').update(buffer).digest('hex');}
+
+async function cacheIsCurrent(){
+  if(!await exists(outputPath)||!await exists(auditPath))return false;
+  try{
+    const audit=JSON.parse(await readFile(auditPath,'utf8'));
+    return Number(audit?.schema_version)>=CACHE_SCHEMA_VERSION&&Array.isArray(audit?.campus_reconciliation);
+  }catch{return false;}
+}
 
 async function fetchBytes(url,label){
   const errors=[];
@@ -116,6 +126,7 @@ function rowsToFeatures(rows,source){
       address,
       category:idx.category>=0?clean(row[idx.category]):'',
       facility_code:idx.code>=0?clean(row[idx.code]):'',
+      physical_campus:source.kind==='hospital',
       source:'臺北市政府衛生局開放資料',
       source_dataset_id:DATASET_ID,
       source_resource_id:source.rid
@@ -126,30 +137,50 @@ function rowsToFeatures(rows,source){
 
 async function main(){
   await mkdir(outDir,{recursive:true});
-  if(ifMissing&&await exists(outputPath)){
-    console.log(`Taipei healthcare cache found: ${outputPath}`);
+  if(ifMissing&&await cacheIsCurrent()){
+    console.log(`Taipei healthcare schema v${CACHE_SCHEMA_VERSION} cache found: ${outputPath}`);
     return;
   }
-  const allFeatures=[];const auditSources=[];
+  if(ifMissing&&await exists(outputPath))console.log(`Healthcare cache is stale; rebuilding for physical-campus schema v${CACHE_SCHEMA_VERSION}…`);
+
+  const rawFeatures=[];const auditSources=[];
   for(const source of SOURCES){
     const url=`${DOWNLOAD_BASE}${source.rid}`;
     console.log(`Downloading ${source.label}…`);
     const bytes=await fetchBytes(url,source.label);
     const parsed=rowsToFeatures(parseCsv(decodeCsv(bytes)),source);
-    allFeatures.push(...parsed.features);
+    rawFeatures.push(...parsed.features);
     auditSources.push({kind:source.kind,label:source.label,rid:source.rid,source_url:url,source_sha256:sha256(bytes),row_count:parsed.features.length,headers:parsed.headers});
   }
+
+  const rawHospitalRecords=rawFeatures.filter(f=>f.properties.facility_type==='hospital').length;
+  const hospitalResourceId=SOURCES.find(source=>source.kind==='hospital').rid;
+  const reconciled=reconcileHospitalCampuses(rawFeatures,{datasetId:DATASET_ID,hospitalResourceId});
+  const allFeatures=reconciled.features;
   const hospitals=allFeatures.filter(f=>f.properties.facility_type==='hospital').length;
   const clinics=allFeatures.filter(f=>f.properties.facility_type==='clinic').length;
-  if(hospitals<30)throw new Error(`Hospital count unexpectedly small: ${hospitals}`);
+  if(rawHospitalRecords<30)throw new Error(`Raw hospital record count unexpectedly small: ${rawHospitalRecords}`);
+  if(hospitals<30)throw new Error(`Physical hospital-site count unexpectedly small: ${hospitals}`);
   if(clinics<1700)throw new Error(`Clinic count unexpectedly small: ${clinics}`);
+
   const collection={type:'FeatureCollection',features:allFeatures};
-  const audit={schema_version:1,fetched_at:new Date().toISOString(),output_crs:'EPSG:4326',dataset_id:DATASET_ID,provider:'臺北市政府衛生局',counts:{hospital:hospitals,clinic:clinics,total:allFeatures.length},sources:auditSources};
+  const audit={
+    schema_version:CACHE_SCHEMA_VERSION,
+    fetched_at:new Date().toISOString(),
+    output_crs:'EPSG:4326',
+    dataset_id:DATASET_ID,
+    provider:'臺北市政府衛生局 + official physical-campus reconciliation',
+    counts:{raw_hospital_records:rawHospitalRecords,hospital:hospitals,clinic:clinics,total:allFeatures.length},
+    campus_reconciliation:reconciled.audit,
+    sources:auditSources
+  };
   await writeFile(outputPath,JSON.stringify(collection),'utf8');
   await writeFile(auditPath,JSON.stringify(audit,null,2)+'\n','utf8');
   console.log('Taipei healthcare local dataset: PASS');
-  console.log(`  hospitals: ${hospitals}`);
+  console.log(`  raw hospital records: ${rawHospitalRecords}`);
+  console.log(`  physical hospital sites: ${hospitals}`);
   console.log(`  clinics: ${clinics}`);
+  for(const item of reconciled.audit)console.log(`  reconciled ${item.parent_name}: ${item.replaced_raw_hospital_records} raw -> ${item.physical_campus_sites} physical sites`);
   console.log(`  total: ${allFeatures.length}`);
 }
 

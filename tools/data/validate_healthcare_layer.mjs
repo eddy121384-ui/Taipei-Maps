@@ -21,7 +21,7 @@ for(const token of layerTokens)if(!layer.includes(token))throw new Error(`Health
 
 const builderTokens=[
   "DATASET_ID='ffdd5753-30db-4c38-b65f-b77892773d60'","rid:'3a02af7d-8c33-46c1-8226-c12a11610f6b'","rid:'04a3d195-ee97-467a-b066-e471ff99d15d'",
-  "臺北市診所清冊","臺北市醫院清冊","經度","緯度","機構名稱","行政區","地址","TextDecoder(encoding,{fatal:true})","hospital<30","clinics<1700"
+  "臺北市診所清冊","臺北市醫院清冊","經度","緯度","機構名稱","行政區","地址","TextDecoder(encoding,{fatal:true})","hospitals<30","clinics<1700"
 ];
 for(const token of builderTokens)if(!builder.includes(token))throw new Error(`Healthcare builder contract missing: ${token}`);
 if(layer.includes('google.com')||builder.includes('google.com'))throw new Error('Healthcare layer must not depend on Google Maps/Places content');

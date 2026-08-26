@@ -16,9 +16,9 @@
 <body>
 <div id="map"></div>
 <section class="panel">
-  <div class="eyebrow">ISSUE #56 · NORMALIZATION + DUPLICATE AUDIT v0.2</div>
+  <div class="eyebrow">ISSUE #56 · NORMALIZATION + DUPLICATE AUDIT v0.3</div>
   <h1>生活 POI：品牌化 + 疑似重複檢查</h1>
-  <div class="sub">Overture Places 仍是唯一 structured source；OSM raster 只做目視 cross-check。這一版不合併資料，只把「品牌顯示」與「疑似同店重複」先量化。</div>
+  <div class="sub">Overture Places 仍是唯一 structured source；OSM raster 只做目視 cross-check。v0.3 將便利商店與超市分開使用不同 duplicate 距離規則。</div>
   <div class="controls">
     <button class="district active" data-district="daan">大安</button><button class="district" data-district="xinyi">信義</button><button class="district" data-district="songshan">松山</button><button class="district" data-district="zhongshan">中山</button><button class="district" data-district="zhongzheng">中正</button>
   </div>
@@ -38,7 +38,7 @@
   </div>
   <div id="brands" class="brands">正規化品牌：—</div>
   <div id="status">Booting normalization audit…</div>
-  <div class="note" style="margin-top:8px">地圖 label 對主要連鎖只顯示品牌；分店名退到 popup。紅圈只是「疑似 duplicate candidate」，目前不自動刪除，也不拿 dedup estimate 當正式 Place Metrics。</div>
+  <div class="note" style="margin-top:8px">地圖 label 對主要連鎖只顯示品牌；分店名退到 popup。紅圈只是 audit candidate：便利商店規則較嚴格；超市容許較大的同店座標偏移。目前仍不自動刪除。</div>
 </section>
 <script>
 (async()=>{
@@ -97,20 +97,27 @@
   function dedupeSourceTiles(features){const byId=new Map();for(const f of features){const key=sourceFeatureKey(f);if(!byId.has(key))byId.set(key,f);}return [...byId.values()];}
   function duplicateNameKey(p){const branch=branchName(p);if(branch)return normalizeToken(branch);return normalizeToken(primaryName(p));}
   function duplicateIdentity(p){const chain=inferredChain(p);if(chain!==OTHER)return chain;return normalizeToken(rawBrand(p)||primaryName(p));}
+  function shouldLinkDuplicate(a,b,distance,sameBranch,exactRaw){
+    if(a.cat==='supermarket'){
+      if(distance<=45)return true;
+      return distance<=80&&(sameBranch||exactRaw);
+    }
+    return distance<=8||(distance<=30&&(sameBranch||exactRaw));
+  }
   function findDuplicateClusters(items){
     const parent=items.map((_,i)=>i);const find=i=>parent[i]===i?i:(parent[i]=find(parent[i]));const union=(a,b)=>{a=find(a);b=find(b);if(a!==b)parent[b]=a;};
     for(let i=0;i<items.length;i++)for(let j=i+1;j<items.length;j++){
       const a=items[i],b=items[j];if(a.cat!==b.cat)continue;
       const pa=a.f.properties||{},pb=b.f.properties||{};const identityA=duplicateIdentity(pa),identityB=duplicateIdentity(pb);if(!identityA||identityA!==identityB)continue;
       const ca=a.f.geometry?.coordinates,cb=b.f.geometry?.coordinates;if(!Array.isArray(ca)||!Array.isArray(cb))continue;
-      const distance=haversineMeters(ca,cb);if(distance>30)continue;
+      const distance=haversineMeters(ca,cb);if(distance>80)continue;
       const nameA=duplicateNameKey(pa),nameB=duplicateNameKey(pb);const exactRaw=normalizeToken(primaryName(pa))===normalizeToken(primaryName(pb));const sameBranch=Boolean(nameA&&nameB&&nameA===nameB);
-      if(distance<=8||sameBranch||exactRaw)union(i,j);
+      if(shouldLinkDuplicate(a,b,distance,sameBranch,exactRaw))union(i,j);
     }
     const groups=new Map();for(let i=0;i<items.length;i++){const root=find(i);if(!groups.has(root))groups.set(root,[]);groups.get(root).push(items[i]);}
     return [...groups.values()].filter(group=>group.length>1);
   }
-  function duplicateGeoJson(groups){return {type:'FeatureCollection',features:groups.map((group,index)=>{const coords=group.map(x=>x.f.geometry.coordinates);const center=[coords.reduce((s,c)=>s+c[0],0)/coords.length,coords.reduce((s,c)=>s+c[1],0)/coords.length];const names=[...new Set(group.map(x=>primaryName(x.f.properties||{})).filter(Boolean))];const brand=displayBrand(group[0].f.properties||{});return {type:'Feature',geometry:{type:'Point',coordinates:center},properties:{group_id:index+1,count:group.length,brand,names:names.join(' / ')}};})};}
+  function duplicateGeoJson(groups){return {type:'FeatureCollection',features:groups.map((group,index)=>{const coords=group.map(x=>x.f.geometry.coordinates);const center=[coords.reduce((s,c)=>s+c[0],0)/coords.length,coords.reduce((s,c)=>s+c[1],0)/coords.length];const names=[...new Set(group.map(x=>primaryName(x.f.properties||{})).filter(Boolean))];const brand=displayBrand(group[0].f.properties||{});let maxSpan=0;for(let i=0;i<coords.length;i++)for(let j=i+1;j<coords.length;j++)maxSpan=Math.max(maxSpan,haversineMeters(coords[i],coords[j]));return {type:'Feature',geometry:{type:'Point',coordinates:center},properties:{group_id:index+1,count:group.length,brand,category:group[0].cat,max_span_m:Math.round(maxSpan),names:names.join(' / ')}};})};}
 
   status.textContent='Preflighting latest Overture Places PMTiles…';
   let selected=null,metadata=null;const failures=[];
@@ -181,10 +188,10 @@
     const html=`<div style="min-width:230px"><div style="font-size:11px;font-weight:800;color:${category==='convenience_store'?'#2f6fdf':'#d97706'}">${category==='convenience_store'?'便利商店':'超市 / grocery'}</div><div style="font-size:15px;font-weight:800;margin-top:2px">${escapeHtml(brand)}</div>${branchHtml}${rawNameHtml}<div style="margin-top:6px;font-size:11px;color:#455a64">taxonomy: ${escapeHtml(taxonomyPrimary(p)||'—')}<br>basic_category: ${escapeHtml(p.basic_category||'—')}<br>operating_status: ${escapeHtml(p.operating_status||'—')}<br>confidence: ${Number.isFinite(confidence)?confidence.toFixed(3):'—'}<br>source: ${escapeHtml(sources||'—')}</div><div style="font-size:9.5px;color:#78909c;margin-top:7px;word-break:break-all">Overture id: ${escapeHtml(p.id||'—')} · release ${escapeHtml(selected.release)}</div></div>`;
     popup?.remove();popup=new maplibregl.Popup({offset:9,maxWidth:'340px'}).setLngLat(coords).setHTML(html).addTo(map);
   }
-  function openDuplicatePopup(e){const feature=e?.features?.[0];if(!feature)return;const p=feature.properties||{};const html=`<div style="min-width:220px"><div style="font-size:11px;font-weight:800;color:#c62828">疑似 duplicate candidate</div><div style="font-size:14px;font-weight:800;margin-top:2px">${escapeHtml(p.brand||'未標準化品牌')} × ${escapeHtml(p.count||'—')}</div><div style="margin-top:5px;font-size:11px;color:#455a64">${escapeHtml(p.names||'—')}</div><div style="font-size:9.5px;color:#78909c;margin-top:7px">僅供 audit；尚未自動合併。</div></div>`;popup?.remove();popup=new maplibregl.Popup({offset:10,maxWidth:'340px'}).setLngLat(feature.geometry.coordinates).setHTML(html).addTo(map);}
+  function openDuplicatePopup(e){const feature=e?.features?.[0];if(!feature)return;const p=feature.properties||{};const type=p.category==='supermarket'?'超市':'便利商店';const html=`<div style="min-width:220px"><div style="font-size:11px;font-weight:800;color:#c62828">疑似 duplicate candidate</div><div style="font-size:14px;font-weight:800;margin-top:2px">${escapeHtml(p.brand||'未標準化品牌')} × ${escapeHtml(p.count||'—')}</div><div style="margin-top:4px;font-size:10px;color:#78909c">${escapeHtml(type)} · group span 約 ${escapeHtml(p.max_span_m||'—')}m</div><div style="margin-top:5px;font-size:11px;color:#455a64">${escapeHtml(p.names||'—')}</div><div style="font-size:9.5px;color:#78909c;margin-top:7px">僅供 audit；尚未自動合併。</div></div>`;popup?.remove();popup=new maplibregl.Popup({offset:10,maxWidth:'340px'}).setLngLat(feature.geometry.coordinates).setHTML(html).addTo(map);}
   for(const id of ['daily-life-convenience','daily-life-supermarket']){map.on('click',id,openPopup);map.on('mouseenter',id,()=>map.getCanvas().style.cursor='pointer');map.on('mouseleave',id,()=>map.getCanvas().style.cursor='');}
   map.on('click',DUPLICATE_LAYER,openDuplicatePopup);map.on('mouseenter',DUPLICATE_LAYER,()=>map.getCanvas().style.cursor='pointer');map.on('mouseleave',DUPLICATE_LAYER,()=>map.getCanvas().style.cursor='');
-  map.on('load',()=>{setEnabled(true);setDuplicatesEnabled(true);refreshAuditStats();status.textContent=`READY · ${selected.release} · brand-normalized + duplicate-candidate audit`;status.className='good';});
+  map.on('load',()=>{setEnabled(true);setDuplicatesEnabled(true);refreshAuditStats();status.textContent=`READY · ${selected.release} · category-aware duplicate audit v0.3`;status.className='good';});
   map.on('movestart',()=>{moveStartedAt=performance.now();});
   map.on('idle',()=>{if(moveStartedAt!=null){idleMsEl.textContent=`${Math.round(performance.now()-moveStartedAt)} ms`;moveStartedAt=null;}refreshAuditStats();});
   map.on('error',e=>{console.warn('Map error',e?.error||e);});

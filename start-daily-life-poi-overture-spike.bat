@@ -13,36 +13,28 @@ if not defined NODE_CMD (
 )
 
 echo ==========================================================
-echo   Buju / Taipei-Maps - Overture Places audit spike v0.2
-echo   Issue #56 - normalization + duplicate audit
+echo   Buju / Taipei-Maps - Overture Places audit spike v0.4
+echo   Issue #56 - mutually exclusive daily-life categories
 echo ==========================================================
 echo.
 echo This spike intentionally uses:
 echo   - OSM raster only as visual basemap
 echo   - Overture Places as structured / clickable POI source
-echo   - Taiwan-chain brand normalization for audit labels
-echo   - conservative duplicate-candidate detection only
+echo   - basic_category as authoritative category when present
+echo   - taxonomy/categories only when basic_category is missing
 echo   - no Google Places ingestion
 echo   - no OSM structured merge yet
 echo.
 echo Visual audit checklist:
-echo   1. Test Daan / Xinyi / Songshan / Zhongshan / Zhongzheng buttons.
-echo   2. Blue = convenience store; orange = supermarket / grocery.
-echo   3. Major-chain map labels should show BRAND, not branch name.
-echo      Example: PX Mart branches should label as 全聯 on-map.
-echo   4. Click a POI: branch/source name should remain available in popup.
-echo   5. Red rings = conservative suspected duplicate groups. Click to inspect.
-echo   6. Compare raw classified total vs audit dedup estimate.
-echo   7. Compare structured points with familiar OSM raster labels nearby.
-echo   8. Record present / missing / wrong category / duplicate / stale / misplaced.
-echo   9. Pan and zoom normally; watch move-to-idle timing and obvious stutter.
-echo.
-echo IMPORTANT:
-echo   - red rings are audit candidates, NOT automatic deletion
-echo   - audit dedup estimate is NOT production Place Metrics yet
-echo   - this remains an Overture-only source-quality spike
+echo   1. Blue must always mean convenience store.
+echo   2. Orange must always mean supermarket / grocery.
+echo   3. classification overlaps should remain 0.
+echo   4. Test the previously orange FamilyMart point near Xinglong Rd.
+echo   5. Check duplicate pairs that formerly appeared as one blue + one orange.
+echo   6. Red rings remain audit candidates only; no data is auto-deleted.
+echo   7. Test Daan / Xinyi / Songshan / Zhongshan / Zhongzheng.
 echo.
 echo Keep this window open. Press Ctrl+C to stop the local server.
 echo.
-"%NODE_CMD%" tools\dev\serve_single_engine_core.mjs 5173 "/daily-life-poi-overture-spike.html"
+"%NODE_CMD%" tools\dev\serve_single_engine_core.mjs 5173 "/daily-life-poi-overture-spike-v04.html"
 exit /b %errorlevel%

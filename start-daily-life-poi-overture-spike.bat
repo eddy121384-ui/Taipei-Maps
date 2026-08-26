@@ -13,27 +13,35 @@ if not defined NODE_CMD (
 )
 
 echo ==========================================================
-echo   Buju / Taipei-Maps - Overture Places audit spike
-echo   Issue #56 - convenience stores + supermarkets
+echo   Buju / Taipei-Maps - Overture Places audit spike v0.2
+echo   Issue #56 - normalization + duplicate audit
 echo ==========================================================
 echo.
 echo This spike intentionally uses:
 echo   - OSM raster only as visual basemap
 echo   - Overture Places as structured / clickable POI source
+echo   - Taiwan-chain brand normalization for audit labels
+echo   - conservative duplicate-candidate detection only
 echo   - no Google Places ingestion
 echo   - no OSM structured merge yet
 echo.
 echo Visual audit checklist:
 echo   1. Test Daan / Xinyi / Songshan / Zhongshan / Zhongzheng buttons.
 echo   2. Blue = convenience store; orange = supermarket / grocery.
-echo   3. Compare structured points with familiar OSM raster labels nearby.
-echo   4. Click points and inspect name / category / brand / status / confidence / provenance.
-echo   5. Look for major chains: 7-ELEVEN, FamilyMart, Hi-Life, OK Mart,
-echo      PX Mart, Carrefour, Simple Mart.
-echo   6. Record present / missing / wrong category / duplicate / stale / misplaced.
-echo   7. Pan and zoom normally; watch move-to-idle timing and obvious stutter.
+echo   3. Major-chain map labels should show BRAND, not branch name.
+echo      Example: PX Mart branches should label as 全聯 on-map.
+echo   4. Click a POI: branch/source name should remain available in popup.
+echo   5. Red rings = conservative suspected duplicate groups. Click to inspect.
+echo   6. Compare raw classified total vs audit dedup estimate.
+echo   7. Compare structured points with familiar OSM raster labels nearby.
+echo   8. Record present / missing / wrong category / duplicate / stale / misplaced.
+echo   9. Pan and zoom normally; watch move-to-idle timing and obvious stutter.
 echo.
-echo IMPORTANT: This is a source-quality spike, not final UI.
+echo IMPORTANT:
+echo   - red rings are audit candidates, NOT automatic deletion
+echo   - audit dedup estimate is NOT production Place Metrics yet
+echo   - this remains an Overture-only source-quality spike
+echo.
 echo Keep this window open. Press Ctrl+C to stop the local server.
 echo.
 "%NODE_CMD%" tools\dev\serve_single_engine_core.mjs 5173 "/daily-life-poi-overture-spike.html"

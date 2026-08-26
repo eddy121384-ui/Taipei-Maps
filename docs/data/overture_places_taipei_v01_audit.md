@@ -1,6 +1,6 @@
 # Issue #56 — Overture Places / Taipei daily-life POI v0.1 audit
 
-Status: **source/schema audit complete; initial user visual smoke indicates provisional PASS WITH GAPS; broader district audit still required**
+Status: **source/schema audit complete; initial user visual smoke indicates provisional PASS WITH GAPS; duplicate-candidate detection now catches both convenience-store and supermarket examples; broader district / false-positive audit still required**
 
 Product scope: Taipei City convenience stores and supermarkets / grocery stores only. This document is intentionally about source trustworthiness, not final UI.
 
@@ -88,19 +88,40 @@ Record these cases as `missing` during the district audit. Do not infer structur
 
 ### 2. Obvious duplicate physical-store points exist
 
-The smoke revealed at least one case where a single physical convenience store is represented by two nearby Overture points.
+The smoke revealed cases where a single physical store is represented by two nearby Overture points.
 
 Therefore raw Overture features cannot be counted directly for future place metrics. A normalization / deduplication step is required before metrics such as `convenience_store_count_500m` are trustworthy.
 
-Initial deduplication direction for Phase B:
+The first v0.2 heuristic successfully detected the observed convenience-store duplicate but missed a visually obvious duplicate PX Mart / 全聯 pair. v0.3 therefore changed the duplicate-candidate rule to be category-aware:
 
-- cluster only within a small distance threshold
+- convenience stores keep a strict small-distance / matching-name rule because genuinely distinct stores can exist very close together in Taipei;
+- supermarkets use a wider same-brand candidate radius because different source observations can plausibly represent the same large store at its entrance versus building centroid;
+- all results remain audit candidates only; no source features are deleted or merged by the smoke page.
+
+### v0.3 confirmation smoke
+
+The follow-up desktop screenshot confirms that the previously missed supermarket duplicate is now surrounded by a red duplicate-candidate ring. The same view reported:
+
+```text
+raw convenience         378
+raw supermarket         312
+raw classified total    690
+suspect duplicate groups 42
+audit dedup estimate    647
+rendered POI             25
+move -> idle             737 ms
+```
+
+The `690 -> 647` difference is **not** a production dedup count. It only shows that duplicate handling is material enough to require a canonicalization layer. Before any automatic merge rule is promoted, a sample of red candidate groups must be checked for false positives across several districts and chains.
+
+Initial deduplication direction for the canonical layer:
+
 - require compatible normalized category
-- prefer same normalized brand / strongly matching normalized name
-- use address / branch token / provenance when available to avoid collapsing genuinely distinct nearby stores
-- retain all source IDs and lineage on the surviving canonical POI
-
-Do not choose the final distance threshold from one screenshot; derive it from the audit sample.
+- normalize major Taiwan brands before entity comparison
+- use category-specific distance thresholds rather than one global threshold
+- use branch token / raw source name / address / provenance where available
+- preserve all contributing source IDs and lineage on the surviving canonical POI
+- never derive final Place Metrics directly from raw Overture feature counts
 
 ### 3. Source name is not necessarily the correct map label
 
@@ -123,13 +144,13 @@ For future place metrics, physical-store identity matters; branch-name typograph
 
 ### Provisional interpretation
 
-The first visual smoke does **not** support a clean `PASS — Overture alone` conclusion.
+The visual smokes do **not** support a clean `PASS — Overture alone` conclusion.
 
 The current working hypothesis is:
 
 `PASS WITH GAPS — Overture is useful as a primary commercial-POI baseline, but canonicalization / deduplication is required and structured OSM is likely needed as a Phase B hole-filler.`
 
-This remains provisional until Daan, Xinyi, Songshan, Zhongshan and Zhongzheng have enough sampled observations to estimate the size and pattern of the gaps.
+This remains provisional until Daan, Xinyi, Songshan, Zhongshan and Zhongzheng have enough sampled observations to estimate the size and pattern of the gaps and until the v0.3 red duplicate candidates receive a small false-positive audit.
 
 ## Physical coverage audit matrix
 
@@ -137,8 +158,8 @@ Use `start-daily-life-poi-overture-spike.bat` and inspect several familiar locat
 
 | District | Chain / known place | present | missing | wrong category | duplicate | stale | misplaced | notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Daan | initial visual smoke | yes | yes |  | yes |  |  | Useful coverage exists; at least one raster-visible store lacks an Overture point; at least one duplicate physical-store pair observed |
-| Daan |  |  |  |  |  |  |  |  |
+| Daan | initial visual smoke | yes | yes |  | yes |  |  | Useful coverage exists; at least one raster-visible store lacks an Overture point; duplicate convenience-store pair observed |
+| Daan | PX Mart / supermarket duplicate smoke | yes |  |  | yes |  |  | v0.2 missed the obvious duplicate; category-aware v0.3 catches it with a red candidate ring |
 | Xinyi |  |  |  |  |  |  |  |  |
 | Xinyi |  |  |  |  |  |  |  |  |
 | Songshan |  |  |  |  |  |  |  |  |
@@ -156,6 +177,8 @@ The spike uses the remote Overture `places.pmtiles` archive directly through the
 - move-to-idle timing shown by the spike
 - whether enabling the two POI categories causes obvious rendering stalls
 - whether the archive preflight or requests fail intermittently
+
+The v0.3 confirmation screenshot showed `move -> idle = 737 ms` in the inspected view. This is only one observation, not a benchmark, but there is no evidence yet that a Taipei-only PMTiles extract is required for performance.
 
 Do not optimize or build a Taipei-only PMTiles extract unless the audit demonstrates a real performance problem.
 

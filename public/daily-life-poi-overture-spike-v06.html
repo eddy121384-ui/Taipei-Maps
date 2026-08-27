@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>卜居 · Overture Places duplicate audit v0.6</title>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" />
+  <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+  <script src="https://unpkg.com/pmtiles@4.4.1/dist/pmtiles.js"></script>
+  <style>
+    html,body,#map{width:100%;height:100%;margin:0}body{font-family:Inter,system-ui,"Noto Sans TC",sans-serif;overflow:hidden}#map{background:#eef1f4}
+    .panel{position:absolute;z-index:5;top:14px;left:14px;width:min(540px,calc(100vw - 28px));max-height:calc(100vh - 28px);overflow:auto;padding:14px;border:1px solid #ccd3d9;border-radius:14px;background:rgba(255,255,255,.96);box-shadow:0 10px 28px rgba(0,0,0,.14)}
+    .eyebrow{font-size:11px;font-weight:800;letter-spacing:.12em;color:#68727d}h1{font-size:20px;margin:5px 0}.sub,.note{font-size:11.5px;color:#5e6872;line-height:1.5}.controls{display:flex;gap:6px;flex-wrap:wrap;margin:9px 0}button{border:1px solid #c8d0d7;border-radius:9px;padding:7px 9px;background:#fff;font-weight:700;cursor:pointer}.active{background:#25313b;color:#fff}.legend{display:flex;gap:12px;align-items:center;font-size:11.5px;margin:8px 0;flex-wrap:wrap}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}.convenience{background:#2f6fdf}.supermarket{background:#d97706}.hard{background:transparent;border:2px solid #c62828;box-sizing:border-box}.review{background:transparent;border:2px dashed #d99100;box-sizing:border-box}.metrics{display:grid;grid-template-columns:1fr auto;gap:4px 10px;border-top:1px solid #dde2e7;border-bottom:1px solid #dde2e7;padding:9px 0;margin:9px 0;font-size:12px}.metrics span:nth-child(odd){color:#66717b}.metrics span:nth-child(even){font-weight:800;font-variant-numeric:tabular-nums;text-align:right}#status{font-size:12px;font-weight:700;line-height:1.45}.error{color:#b42318}.good{color:#137333}.brands{font-size:11px;color:#455a64;line-height:1.45;word-break:break-word}
+  </style>
+</head>
+<body>
+<div id="map"></div>
+<section class="panel">
+  <div class="eyebrow">ISSUE #56 · DUPLICATE AUDIT v0.6</div>
+  <h1>生活 POI：高信心重複 + 鄰近同品牌複核</h1>
+  <div class="sub">紅圈維持 v0.5 的高信心 duplicate 規則；新增琥珀虛線圈，專門抓「同品牌很近、但名稱證據不足」的可疑 pair，避免把漏抓問題直接用放寬自動合併門檻解決。</div>
+  <div class="controls"><button class="district active" data-district="daan">大安</button><button class="district" data-district="xinyi">信義</button><button class="district" data-district="songshan">松山</button><button class="district" data-district="zhongshan">中山</button><button class="district" data-district="zhongzheng">中正</button></div>
+  <div class="controls"><button id="togglePoi" class="active">生活 POI ON</button><button id="toggleHard" class="active">紅圈 ON</button><button id="toggleReview" class="active">琥珀複核圈 ON</button></div>
+  <div class="legend"><span><i class="dot convenience"></i>便利商店</span><span><i class="dot supermarket"></i>超市 / grocery</span><span><i class="dot hard"></i>高信心 duplicate</span><span><i class="dot review"></i>鄰近同品牌待複核</span></div>
+  <div class="metrics">
+    <span>Overture release</span><span id="release">—</span>
+    <span>canonical convenience</span><span id="convenienceCount">—</span>
+    <span>canonical supermarket</span><span id="supermarketCount">—</span>
+    <span>canonical classified total</span><span id="rawTotal">—</span>
+    <span>classification overlaps</span><span id="overlapCount">—</span>
+    <span>hard duplicate groups</span><span id="hardGroups">—</span>
+    <span>nearby review pairs</span><span id="reviewPairs">—</span>
+    <span>hard-only dedup estimate</span><span id="dedupEstimate">—</span>
+    <span>rendered POI</span><span id="renderedCount">—</span>
+    <span>move → idle</span><span id="idleMs">—</span>
+  </div>
+  <div id="brands" class="brands">正規化品牌：—</div>
+  <div id="status">Booting duplicate audit v0.6…</div>
+  <div class="note" style="margin-top:8px"><b>判讀：</b>紅圈＝可視為高信心 audit candidate；琥珀圈＝只提醒人工看，絕不自動合併。便利商店 review 半徑 50m；超市 100m。Popup 會列出 pair 距離、raw name、branch、source 與 Overture id。</div>
+</section>
+<script>
+(async()=>{
+  const $=s=>document.querySelector(s);
+  const status=$('#status'),releaseEl=$('#release'),convenienceCountEl=$('#convenienceCount'),supermarketCountEl=$('#supermarketCount'),rawTotalEl=$('#rawTotal'),overlapCountEl=$('#overlapCount'),hardGroupsEl=$('#hardGroups'),reviewPairsEl=$('#reviewPairs'),dedupEstimateEl=$('#dedupEstimate'),renderedCountEl=$('#renderedCount'),idleMsEl=$('#idleMs'),brandsEl=$('#brands');
+  if(!window.maplibregl||!window.pmtiles){status.textContent='ERROR: MapLibre / PMTiles CDN 未載入';status.className='error';return;}
+
+  const candidates=[
+    {release:'2026-08-19.0',url:'https://overturemaps-extras-us-west-2.s3.us-west-2.amazonaws.com/tiles/2026-08-19.0/places.pmtiles'},
+    {release:'2026-07-22.0',url:'https://overturemaps-extras-us-west-2.s3.us-west-2.amazonaws.com/tiles/2026-07-22.0/places.pmtiles'}
+  ];
+  const districts={daan:{center:[121.5434,25.0268],zoom:15.2},xinyi:{center:[121.5645,25.0340],zoom:15.2},songshan:{center:[121.5608,25.0525],zoom:15.2},zhongshan:{center:[121.5332,25.0561],zoom:15.2},zhongzheng:{center:[121.5199,25.0324],zoom:15.2}};
+  const OTHER='其他 / 未標準化',HARD_SOURCE='hard-duplicate-audit',HARD_LAYER='hard-duplicate-ring',REVIEW_SOURCE='nearby-review-audit',REVIEW_LAYER='nearby-review-ring';
+  const poiLayerIds=['daily-life-convenience','daily-life-supermarket','daily-life-convenience-label','daily-life-supermarket-label'];
+  const primaryChains=[
+    {label:'7-ELEVEN',category:'convenience_store',re:/7\s*[-‐‑–—]?\s*eleven|統一超商/i,clean:/7\s*[-‐‑–—]?\s*eleven|統一超商/ig},
+    {label:'全家',category:'convenience_store',re:/family\s*mart|全家/i,clean:/family\s*mart|全家便利商店|全家/ig},
+    {label:'萊爾富',category:'convenience_store',re:/hi\s*[-‐‑–—]?\s*life|萊爾富/i,clean:/hi\s*[-‐‑–—]?\s*life|萊爾富便利商店|萊爾富/ig},
+    {label:'OK Mart',category:'convenience_store',re:/ok\s*mart|ok超商/i,clean:/ok\s*mart|ok超商/ig},
+    {label:'全聯',category:'supermarket',re:/px\s*mart|全聯/i,clean:/px\s*mart|全聯福利中心|全聯/ig},
+    {label:'家樂福',category:'supermarket',re:/carrefour|家樂福/i,clean:/carrefour(?:\s*market)?|家樂福超市|家樂福/ig},
+    {label:'美廉社',category:'supermarket',re:/simple\s*mart|美廉社/i,clean:/simple\s*mart|美廉社/ig}
+  ];
+
+  function parseMaybeJson(v){if(v==null||typeof v!=='string')return v;const s=v.trim();if(!s||(!s.startsWith('{')&&!s.startsWith('[')))return v;try{return JSON.parse(s);}catch{return v;}}
+  function stringified(v){if(v==null)return'';return typeof v==='string'?v:JSON.stringify(v);}
+  function primaryName(p){return String(p['@name']||parseMaybeJson(p.names)?.primary||'').trim();}
+  function rawBrand(p){const brand=parseMaybeJson(p.brand);return String(brand?.names?.primary||brand?.name||'').trim();}
+  function inferredChainRule(p){const text=`${primaryName(p)} ${rawBrand(p)}`;for(const chain of primaryChains)if(chain.re.test(text))return chain;return null;}
+  function inferredChain(p){return inferredChainRule(p)?.label||rawBrand(p)||OTHER;}
+  function sourceNormalizedCategory(p){const basic=String(p.basic_category||'').trim().toLowerCase();if(basic)return basic==='convenience_store'?'convenience_store':(basic==='supermarket'||basic==='grocery_store'?'supermarket':null);const blob=[stringified(parseMaybeJson(p.taxonomy)),stringified(parseMaybeJson(p.categories))].join(' ').toLowerCase();if(blob.includes('convenience_store'))return'convenience_store';if(blob.includes('supermarket')||blob.includes('grocery_store'))return'supermarket';return null;}
+  function normalizedCategory(p){return inferredChainRule(p)?.category||sourceNormalizedCategory(p);}
+  function normalizeToken(v){return String(v||'').toLowerCase().replace(/[\s\-_‐‑–—·・()（）\[\]【】]/g,'').replace(/(?:福利中心|便利商店|超市|門市|分店|店)$/g,'').trim();}
+  function branchName(p){const chain=inferredChain(p),sourceName=primaryName(p);if(!sourceName)return'';let branch=sourceName;const rule=primaryChains.find(x=>x.label===chain);if(rule)branch=branch.replace(rule.clean,' ');const raw=rawBrand(p);if(raw)branch=branch.replace(new RegExp(raw.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'ig'),' ');branch=branch.replace(/(?:福利中心|便利商店|超市|門市|分店)/g,' ').replace(/[|｜·・\-–—:：]+/g,' ').replace(/\s+/g,' ').trim();return !branch||normalizeToken(branch)===normalizeToken(chain)||normalizeToken(branch)===normalizeToken(raw)?'':branch;}
+  function displayBrand(p){const chain=inferredChain(p);return chain!==OTHER?chain:(rawBrand(p)||primaryName(p)||'(unnamed place)');}
+  function sourceDatasets(p){const sources=parseMaybeJson(p.sources);if(!Array.isArray(sources))return'';return [...new Set(sources.map(s=>s?.dataset).filter(Boolean))].join(', ');}
+  function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
+  function haversineMeters(a,b){const toRad=x=>x*Math.PI/180,R=6371000,dLat=toRad(b[1]-a[1]),dLng=toRad(b[0]-a[0]),lat1=toRad(a[1]),lat2=toRad(b[1]);const h=Math.sin(dLat/2)**2+Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLng/2)**2;return 2*R*Math.asin(Math.min(1,Math.sqrt(h)));}
+  function sourceFeatureKey(f){const p=f.properties||{};return p.id||`${f.geometry?.coordinates?.join(',')}|${primaryName(p)}|${normalizedCategory(p)}`;}
+  function dedupeSourceTiles(features){const byId=new Map();for(const f of features){const key=sourceFeatureKey(f);if(!byId.has(key))byId.set(key,f);}return [...byId.values()];}
+  function duplicateNameKey(p){const branch=branchName(p);return normalizeToken(branch||primaryName(p));}
+  function duplicateIdentity(p){const chain=inferredChain(p);return chain!==OTHER?chain:normalizeToken(rawBrand(p)||primaryName(p));}
+  function hardLink(a,b,distance,sameBranch,exactRaw){if(a.cat==='supermarket'){if(distance<=45)return true;return distance<=80&&(sameBranch||exactRaw);}return distance<=8||(distance<=30&&(sameBranch||exactRaw));}
+  function reviewMax(cat){return cat==='supermarket'?100:50;}
+  function pairEvidence(a,b){const pa=a.f.properties||{},pb=b.f.properties||{},ca=a.f.geometry.coordinates,cb=b.f.geometry.coordinates,distance=haversineMeters(ca,cb),ka=duplicateNameKey(pa),kb=duplicateNameKey(pb);return {distance,sameBranch:Boolean(ka&&ka===kb),exactRaw:normalizeToken(primaryName(pa))===normalizeToken(primaryName(pb))};}
+
+  function findHardClusters(items){
+    const parent=items.map((_,i)=>i),find=i=>parent[i]===i?i:(parent[i]=find(parent[i])),union=(a,b)=>{a=find(a);b=find(b);if(a!==b)parent[b]=a;};
+    for(let i=0;i<items.length;i++)for(let j=i+1;j<items.length;j++){
+      const a=items[i],b=items[j];if(a.cat!==b.cat||duplicateIdentity(a.f.properties||{})!==duplicateIdentity(b.f.properties||{}))continue;
+      const ev=pairEvidence(a,b);if(ev.distance<=80&&hardLink(a,b,ev.distance,ev.sameBranch,ev.exactRaw))union(i,j);
+    }
+    const groups=new Map();for(let i=0;i<items.length;i++){const root=find(i);if(!groups.has(root))groups.set(root,[]);groups.get(root).push(items[i]);}
+    return {groups:[...groups.values()].filter(g=>g.length>1),rootOf:i=>find(i)};
+  }
+  function findReviewPairs(items,rootOf){
+    const pairs=[];
+    for(let i=0;i<items.length;i++)for(let j=i+1;j<items.length;j++){
+      const a=items[i],b=items[j];if(a.cat!==b.cat)continue;if(duplicateIdentity(a.f.properties||{})!==duplicateIdentity(b.f.properties||{}))continue;if(rootOf(i)===rootOf(j))continue;
+      const ev=pairEvidence(a,b);if(ev.distance>reviewMax(a.cat))continue;if(hardLink(a,b,ev.distance,ev.sameBranch,ev.exactRaw))continue;
+      pairs.push({a,b,...ev});
+    }
+    return pairs;
+  }
+  function hardGeoJson(groups){return {type:'FeatureCollection',features:groups.map((group,index)=>{const coords=group.map(x=>x.f.geometry.coordinates),center=[coords.reduce((s,c)=>s+c[0],0)/coords.length,coords.reduce((s,c)=>s+c[1],0)/coords.length],names=[...new Set(group.map(x=>primaryName(x.f.properties||{})).filter(Boolean))];let maxSpan=0;for(let i=0;i<coords.length;i++)for(let j=i+1;j<coords.length;j++)maxSpan=Math.max(maxSpan,haversineMeters(coords[i],coords[j]));return {type:'Feature',geometry:{type:'Point',coordinates:center},properties:{group_id:index+1,count:group.length,brand:displayBrand(group[0].f.properties||{}),category:group[0].cat,max_span_m:Math.round(maxSpan),names:names.join(' / ')}};})};}
+  function reviewGeoJson(pairs){return {type:'FeatureCollection',features:pairs.map((pair,index)=>{const ca=pair.a.f.geometry.coordinates,cb=pair.b.f.geometry.coordinates,pa=pair.a.f.properties||{},pb=pair.b.f.properties||{};return {type:'Feature',geometry:{type:'Point',coordinates:[(ca[0]+cb[0])/2,(ca[1]+cb[1])/2]},properties:{pair_id:index+1,brand:displayBrand(pa),category:pair.a.cat,distance_m:Math.round(pair.distance),name_a:primaryName(pa)||'—',name_b:primaryName(pb)||'—',branch_a:branchName(pa)||'—',branch_b:branchName(pb)||'—',source_a:sourceDatasets(pa)||'—',source_b:sourceDatasets(pb)||'—',id_a:pa.id||'—',id_b:pb.id||'—'}};})};}
+
+  let selected=null,metadata=null,failures=[];
+  for(const candidate of candidates){try{const archive=new pmtiles.PMTiles(candidate.url);metadata=await archive.getMetadata();const layers=(metadata?.vector_layers||[]).map(v=>v?.id);if(layers.includes('place')){selected=candidate;break;}failures.push(`${candidate.release}: no place layer`);}catch(err){failures.push(`${candidate.release}: ${err?.message||err}`);}}
+  if(!selected){status.textContent='ERROR: Overture Places preflight failed · '+failures.join(' | ');status.className='error';return;}
+  releaseEl.textContent=selected.release;
+
+  const protocol=new pmtiles.Protocol({metadata:true});maplibregl.addProtocol('pmtiles',protocol.tile);
+  const basic=['downcase',['to-string',['coalesce',['get','basic_category'],'']]],hasBasic=['!=',basic,''];
+  const taxonomyText=['downcase',['to-string',['coalesce',['get','taxonomy'],'']]],categoriesText=['downcase',['to-string',['coalesce',['get','categories'],'']]];
+  const fallbackConvenience=['any',['>=',['index-of','convenience_store',taxonomyText],0],['>=',['index-of','convenience_store',categoriesText],0]];
+  const fallbackSupermarket=['any',['>=',['index-of','supermarket',taxonomyText],0],['>=',['index-of','grocery_store',taxonomyText],0],['>=',['index-of','supermarket',categoriesText],0],['>=',['index-of','grocery_store',categoriesText],0]];
+  const sourceConvenience=['any',['==',basic,'convenience_store'],['all',['!',hasBasic],fallbackConvenience]];
+  const sourceSupermarket=['any',['match',basic,['supermarket','grocery_store'],true,false],['all',['!',hasBasic],['!',fallbackConvenience],fallbackSupermarket]];
+  const labelSearch=['downcase',['concat',['coalesce',['get','@name'],''],' ',['to-string',['coalesce',['get','brand'],'']]]],contains=v=>['>=',['index-of',v.toLowerCase(),labelSearch],0];
+  const convenienceBrand=['any',contains('7-eleven'),contains('統一超商'),contains('familymart'),contains('全家'),contains('hi-life'),contains('hi life'),contains('萊爾富'),contains('ok mart'),contains('ok超商')];
+  const supermarketBrand=['any',contains('px mart'),contains('全聯'),contains('carrefour'),contains('家樂福'),contains('simple mart'),contains('美廉社')];
+  const convenienceFilter=['any',convenienceBrand,['all',['!',supermarketBrand],sourceConvenience]];
+  const supermarketFilter=['all',['!',convenienceBrand],['any',supermarketBrand,sourceSupermarket]];
+  const brandLabel=['case',['any',contains('7-eleven'),contains('統一超商')],'7-ELEVEN',['any',contains('familymart'),contains('全家')],'全家',['any',contains('hi-life'),contains('hi life'),contains('萊爾富')],'萊爾富',['any',contains('ok mart'),contains('ok超商')],'OK Mart',['any',contains('px mart'),contains('全聯')],'全聯',['any',contains('carrefour'),contains('家樂福')],'家樂福',['any',contains('simple mart'),contains('美廉社')],'美廉社',['coalesce',['get','@name'],'']];
+
+  const map=new maplibregl.Map({container:'map',center:districts.daan.center,zoom:districts.daan.zoom,pitch:0,bearing:0,maxZoom:19,minZoom:12,maxBounds:[[121.39,24.90],[121.76,25.25]],style:{version:8,sources:{osm:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,attribution:'© OpenStreetMap contributors',maxzoom:19},overturePlaces:{type:'vector',url:`pmtiles://${selected.url}`,attribution:'© Overture Maps Foundation / source contributors'},[HARD_SOURCE]:{type:'geojson',data:{type:'FeatureCollection',features:[]}},[REVIEW_SOURCE]:{type:'geojson',data:{type:'FeatureCollection',features:[]}}},layers:[
+    {id:'osm',type:'raster',source:'osm'},
+    {id:'daily-life-convenience',type:'circle',source:'overturePlaces','source-layer':'place',minzoom:14,filter:convenienceFilter,paint:{'circle-radius':['interpolate',['linear'],['zoom'],14,3,16,4.5,19,6],'circle-color':'#2f6fdf','circle-opacity':.9,'circle-stroke-color':'#fff','circle-stroke-width':1.3}},
+    {id:'daily-life-supermarket',type:'circle',source:'overturePlaces','source-layer':'place',minzoom:14,filter:supermarketFilter,paint:{'circle-radius':['interpolate',['linear'],['zoom'],14,3.5,16,5,19,6.5],'circle-color':'#d97706','circle-opacity':.92,'circle-stroke-color':'#fff','circle-stroke-width':1.3}},
+    {id:REVIEW_LAYER,type:'circle',source:REVIEW_SOURCE,minzoom:14,paint:{'circle-radius':['interpolate',['linear'],['zoom'],14,8,16,11,19,15],'circle-color':'rgba(255,255,255,0)','circle-stroke-color':'#d99100','circle-stroke-width':2.5,'circle-stroke-opacity':.95}},
+    {id:HARD_LAYER,type:'circle',source:HARD_SOURCE,minzoom:14,paint:{'circle-radius':['interpolate',['linear'],['zoom'],14,8,16,11,19,15],'circle-color':'rgba(255,255,255,0)','circle-stroke-color':'#c62828','circle-stroke-width':2.8}},
+    {id:'daily-life-convenience-label',type:'symbol',source:'overturePlaces','source-layer':'place',minzoom:16,filter:convenienceFilter,layout:{'text-field':brandLabel,'text-size':11,'text-offset':[0,1],'text-anchor':'top','text-max-width':9,'text-allow-overlap':false},paint:{'text-color':'#1f4fa5','text-halo-color':'rgba(255,255,255,.98)','text-halo-width':1.4}},
+    {id:'daily-life-supermarket-label',type:'symbol',source:'overturePlaces','source-layer':'place',minzoom:16,filter:supermarketFilter,layout:{'text-field':brandLabel,'text-size':11,'text-offset':[0,1],'text-anchor':'top','text-max-width':9,'text-allow-overlap':false},paint:{'text-color':'#9a5400','text-halo-color':'rgba(255,255,255,.98)','text-halo-width':1.4}}
+  ]}});
+  map.addControl(new maplibregl.NavigationControl({showCompass:false}),'top-right');map.addControl(new maplibregl.ScaleControl({maxWidth:120,unit:'metric'}),'bottom-right');
+
+  let enabled=true,hardEnabled=true,reviewEnabled=true,popup=null,moveStartedAt=null;
+  function setVisibility(id,on){if(map.getLayer(id))map.setLayoutProperty(id,'visibility',on?'visible':'none');}
+  function refreshAuditStats(){if(!map.isStyleLoaded())return;let loaded=[];try{loaded=dedupeSourceTiles(map.querySourceFeatures('overturePlaces',{sourceLayer:'place'}));}catch{}
+    const classified=loaded.map(f=>({f,cat:normalizedCategory(f.properties||{})})).filter(x=>x.cat&&x.f?.geometry?.type==='Point'&&Array.isArray(x.f.geometry.coordinates));
+    const convenience=classified.filter(x=>x.cat==='convenience_store'),supermarket=classified.filter(x=>x.cat==='supermarket');
+    const hard=findHardClusters(classified),reviews=findReviewPairs(classified,hard.rootOf),duplicateExcess=hard.groups.reduce((sum,g)=>sum+g.length-1,0);
+    convenienceCountEl.textContent=convenience.length.toLocaleString();supermarketCountEl.textContent=supermarket.length.toLocaleString();rawTotalEl.textContent=classified.length.toLocaleString();hardGroupsEl.textContent=hard.groups.length.toLocaleString();reviewPairsEl.textContent=reviews.length.toLocaleString();dedupEstimateEl.textContent=Math.max(0,classified.length-duplicateExcess).toLocaleString();
+    map.getSource(HARD_SOURCE)?.setData(hardGeoJson(hard.groups));map.getSource(REVIEW_SOURCE)?.setData(reviewGeoJson(reviews));
+    const brands=new Map();for(const {f} of classified){const label=inferredChain(f.properties||{});brands.set(label,(brands.get(label)||0)+1);}brandsEl.textContent='正規化品牌：'+([...brands.entries()].sort((a,b)=>b[1]-a[1]).slice(0,12).map(([name,n])=>`${name} ${n}`).join(' · ')||'目前 loaded tiles 無符合 POI');
+    try{const rendered=map.queryRenderedFeatures({layers:['daily-life-convenience','daily-life-supermarket']});renderedCountEl.textContent=dedupeSourceTiles(rendered).length.toLocaleString();const byKey=new Map();for(const f of rendered){const key=sourceFeatureKey(f);if(!byKey.has(key))byKey.set(key,new Set());byKey.get(key).add(f.layer?.id);}overlapCountEl.textContent=[...byKey.values()].filter(s=>s.has('daily-life-convenience')&&s.has('daily-life-supermarket')).length.toLocaleString();}catch{renderedCountEl.textContent='—';overlapCountEl.textContent='—';}
+  }
+  function openPoiPopup(e){const f=e?.features?.[0];if(!f)return;const p=f.properties||{},cat=normalizedCategory(p)||'unclassified',brand=displayBrand(p),branch=branchName(p),sourceName=primaryName(p),sources=sourceDatasets(p);popup?.remove();popup=new maplibregl.Popup({offset:9,maxWidth:'340px'}).setLngLat(f.geometry.coordinates.slice()).setHTML(`<div style="min-width:230px"><div style="font-size:11px;font-weight:800;color:${cat==='convenience_store'?'#2f6fdf':'#d97706'}">${cat==='convenience_store'?'便利商店':'超市 / grocery'}</div><div style="font-size:15px;font-weight:800">${escapeHtml(brand)}</div>${branch?`<div style="font-size:12px;color:#455a64">${escapeHtml(branch)}</div>`:''}<div style="margin-top:6px;font-size:10px;color:#607d8b">raw name: ${escapeHtml(sourceName||'—')}<br>source: ${escapeHtml(sources||'—')}<br>Overture id: ${escapeHtml(p.id||'—')}</div></div>`).addTo(map);}
+  function openHardPopup(e){const p=e?.features?.[0]?.properties||{},f=e?.features?.[0];if(!f)return;popup?.remove();popup=new maplibregl.Popup({offset:10,maxWidth:'360px'}).setLngLat(f.geometry.coordinates).setHTML(`<div style="min-width:240px"><div style="font-size:11px;font-weight:800;color:#c62828">高信心 duplicate candidate</div><div style="font-size:14px;font-weight:800">${escapeHtml(p.brand||'—')} × ${escapeHtml(p.count||'—')}</div><div style="margin-top:5px;font-size:11px;color:#455a64">${escapeHtml(p.names||'—')}<br>最大點位距離：約 ${escapeHtml(p.max_span_m??'—')}m</div><div style="font-size:9.5px;color:#78909c;margin-top:7px">audit only；尚未自動合併。</div></div>`).addTo(map);}
+  function openReviewPopup(e){const p=e?.features?.[0]?.properties||{},f=e?.features?.[0];if(!f)return;popup?.remove();popup=new maplibregl.Popup({offset:10,maxWidth:'430px'}).setLngLat(f.geometry.coordinates).setHTML(`<div style="min-width:300px"><div style="font-size:11px;font-weight:800;color:#a66d00">鄰近同品牌 · 待人工複核</div><div style="font-size:14px;font-weight:800">${escapeHtml(p.brand||'—')} · 約 ${escapeHtml(p.distance_m||'—')}m</div><div style="margin-top:7px;font-size:11px;color:#455a64"><b>A</b> ${escapeHtml(p.name_a)}<br>branch: ${escapeHtml(p.branch_a)}<br>source: ${escapeHtml(p.source_a)}<br>id: ${escapeHtml(p.id_a)}<hr style="border:0;border-top:1px solid #e0e0e0"><b>B</b> ${escapeHtml(p.name_b)}<br>branch: ${escapeHtml(p.branch_b)}<br>source: ${escapeHtml(p.source_b)}<br>id: ${escapeHtml(p.id_b)}</div><div style="font-size:9.5px;color:#78909c;margin-top:7px">不是 duplicate 判決；請人工判斷是否同一實體店。</div></div>`).addTo(map);}
+
+  for(const id of ['daily-life-convenience','daily-life-supermarket']){map.on('click',id,openPoiPopup);map.on('mouseenter',id,()=>map.getCanvas().style.cursor='pointer');map.on('mouseleave',id,()=>map.getCanvas().style.cursor='');}
+  map.on('click',HARD_LAYER,openHardPopup);map.on('click',REVIEW_LAYER,openReviewPopup);for(const id of [HARD_LAYER,REVIEW_LAYER]){map.on('mouseenter',id,()=>map.getCanvas().style.cursor='pointer');map.on('mouseleave',id,()=>map.getCanvas().style.cursor='');}
+  $('#togglePoi').onclick=()=>{enabled=!enabled;for(const id of poiLayerIds)setVisibility(id,enabled);$('#togglePoi').classList.toggle('active',enabled);$('#togglePoi').textContent=`生活 POI ${enabled?'ON':'OFF'}`;};
+  $('#toggleHard').onclick=()=>{hardEnabled=!hardEnabled;setVisibility(HARD_LAYER,hardEnabled);$('#toggleHard').classList.toggle('active',hardEnabled);$('#toggleHard').textContent=`紅圈 ${hardEnabled?'ON':'OFF'}`;};
+  $('#toggleReview').onclick=()=>{reviewEnabled=!reviewEnabled;setVisibility(REVIEW_LAYER,reviewEnabled);$('#toggleReview').classList.toggle('active',reviewEnabled);$('#toggleReview').textContent=`琥珀複核圈 ${reviewEnabled?'ON':'OFF'}`;};
+  document.querySelectorAll('button.district').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('button.district').forEach(b=>b.classList.remove('active'));btn.classList.add('active');map.easeTo({...districts[btn.dataset.district],pitch:0,bearing:0,duration:650});}));
+  map.on('load',()=>{refreshAuditStats();status.textContent=`READY · ${selected.release} · hard + review duplicate audit v0.6`;status.className='good';});
+  map.on('movestart',()=>{moveStartedAt=performance.now();});map.on('idle',()=>{if(moveStartedAt!=null){idleMsEl.textContent=`${Math.round(performance.now()-moveStartedAt)} ms`;moveStartedAt=null;}refreshAuditStats();});map.on('error',e=>console.warn('Map error',e?.error||e));
+})();
+</script>
+</body>
+</html>

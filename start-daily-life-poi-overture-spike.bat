@@ -13,31 +13,26 @@ if not defined NODE_CMD (
 )
 
 echo ==========================================================
-echo   Buju / Taipei-Maps - Overture Places audit spike v0.14
-echo   Issue #56 - adversarial false-positive hunt
+echo   Buju / Taipei-Maps - Overture Places audit spike v0.15
+echo   Issue #56 - precision geo guard + adversarial duplicate review
 echo ==========================================================
 echo.
-echo This round deliberately hunts counterexamples instead of easy duplicates:
-echo   - quarantine now keeps only high-explainability geo/name conflicts
-echo   - generic name / missing brand is NOT treated as ghost evidence by itself
-echo   - duplicate ranking favors pairs most likely to be two real stores:
-echo       * branch names both present and different
-echo       * addresses both present and different
-echo       * both records are specific / strong
-echo       * distance near the category review ceiling
-echo   - same raw record appears at most once in the Top-15 round
-echo   - all verdicts remain audit-only; no automatic merge/delete
+echo v0.15 tightens anomaly detection after a false positive on a real Taipei store:
+echo   - bare place-name tokens in store names/branches are NOT enough for quarantine
+echo   - example: Zhongzheng Jinmen store on Jinmen St is valid Taipei data
+echo   - hard geo quarantine now requires structured address text to explicitly name
+echo     an outside-Taipei city/county such as Taoyuan City or Kinmen County
+echo   - generic/missing-brand records remain out of automatic ghost quarantine
+echo   - duplicate review still hunts adversarial false positives first
 echo.
 echo Visual audit checklist:
 echo   1. Wait for READY.
-echo   2. Anomaly queue should now mainly contain explicit geo/name conflicts.
-echo   3. Click ^"找反例 Top 15^".
-echo   4. Prefer checking pairs labelled branch/address different.
-echo   5. We WANT to find real ^"different store^" counterexamples in this round.
-echo   6. Click A/B points to inspect raw brand, branch, address, source, strength.
-echo   7. Copy results back after roughly 10-15 judgments.
+echo   2. Confirm the Zhongzheng Jinmen Simple Mart is NOT an anomaly candidate.
+echo   3. Anomaly queue should now contain only explicit admin-address conflicts.
+echo   4. Click ^"找反例 Top 15^" and look for real same-brand stores that should stay separate.
+echo   5. All judgments remain audit-only; nothing is automatically deleted or merged.
 echo.
 echo Keep this window open. Press Ctrl+C to stop the local server.
 echo.
-"%NODE_CMD%" tools\dev\serve_single_engine_core.mjs 5173 "/daily-life-poi-overture-spike-v14.html"
+"%NODE_CMD%" tools\dev\serve_single_engine_core.mjs 5173 "/daily-life-poi-overture-spike-v15.html"
 exit /b %errorlevel%

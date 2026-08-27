@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>卜居 · Overture Places duplicate review v0.12</title>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" />
+  <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+  <script src="https://unpkg.com/pmtiles@4.4.1/dist/pmtiles.js"></script>
+  <style>
+    html,body,#map{width:100%;height:100%;margin:0}body{font-family:Inter,system-ui,"Noto Sans TC",sans-serif;overflow:hidden}#map{background:#eef1f4}
+    .panel{position:absolute;z-index:5;top:14px;left:14px;width:min(620px,calc(100vw - 28px));max-height:calc(100vh - 28px);overflow:auto;padding:14px;border:1px solid #ccd3d9;border-radius:14px;background:rgba(255,255,255,.96);box-shadow:0 10px 28px rgba(0,0,0,.14)}
+    .eyebrow{font-size:11px;font-weight:800;letter-spacing:.12em;color:#68727d}h1{font-size:20px;margin:5px 0}.sub,.note{font-size:11.5px;color:#5e6872;line-height:1.5}.controls{display:flex;gap:6px;flex-wrap:wrap;margin:9px 0}button{border:1px solid #c8d0d7;border-radius:9px;padding:7px 9px;background:#fff;font-weight:700;cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}.active{background:#25313b;color:#fff}.legend{display:flex;gap:12px;align-items:center;font-size:11.5px;margin:8px 0;flex-wrap:wrap}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}.blue{background:#2f6fdf}.orange{background:#d97706}.red{background:transparent;border:2px solid #c62828;box-sizing:border-box}.amber{background:transparent;border:2px solid #d99100;box-sizing:border-box}
+    .metrics{display:grid;grid-template-columns:1fr auto;gap:4px 10px;border-top:1px solid #dde2e7;border-bottom:1px solid #dde2e7;padding:9px 0;margin:9px 0;font-size:12px}.metrics span:nth-child(odd){color:#66717b}.metrics span:nth-child(even){font-weight:800;font-variant-numeric:tabular-nums;text-align:right}.brands{font-size:11px;color:#455a64;line-height:1.45;word-break:break-word}
+    .queue{margin-top:10px;padding:10px;border:1px solid #e0c373;border-radius:12px;background:#fffaf0}.queue-title{display:flex;justify-content:space-between;gap:10px;align-items:center;font-size:12px;font-weight:800;color:#7b5700}.record{margin-top:6px;padding-top:6px;border-top:1px solid #eadfbf;font-size:11px;line-height:1.45}.muted{color:#78909c}.warn{color:#b45309;font-weight:800}.good{color:#137333}.error{color:#b42318}#status{font-size:12px;font-weight:700;line-height:1.45}.same{border-color:#79b787}.different{border-color:#d68080}.badloc{border-color:#d99100}.unsure{border-color:#c4a250}
+  </style>
+</head>
+<body>
+<div id="map"></div>
+<section class="panel">
+  <div class="eyebrow">ISSUE #56 · DUPLICATE REVIEW v0.12</div>
+  <h1>生活 POI：只抽查兩筆，不再把整串店綁成一組</h1>
+  <div class="sub">v0.12 針對上一版兩個問題重做 audit：已知連鎖品牌改用較嚴格的識別規則，避免只因店名裡出現「全家」就誤認為 FamilyMart；review queue 改為不重複 record 的 A/B pair sample，不再用 transitive family 把附近多家門市串成一大組。</div>
+  <div class="controls"><button class="district active" data-district="daan">大安</button><button class="district" data-district="xinyi">信義</button><button class="district" data-district="songshan">松山</button><button class="district" data-district="zhongshan">中山</button><button class="district" data-district="zhongzheng">中正</button></div>
+  <div class="controls"><button id="togglePoi" class="active">生活 POI ON</button><button id="toggleHard" class="active">紅圈 ON</button></div>
+  <div class="legend"><span><i class="dot blue"></i>便利商店</span><span><i class="dot orange"></i>超市 / grocery</span><span><i class="dot red"></i>高信心 duplicate</span><span><i class="dot amber"></i>目前 A/B 候選</span></div>
+  <div class="metrics">
+    <span>Overture release</span><span id="release">—</span>
+    <span>canonical convenience</span><span id="convenienceCount">—</span>
+    <span>canonical supermarket</span><span id="supermarketCount">—</span>
+    <span>target-chain records</span><span id="targetCount">—</span>
+    <span>hard duplicate groups</span><span id="hardGroups">—</span>
+    <span>nearby review pairs</span><span id="reviewPairs">—</span>
+    <span>geo-name anomaly records</span><span id="geoAnomalies">—</span>
+    <span>rendered canonical POI</span><span id="renderedCount">—</span>
+    <span>move → idle</span><span id="idleMs">—</span>
+  </div>
+  <div id="brands" class="brands">正規化品牌：—</div>
+  <div class="queue">
+    <div class="queue-title"><span>🔎 Non-overlapping Pair Review Queue</span><span id="queuePos">尚未建立</span></div>
+    <div class="controls"><button id="buildQueue">產生最可疑 Top 15</button><button id="prevCandidate" disabled>← 上一組</button><button id="nextCandidate" disabled>下一組 →</button></div>
+    <div id="queueDetail" class="record">先按「產生最可疑 Top 15」。每題只比較 A/B 兩筆；同一個 raw record 在這輪只會出現一次。直接點 A、B 或一般藍／橘點，都能看 raw/source/address。</div>
+    <div class="controls"><button id="judgeSame" class="same" disabled>✅ 同一家</button><button id="judgeDifferent" class="different" disabled>❌ 不同店</button><button id="judgeBadLocation" class="badloc" disabled>📍 錯位／異常資料</button><button id="judgeUnsure" class="unsure" disabled>？ 不確定</button><button id="copyResults" disabled>複製判讀結果</button></div>
+    <div id="queueSummary" class="muted" style="font-size:10.5px">已判讀 0 · 同一家 0 · 不同店 0 · 錯位/異常 0 · 不確定 0</div>
+  </div>
+  <div id="status">Booting pair audit v0.12…</div>
+  <div class="note" style="margin-top:8px"><b>這版先做 audit，不做 canonical merge。</b> 若 raw name / branch 顯示「桃園」但點位明顯落在台北，請按「錯位／異常資料」；這種 record 之後應進 source-quality quarantine，而不是拿距離規則硬合併。</div>
+</section>
+<script>
+(async()=>{
+  'use strict';
+  const $=s=>document.querySelector(s);
+  const status=$('#status'),releaseEl=$('#release'),convenienceCountEl=$('#convenienceCount'),supermarketCountEl=$('#supermarketCount'),targetCountEl=$('#targetCount'),hardGroupsEl=$('#hardGroups'),reviewPairsEl=$('#reviewPairs'),geoAnomaliesEl=$('#geoAnomalies'),renderedCountEl=$('#renderedCount'),idleMsEl=$('#idleMs'),brandsEl=$('#brands');
+  if(!window.maplibregl||!window.pmtiles){status.textContent='ERROR: MapLibre / PMTiles CDN 未載入';status.className='error';return;}
+
+  const releases=[{release:'2026-08-19.0',url:'https://overturemaps-extras-us-west-2.s3.us-west-2.amazonaws.com/tiles/2026-08-19.0/places.pmtiles'},{release:'2026-07-22.0',url:'https://overturemaps-extras-us-west-2.s3.us-west-2.amazonaws.com/tiles/2026-07-22.0/places.pmtiles'}];
+  const districts={daan:{center:[121.5434,25.0268],zoom:15.2},xinyi:{center:[121.5645,25.0340],zoom:15.2},songshan:{center:[121.5608,25.0525],zoom:15.2},zhongshan:{center:[121.5332,25.0561],zoom:15.2},zhongzheng:{center:[121.5199,25.0324],zoom:15.2}};
+  const CHAINS=[
+    {label:'7-ELEVEN',category:'convenience_store',brand:/^(?:7\s*[-‐‑–—]?\s*eleven|統一超商)$/i,name:/^(?:7\s*[-‐‑–—]?\s*eleven|統一超商)(?:[\s·・\-–—:：]*.{0,20}(?:店|門市))?$/i},
+    {label:'全家',category:'convenience_store',brand:/^(?:family\s*mart|全家便利商店|全家)$/i,name:/^(?:family\s*mart|全家(?:便利商店)?)(?:[\s·・\-–—:：]*.{0,20}(?:店|門市))?$/i},
+    {label:'萊爾富',category:'convenience_store',brand:/^(?:hi\s*[-‐‑–—]?\s*life|萊爾富(?:便利商店)?)$/i,name:/^(?:hi\s*[-‐‑–—]?\s*life|萊爾富(?:便利商店)?)(?:[\s·・\-–—:：]*.{0,20}(?:店|門市))?$/i},
+    {label:'OK Mart',category:'convenience_store',brand:/^(?:ok\s*mart|ok超商)$/i,name:/^(?:ok\s*mart|ok超商)(?:[\s·・\-–—:：]*.{0,20}(?:店|門市))?$/i},
+    {label:'全聯',category:'supermarket',brand:/^(?:px\s*mart|全聯福利中心|全聯)$/i,name:/^(?:px\s*mart|全聯(?:福利中心)?)(?:[\s·・\-–—:：]*.{0,24}(?:店|門市))?$/i},
+    {label:'家樂福',category:'supermarket',brand:/^(?:carrefour(?:\s*market)?|家樂福(?:超市)?)$/i,name:/^(?:carrefour(?:\s*market)?|家樂福(?:超市)?)(?:[\s·・\-–—:：]*.{0,24}(?:店|門市))?$/i},
+    {label:'美廉社',category:'supermarket',brand:/^(?:simple\s*mart|美廉社)$/i,name:/^(?:simple\s*mart|美廉社)(?:[\s·・\-–—:：]*.{0,20}(?:店|門市))?$/i}
+  ];
+  const OUTSIDE_TAIPEI_TOKENS=['桃園','新竹','苗栗','臺中','台中','彰化','南投','雲林','嘉義','臺南','台南','高雄','屏東','宜蘭','花蓮','臺東','台東','澎湖','金門','連江'];
+
+  function parseMaybeJson(v){if(v==null||typeof v!=='string')return v;const s=v.trim();if(!s||(!s.startsWith('{')&&!s.startsWith('[')))return v;try{return JSON.parse(s);}catch{return v;}}
+  function stringified(v){if(v==null)return'';return typeof v==='string'?v:JSON.stringify(v);}
+  function primaryName(p){return String(p['@name']||parseMaybeJson(p.names)?.primary||'').trim();}
+  function rawBrand(p){const b=parseMaybeJson(p.brand);return String(b?.names?.primary||b?.name||'').trim();}
+  function chainRule(p){const name=primaryName(p),brand=rawBrand(p);for(const c of CHAINS){if((brand&&c.brand.test(brand))||(name&&c.name.test(name)))return c;}return null;}
+  function sourceCategory(p){const basic=String(p.basic_category||'').trim().toLowerCase();if(basic==='convenience_store')return'convenience_store';if(basic==='supermarket'||basic==='grocery_store')return'supermarket';if(basic)return null;const blob=(stringified(parseMaybeJson(p.taxonomy))+' '+stringified(parseMaybeJson(p.categories))).toLowerCase();if(blob.includes('convenience_store'))return'convenience_store';if(blob.includes('supermarket')||blob.includes('grocery_store'))return'supermarket';return null;}
+  function canonicalCategory(p){return chainRule(p)?.category||sourceCategory(p);}
+  function canonicalBrand(p){return chainRule(p)?.label||rawBrand(p)||primaryName(p)||'其他 / 未標準化';}
+  function normalizeToken(v){return String(v||'').toLowerCase().replace(/[\s\-_‐‑–—·・()（）\[\]【】]/g,'').replace(/(?:福利中心|便利商店|超市|門市|分店|店)$/g,'').trim();}
+  function branchName(p){const rule=chainRule(p),name=primaryName(p);if(!rule||!name)return'';let s=name;if(rule.label==='7-ELEVEN')s=s.replace(/^(?:7\s*[-‐‑–—]?\s*eleven|統一超商)/i,'');else if(rule.label==='全家')s=s.replace(/^(?:family\s*mart|全家(?:便利商店)?)/i,'');else if(rule.label==='萊爾富')s=s.replace(/^(?:hi\s*[-‐‑–—]?\s*life|萊爾富(?:便利商店)?)/i,'');else if(rule.label==='OK Mart')s=s.replace(/^(?:ok\s*mart|ok超商)/i,'');else if(rule.label==='全聯')s=s.replace(/^(?:px\s*mart|全聯(?:福利中心)?)/i,'');else if(rule.label==='家樂福')s=s.replace(/^(?:carrefour(?:\s*market)?|家樂福(?:超市)?)/i,'');else if(rule.label==='美廉社')s=s.replace(/^(?:simple\s*mart|美廉社)/i,'');return s.replace(/^[\s·・\-–—:：]+/,'').trim();}
+  function sourceDatasets(p){const s=parseMaybeJson(p.sources);return Array.isArray(s)?[...new Set(s.map(x=>x?.dataset).filter(Boolean))].join(', '):'';}
+  function addressText(p){const candidates=[p.addresses,p.address,p['@address']];for(const v of candidates){if(v==null)continue;const parsed=parseMaybeJson(v);if(Array.isArray(parsed)){const out=parsed.map(x=>typeof x==='string'?x:Object.values(x||{}).filter(y=>typeof y==='string').join(' ')).filter(Boolean).join(' | ');if(out)return out;}if(typeof parsed==='object'){const out=Object.values(parsed).filter(y=>typeof y==='string').join(' ');if(out)return out;}if(typeof parsed==='string'&&parsed.trim())return parsed.trim();}return'';}
+  function featureKey(f){const p=f.properties||{};return p.id||`${f.geometry?.coordinates?.join(',')}|${primaryName(p)}|${rawBrand(p)}`;}
+  function dedupe(features){const m=new Map();for(const f of features){const k=featureKey(f);if(!m.has(k))m.set(k,f);}return [...m.values()];}
+  function haversine(a,b){const r=x=>x*Math.PI/180,R=6371000,dLat=r(b[1]-a[1]),dLon=r(b[0]-a[0]),h=Math.sin(dLat/2)**2+Math.cos(r(a[1]))*Math.cos(r(b[1]))*Math.sin(dLon/2)**2;return 2*R*Math.asin(Math.min(1,Math.sqrt(h)));}
+  function inTaipeiApprox(coord){return coord[0]>=121.43&&coord[0]<=121.69&&coord[1]>=24.95&&coord[1]<=25.22;}
+  function geoNameConflict(item){if(!inTaipeiApprox(item.f.geometry.coordinates))return'';const p=item.f.properties||{},text=[primaryName(p),branchName(p),addressText(p)].join(' ');return OUTSIDE_TAIPEI_TOKENS.find(t=>text.includes(t))||'';}
+  function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
+  function pointProps(item){const p=item.f.properties||{},rule=chainRule(p);return{key:featureKey(item.f),category:item.cat,brand:canonicalBrand(p),chain:rule?.label||'',raw_name:primaryName(p)||'—',raw_brand:rawBrand(p)||'—',branch:branchName(p)||'—',source:sourceDatasets(p)||'—',address:addressText(p)||'—',overture_id:p.id||'—',geo_conflict:geoNameConflict(item)};}
+  function canonicalGeo(items){return{type:'FeatureCollection',features:items.map(item=>({type:'Feature',geometry:{type:'Point',coordinates:item.f.geometry.coordinates},properties:pointProps(item)}))};}
+
+  function pairEvidence(a,b){const pa=a.f.properties||{},pb=b.f.properties||{},distance=haversine(a.f.geometry.coordinates,b.f.geometry.coordinates),ba=normalizeToken(branchName(pa)),bb=normalizeToken(branchName(pb)),na=normalizeToken(primaryName(pa)),nb=normalizeToken(primaryName(pb));return{distance,sameBranch:Boolean(ba&&bb&&ba===bb),exactRaw:Boolean(na&&nb&&na===nb)};}
+  function hardLink(cat,e){if(cat==='supermarket'){if(e.distance<=45)return true;return e.distance<=80&&(e.sameBranch||e.exactRaw);}return e.distance<=8||(e.distance<=30&&(e.sameBranch||e.exactRaw));}
+  function reviewMax(cat){return cat==='supermarket'?100:50;}
+  function auditTargetItems(items){return items.filter(item=>chainRule(item.f.properties||{}));}
+  function buildAudit(items){const hardGroups=[],reviewPairs=[];const byIdentity=new Map();for(const item of auditTargetItems(items)){const p=item.f.properties||{},key=`${item.cat}|${canonicalBrand(p)}`;if(!byIdentity.has(key))byIdentity.set(key,[]);byIdentity.get(key).push(item);}for(const [identity,group] of byIdentity){const parent=group.map((_,i)=>i),find=i=>parent[i]===i?i:(parent[i]=find(parent[i])),union=(a,b)=>{a=find(a);b=find(b);if(a!==b)parent[b]=a;};for(let i=0;i<group.length;i++)for(let j=i+1;j<group.length;j++){const e=pairEvidence(group[i],group[j]);if(hardLink(group[i].cat,e))union(i,j);}const comps=new Map();for(let i=0;i<group.length;i++){const r=find(i);if(!comps.has(r))comps.set(r,[]);comps.get(r).push(group[i]);}for(const comp of comps.values())if(comp.length>1)hardGroups.push(comp);for(let i=0;i<group.length;i++)for(let j=i+1;j<group.length;j++){if(find(i)===find(j))continue;const e=pairEvidence(group[i],group[j]);if(e.distance<=reviewMax(group[i].cat)&&!hardLink(group[i].cat,e))reviewPairs.push({a:group[i],b:group[j],identity,...e});}}
+    return{hardGroups,reviewPairs};
+  }
+  function pairPriority(pair){const pa=pair.a.f.properties||{},pb=pair.b.f.properties||{},max=reviewMax(pair.a.cat),distanceRisk=Math.min(1,pair.distance/max)*50,ba=branchName(pa),bb=branchName(pb),branchConflict=Boolean(ba&&bb&&normalizeToken(ba)!==normalizeToken(bb)),rawConflict=normalizeToken(primaryName(pa))!==normalizeToken(primaryName(pb)),sourceConflict=sourceDatasets(pa)!==sourceDatasets(pb),geoA=geoNameConflict(pair.a),geoB=geoNameConflict(pair.b);return Math.round(distanceRisk+(branchConflict?25:0)+(rawConflict?10:0)+(sourceConflict?5:0)+(geoA||geoB?100:0));}
+  function rankedNonOverlapping(pairs,limit=15){const sorted=[...pairs].map(p=>({pair:p,score:pairPriority(p)})).sort((a,b)=>b.score-a.score||b.pair.distance-a.pair.distance),used=new Set(),counts=new Map(),out=[];for(const row of sorted){const ak=featureKey(row.pair.a.f),bk=featureKey(row.pair.b.f),brand=canonicalBrand(row.pair.a.f.properties||{});if(used.has(ak)||used.has(bk))continue;if((counts.get(brand)||0)>=4)continue;out.push(row);used.add(ak);used.add(bk);counts.set(brand,(counts.get(brand)||0)+1);if(out.length>=limit)break;}return out;}
+  function hardGeo(groups){return{type:'FeatureCollection',features:groups.map((g,i)=>{const coords=g.map(x=>x.f.geometry.coordinates),center=[coords.reduce((s,c)=>s+c[0],0)/coords.length,coords.reduce((s,c)=>s+c[1],0)/coords.length];return{type:'Feature',geometry:{type:'Point',coordinates:center},properties:{id:i+1,brand:canonicalBrand(g[0].f.properties||{}),count:g.length}};})};}
+  function pairGeo(row){if(!row)return{type:'FeatureCollection',features:[]};const p=row.pair,features=[{type:'Feature',geometry:{type:'LineString',coordinates:[p.a.f.geometry.coordinates,p.b.f.geometry.coordinates]},properties:{kind:'line'}}];[p.a,p.b].forEach((item,i)=>features.push({type:'Feature',geometry:{type:'Point',coordinates:item.f.geometry.coordinates},properties:{kind:'point',label:`${i===0?'A':'B'}·${canonicalBrand(item.f.properties||{})}`,...pointProps(item)}}));return{type:'FeatureCollection',features};}
+  function pairBounds(row){const a=row.pair.a.f.geometry.coordinates,b=row.pair.b.f.geometry.coordinates;return[[Math.min(a[0],b[0]),Math.min(a[1],b[1])],[Math.max(a[0],b[0]),Math.max(a[1],b[1])]];}
+  function popupHtml(p){return`<div style="min-width:270px"><div style="font-size:11px;font-weight:800;color:${p.category==='convenience_store'?'#2f6fdf':'#d97706'}">${escapeHtml(p.category||'unclassified')}</div><div style="font-size:15px;font-weight:800">${escapeHtml(p.brand||'—')}</div>${p.geo_conflict?`<div style="margin-top:5px;color:#b45309;font-weight:800">⚠ 地名/座標衝突：文字含「${escapeHtml(p.geo_conflict)}」，但座標落在台北 audit 範圍</div>`:''}<div style="font-size:11px;margin-top:6px;color:#455a64">raw name: ${escapeHtml(p.raw_name||'—')}<br>raw brand: ${escapeHtml(p.raw_brand||'—')}<br>branch: ${escapeHtml(p.branch||'—')}<br>address: ${escapeHtml(p.address||'—')}<br>source: ${escapeHtml(p.source||'—')}<br>Overture id: ${escapeHtml(p.overture_id||'—')}</div></div>`;}
+
+  let selected=null;for(const c of releases){try{const archive=new pmtiles.PMTiles(c.url),meta=await archive.getMetadata();if((meta?.vector_layers||[]).some(v=>v?.id==='place')){selected=c;break;}}catch{}}
+  if(!selected){status.textContent='ERROR: Overture Places preflight failed';status.className='error';return;}releaseEl.textContent=selected.release;
+  const protocol=new pmtiles.Protocol({metadata:true});maplibregl.addProtocol('pmtiles',protocol.tile);
+  const OVERTURE='overture',CANON='canonical-poi',HARD='hard-audit',CURRENT='current-pair';
+  const map=new maplibregl.Map({container:'map',center:districts.daan.center,zoom:15.2,pitch:0,bearing:0,maxZoom:19,minZoom:12,maxBounds:[[121.39,24.90],[121.76,25.25]],style:{version:8,sources:{osm:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,maxzoom:19,attribution:'© OpenStreetMap contributors'},[OVERTURE]:{type:'vector',url:`pmtiles://${selected.url}`,attribution:'© Overture Maps Foundation / source contributors'},[CANON]:{type:'geojson',data:{type:'FeatureCollection',features:[]}},[HARD]:{type:'geojson',data:{type:'FeatureCollection',features:[]}},[CURRENT]:{type:'geojson',data:{type:'FeatureCollection',features:[]}}},layers:[
+    {id:'osm',type:'raster',source:'osm'},
+    {id:'overture-loader',type:'circle',source:OVERTURE,'source-layer':'place',minzoom:14,paint:{'circle-radius':0,'circle-opacity':0}},
+    {id:'canonical-convenience',type:'circle',source:CANON,filter:['==',['get','category'],'convenience_store'],paint:{'circle-radius':['interpolate',['linear'],['zoom'],14,3,16,4.5,19,6],'circle-color':'#2f6fdf','circle-opacity':.9,'circle-stroke-color':'#fff','circle-stroke-width':1.3}},
+    {id:'canonical-supermarket',type:'circle',source:CANON,filter:['==',['get','category'],'supermarket'],paint:{'circle-radius':['interpolate',['linear'],['zoom'],14,3.5,16,5,19,6.5],'circle-color':'#d97706','circle-opacity':.92,'circle-stroke-color':'#fff','circle-stroke-width':1.3}},
+    {id:'hard-ring',type:'circle',source:HARD,minzoom:14,paint:{'circle-radius':11,'circle-color':'rgba(255,255,255,0)','circle-stroke-color':'#c62828','circle-stroke-width':2.6}},
+    {id:'current-line',type:'line',source:CURRENT,filter:['==',['get','kind'],'line'],paint:{'line-color':'#d99100','line-width':3,'line-dasharray':[2,2]}},
+    {id:'current-point',type:'circle',source:CURRENT,filter:['==',['get','kind'],'point'],paint:{'circle-radius':14,'circle-color':'rgba(255,250,240,.55)','circle-stroke-color':'#d99100','circle-stroke-width':3}},
+    {id:'current-label',type:'symbol',source:CURRENT,filter:['==',['get','kind'],'point'],layout:{'text-field':['get','label'],'text-size':11,'text-offset':[0,-1.8],'text-allow-overlap':true},paint:{'text-color':'#7b5700','text-halo-color':'#fff','text-halo-width':1.5}},
+    {id:'canonical-label',type:'symbol',source:CANON,minzoom:16,layout:{'text-field':['get','brand'],'text-size':11,'text-offset':[0,1],'text-anchor':'top','text-allow-overlap':false},paint:{'text-color':['case',['==',['get','category'],'convenience_store'],'#1f4fa5','#9a5400'],'text-halo-color':'#fff','text-halo-width':1.4}}
+  ]}});
+  map.addControl(new maplibregl.NavigationControl({showCompass:false}),'top-right');
+
+  let enabled=true,hardEnabled=true,latestItems=[],latestAudit={hardGroups:[],reviewPairs:[]},reviewQueue=[],queueIndex=-1,moveStarted=null,popup=null;const judgments=new Map();
+  function refresh(){if(!map.isStyleLoaded())return;let loaded=[];try{loaded=dedupe(map.querySourceFeatures(OVERTURE,{sourceLayer:'place'}));}catch{}const items=loaded.map(f=>({f,cat:canonicalCategory(f.properties||{})})).filter(x=>x.cat&&x.f?.geometry?.type==='Point'&&Array.isArray(x.f.geometry.coordinates));latestItems=items;latestAudit=buildAudit(items);map.getSource(CANON)?.setData(canonicalGeo(items));map.getSource(HARD)?.setData(hardGeo(latestAudit.hardGroups));convenienceCountEl.textContent=items.filter(x=>x.cat==='convenience_store').length.toLocaleString();supermarketCountEl.textContent=items.filter(x=>x.cat==='supermarket').length.toLocaleString();targetCountEl.textContent=auditTargetItems(items).length.toLocaleString();hardGroupsEl.textContent=latestAudit.hardGroups.length.toLocaleString();reviewPairsEl.textContent=latestAudit.reviewPairs.length.toLocaleString();geoAnomaliesEl.textContent=items.filter(geoNameConflict).length.toLocaleString();renderedCountEl.textContent=items.length.toLocaleString();const brands=new Map();for(const item of auditTargetItems(items)){const b=canonicalBrand(item.f.properties||{});brands.set(b,(brands.get(b)||0)+1);}brandsEl.textContent='目標連鎖：'+([...brands.entries()].sort((a,b)=>b[1]-a[1]).map(([k,v])=>`${k} ${v}`).join(' · ')||'目前 loaded tiles 無目標連鎖');}
+  function rowDetail(row){const p=row.pair,a=pointProps(p.a),b=pointProps(p.b),flags=[a.geo_conflict?`A文字含 ${a.geo_conflict}`:'',b.geo_conflict?`B文字含 ${b.geo_conflict}`:''].filter(Boolean).join(' / ');return`<strong>${escapeHtml(a.brand)}</strong> · 約 ${Math.round(p.distance)}m · priority ${row.score}${flags?`<div class="warn">⚠ ${escapeHtml(flags)}</div>`:''}<div class="record"><strong>A</strong> ${escapeHtml(a.raw_name)}<br>brand: ${escapeHtml(a.raw_brand)} · branch: ${escapeHtml(a.branch)}<br>address: ${escapeHtml(a.address)}<br><span class="muted">source: ${escapeHtml(a.source)}</span></div><div class="record"><strong>B</strong> ${escapeHtml(b.raw_name)}<br>brand: ${escapeHtml(b.raw_brand)} · branch: ${escapeHtml(b.branch)}<br>address: ${escapeHtml(b.address)}<br><span class="muted">source: ${escapeHtml(b.source)}</span></div>`;}
+  function renderQueue(){const has=reviewQueue.length>0&&queueIndex>=0,row=has?reviewQueue[queueIndex]:null;$('#queuePos').textContent=has?`${queueIndex+1} / ${reviewQueue.length}`:'尚未建立';$('#queueDetail').innerHTML=has?rowDetail(row):'先按「產生最可疑 Top 15」。每題只比較 A/B 兩筆；同一個 raw record 在這輪只會出現一次。直接點 A、B 或一般藍／橘點，都能看 raw/source/address。';for(const id of ['prevCandidate','nextCandidate','judgeSame','judgeDifferent','judgeBadLocation','judgeUnsure','copyResults'])$('#'+id).disabled=!has;$('#prevCandidate').disabled=!has||queueIndex<=0;$('#nextCandidate').disabled=!has||queueIndex>=reviewQueue.length-1;const vals=[...judgments.values()],same=vals.filter(v=>v==='同一家').length,diff=vals.filter(v=>v==='不同店').length,bad=vals.filter(v=>v==='錯位/異常').length,unsure=vals.filter(v=>v==='不確定').length;$('#queueSummary').textContent=`已判讀 ${vals.length} · 同一家 ${same} · 不同店 ${diff} · 錯位/異常 ${bad} · 不確定 ${unsure}`;}
+  function openCurrent(){if(queueIndex<0||queueIndex>=reviewQueue.length)return;const row=reviewQueue[queueIndex];map.getSource(CURRENT)?.setData(pairGeo(row));map.fitBounds(pairBounds(row),{padding:{top:120,bottom:120,left:650,right:120},maxZoom:18.5,duration:450});renderQueue();}
+  function buildQueue(){refresh();reviewQueue=rankedNonOverlapping(latestAudit.reviewPairs,15);queueIndex=reviewQueue.length?0:-1;judgments.clear();if(queueIndex>=0)openCurrent();else{map.getSource(CURRENT)?.setData({type:'FeatureCollection',features:[]});renderQueue();status.textContent='目前 loaded tiles 沒有可抽查的同品牌 review pair；可切換行政區再試。';}}
+  function judge(v){if(queueIndex<0)return;const row=reviewQueue[queueIndex],key=`${featureKey(row.pair.a.f)}::${featureKey(row.pair.b.f)}`;judgments.set(key,v);if(queueIndex<reviewQueue.length-1){queueIndex++;setTimeout(openCurrent,100);}else renderQueue();}
+  async function copyResults(){const lines=['Buju duplicate review v0.12'];reviewQueue.forEach((row,i)=>{const key=`${featureKey(row.pair.a.f)}::${featureKey(row.pair.b.f)}`,v=judgments.get(key);if(!v)return;const a=pointProps(row.pair.a),b=pointProps(row.pair.b);lines.push(`${i+1}. ${a.brand} | ${Math.round(row.pair.distance)}m | ${v} | A=${a.raw_name} | B=${b.raw_name} | A_geo=${a.geo_conflict||'-'} | B_geo=${b.geo_conflict||'-'}`);});try{await navigator.clipboard.writeText(lines.join('\n'));status.textContent=`已複製 ${lines.length-1} 筆判讀`;status.className='good';}catch{status.textContent='瀏覽器不允許自動複製';status.className='error';}}
+  function openPopupFromFeature(f){const p=f.properties||{};popup?.remove();popup=new maplibregl.Popup({offset:10,maxWidth:'390px'}).setLngLat(f.geometry.coordinates.slice()).setHTML(popupHtml(p)).addTo(map);}
+  for(const layer of ['canonical-convenience','canonical-supermarket','current-point']){map.on('click',layer,e=>{const f=e.features?.[0];if(f)openPopupFromFeature(f);});map.on('mouseenter',layer,()=>map.getCanvas().style.cursor='pointer');map.on('mouseleave',layer,()=>map.getCanvas().style.cursor='');}
+  $('#togglePoi').onclick=()=>{enabled=!enabled;for(const id of ['canonical-convenience','canonical-supermarket','canonical-label'])map.setLayoutProperty(id,'visibility',enabled?'visible':'none');$('#togglePoi').classList.toggle('active',enabled);$('#togglePoi').textContent=`生活 POI ${enabled?'ON':'OFF'}`;};
+  $('#toggleHard').onclick=()=>{hardEnabled=!hardEnabled;map.setLayoutProperty('hard-ring','visibility',hardEnabled?'visible':'none');$('#toggleHard').classList.toggle('active',hardEnabled);$('#toggleHard').textContent=`紅圈 ${hardEnabled?'ON':'OFF'}`;};
+  $('#buildQueue').onclick=buildQueue;$('#prevCandidate').onclick=()=>{if(queueIndex>0){queueIndex--;openCurrent();}};$('#nextCandidate').onclick=()=>{if(queueIndex<reviewQueue.length-1){queueIndex++;openCurrent();}};$('#judgeSame').onclick=()=>judge('同一家');$('#judgeDifferent').onclick=()=>judge('不同店');$('#judgeBadLocation').onclick=()=>judge('錯位/異常');$('#judgeUnsure').onclick=()=>judge('不確定');$('#copyResults').onclick=copyResults;
+  document.querySelectorAll('.district').forEach(btn=>btn.onclick=()=>{document.querySelectorAll('.district').forEach(b=>b.classList.remove('active'));btn.classList.add('active');reviewQueue=[];queueIndex=-1;judgments.clear();map.getSource(CURRENT)?.setData({type:'FeatureCollection',features:[]});renderQueue();map.easeTo({...districts[btn.dataset.district],pitch:0,bearing:0,duration:500});});
+  map.on('load',()=>{refresh();renderQueue();status.textContent=`READY · ${selected.release} · strict-chain non-overlap pair audit v0.12`;status.className='good';});map.on('movestart',()=>{moveStarted=performance.now();});map.on('idle',()=>{if(moveStarted!=null){idleMsEl.textContent=`${Math.round(performance.now()-moveStarted)} ms`;moveStarted=null;}refresh();});map.on('error',e=>{console.warn('Map error',e?.error||e);});
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>卜居 · duplicate review v0.10 loader</title>
+  <style>
+    html,body{margin:0;width:100%;height:100%;font-family:Inter,system-ui,"Noto Sans TC",sans-serif;background:#eef1f4;color:#263238}
+    .boot{padding:24px}.err{white-space:pre-wrap;color:#b42318;background:#fff;border:1px solid #efb4ae;border-radius:12px;padding:14px;max-width:900px}
+  </style>
+</head>
+<body>
+<div class="boot" id="boot">Loading duplicate review v0.10…</div>
+<script>
+(async()=>{
+  const boot=document.getElementById('boot');
+  try{
+    const res=await fetch('/daily-life-poi-overture-spike-v09.html',{cache:'no-store'});
+    if(!res.ok)throw new Error(`failed to load v0.9 source: HTTP ${res.status}`);
+    let html=await res.text();
+
+    const brokenFilter="labelSearch=['downcase',['concat',['coalesce',['get','@name'],''],' ',['to-string',['coalesce',['get','brand'],'']]],contains=";
+    const fixedFilter="labelSearch=['downcase',['concat',['coalesce',['get','@name'],''],' ',['to-string',['coalesce',['get','brand'],'']]]],contains=";
+    if(!html.includes(brokenFilter))throw new Error('expected v0.9 labelSearch signature not found; refusing blind patch');
+    html=html.replace(brokenFilter,fixedFilter);
+
+    html=html.replace("if(identities.size!==1||![...identities][0]===identity)","if(identities.size!==1||[...identities][0]!==identity)");
+    html=html.replaceAll('v0.9','v0.10');
+
+    const start=html.lastIndexOf('<script>');
+    const end=html.lastIndexOf('</script>');
+    if(start<0||end<=start)throw new Error('inline script not found after patch');
+    const inline=html.slice(start+8,end);
+    try{new Function(inline);}catch(err){throw new Error(`patched inline JS still fails syntax check: ${err.message}`);}
+
+    document.open();
+    document.write(html);
+    document.close();
+  }catch(err){
+    boot.className='boot err';
+    boot.textContent='Duplicate review v0.10 bootstrap failed:\n'+(err?.stack||err);
+  }
+})();
+</script>
+</body>
+</html>

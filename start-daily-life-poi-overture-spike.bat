@@ -13,18 +13,17 @@ if not defined NODE_CMD (
 )
 
 echo ==========================================================
-echo   Buju / Taipei-Maps - Overture Places audit spike v0.10
-echo   Issue #56 - guarded identity-safe duplicate review queue
+echo   Buju / Taipei-Maps - Overture Places audit spike v0.11
+echo   Issue #56 - script-safe guarded identity review queue
 echo ==========================================================
 echo.
-echo This launcher uses a guarded v0.10 loader that:
-echo   - patches the known v0.9 labelSearch bracket bug before execution
-echo   - fixes the mixed-identity guard condition
-echo   - syntax-checks the patched inline JavaScript before rendering
-echo   - shows an explicit bootstrap error instead of a silent grey screen
-echo   - keeps canonical category + brand identity buckets
-echo   - keeps clickable candidate and raw POI source details
-echo   - keeps all duplicate judgments audit-only
+echo This launcher uses v0.11, which fixes the v0.10 loader parser bug:
+echo   - no literal closing script tag appears inside the loader JavaScript
+echo   - known v0.9 filter and mixed-identity bugs are patched before execution
+echo   - patched inline JavaScript is syntax-checked before rendering
+echo   - bootstrap errors are shown explicitly instead of silent grey screens
+echo   - candidate and raw POI source details remain clickable
+echo   - duplicate judgments remain audit-only
 echo.
 echo Visual audit checklist:
 echo   1. Wait for READY before building the queue.
@@ -32,9 +31,9 @@ echo   2. Click ^"產生最可疑 Top 15^".
 echo   3. Every A/B/C label in one family should show the same canonical brand.
 echo   4. Click an amber candidate point and confirm raw/source details appear.
 echo   5. Click a normal blue/orange POI and confirm source details appear.
-echo   6. If bootstrap fails, the page must show the actual error instead of staying grey.
+echo   6. If bootstrap fails, copy the explicit error text from the page.
 echo.
 echo Keep this window open. Press Ctrl+C to stop the local server.
 echo.
-"%NODE_CMD%" tools\dev\serve_single_engine_core.mjs 5173 "/daily-life-poi-overture-spike-v10.html"
+"%NODE_CMD%" tools\dev\serve_single_engine_core.mjs 5173 "/daily-life-poi-overture-spike-v11.html"
 exit /b %errorlevel%

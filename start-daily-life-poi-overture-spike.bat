@@ -13,33 +13,32 @@ if not defined NODE_CMD (
 )
 
 echo ==========================================================
-echo   Buju / Taipei-Maps - Overture Places audit spike v0.8
-echo   Issue #56 - grouped duplicate review families
+echo   Buju / Taipei-Maps - Overture Places audit spike v0.9
+echo   Issue #56 - identity-safe duplicate review queue
 echo ==========================================================
 echo.
 echo This spike intentionally uses:
 echo   - OSM raster only as visual basemap
 echo   - Overture Places as structured / clickable POI source
-echo   - v0.5 canonical brand/category normalization
-echo   - red rings for high-confidence duplicate candidates
-echo   - review pairs grouped into one candidate family when they share records
-echo   - amber A/B/C circles on the actual source points, connected by amber lines
-echo   - no empty midpoint review rings
+echo   - canonical category + brand identity buckets before candidate grouping
+echo   - no cross-brand candidate families
+echo   - amber candidate labels include canonical brand, e.g. A-FamilyMart
+echo   - candidate and raw POI points are clickable for source details
+echo   - red rings remain audit-only high-confidence duplicate candidates
 echo   - no automatic merge/delete
 echo   - no Google Places ingestion
 echo   - no OSM structured merge yet
 echo.
 echo Visual audit checklist:
-echo   1. classification overlaps should remain 0.
-echo   2. Click ^"產生最可疑 Top 15^" after the target district finishes loading.
-echo   3. Each queue item should show actual A/B/C POI points, not an empty midpoint.
-echo   4. Pairs sharing a record should appear once as a candidate family.
-echo   5. Amber lines should visibly connect the records being judged.
-echo   6. Mark each family as all same store / contains different stores / unsure.
-echo   7. Use ^"複製判讀結果^" and paste the summary back into the chat.
-echo   8. Any review result remains audit-only and must not feed Place Metrics yet.
+echo   1. Wait for READY before building the queue.
+echo   2. Click ^"產生最可疑 Top 15^".
+echo   3. Every A/B/C label in one family should show the same canonical brand.
+echo   4. Click an amber candidate point and confirm raw name / branch / source / Overture id appear.
+echo   5. Click a normal blue/orange POI and confirm source details also appear.
+echo   6. If the OSM basemap label differs from the candidate brand, inspect the Overture raw record before judging.
+echo   7. Any review result remains audit-only and must not feed Place Metrics yet.
 echo.
 echo Keep this window open. Press Ctrl+C to stop the local server.
 echo.
-"%NODE_CMD%" tools\dev\serve_single_engine_core.mjs 5173 "/daily-life-poi-overture-spike-v08.html"
+"%NODE_CMD%" tools\dev\serve_single_engine_core.mjs 5173 "/daily-life-poi-overture-spike-v09.html"
 exit /b %errorlevel%

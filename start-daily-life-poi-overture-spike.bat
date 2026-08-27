@@ -13,8 +13,8 @@ if not defined NODE_CMD (
 )
 
 echo ==========================================================
-echo   Buju / Taipei-Maps - Overture Places audit spike v0.7
-echo   Issue #56 - ranked false-positive review queue
+echo   Buju / Taipei-Maps - Overture Places audit spike v0.8
+echo   Issue #56 - grouped duplicate review families
 echo ==========================================================
 echo.
 echo This spike intentionally uses:
@@ -22,22 +22,24 @@ echo   - OSM raster only as visual basemap
 echo   - Overture Places as structured / clickable POI source
 echo   - v0.5 canonical brand/category normalization
 echo   - red rings for high-confidence duplicate candidates
-echo   - amber rings for nearby same-brand pairs needing human review
-echo   - Top 20 ranked review queue to avoid manual map hunting
+echo   - review pairs grouped into one candidate family when they share records
+echo   - amber A/B/C circles on the actual source points, connected by amber lines
+echo   - no empty midpoint review rings
 echo   - no automatic merge/delete
 echo   - no Google Places ingestion
 echo   - no OSM structured merge yet
 echo.
 echo Visual audit checklist:
 echo   1. classification overlaps should remain 0.
-echo   2. Click ^"產生最可疑 Top 20^" after the target district finishes loading.
-echo   3. Queue should fly to each candidate automatically.
-echo   4. Priority should favor longer-distance / conflicting-name pairs.
-echo   5. Mark each as same store / different store / unsure.
-echo   6. Use ^"複製判讀結果^" and paste the summary back into the chat.
-echo   7. Any review result remains audit-only and must not feed Place Metrics yet.
+echo   2. Click ^"產生最可疑 Top 15^" after the target district finishes loading.
+echo   3. Each queue item should show actual A/B/C POI points, not an empty midpoint.
+echo   4. Pairs sharing a record should appear once as a candidate family.
+echo   5. Amber lines should visibly connect the records being judged.
+echo   6. Mark each family as all same store / contains different stores / unsure.
+echo   7. Use ^"複製判讀結果^" and paste the summary back into the chat.
+echo   8. Any review result remains audit-only and must not feed Place Metrics yet.
 echo.
 echo Keep this window open. Press Ctrl+C to stop the local server.
 echo.
-"%NODE_CMD%" tools\dev\serve_single_engine_core.mjs 5173 "/daily-life-poi-overture-spike-v07.html"
+"%NODE_CMD%" tools\dev\serve_single_engine_core.mjs 5173 "/daily-life-poi-overture-spike-v08.html"
 exit /b %errorlevel%

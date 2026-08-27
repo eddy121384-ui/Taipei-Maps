@@ -13,28 +13,29 @@ if not defined NODE_CMD (
 )
 
 echo ==========================================================
-echo   Buju / Taipei-Maps - Overture Places audit spike v0.17
-echo   Issue #56 - stable exact-boundary + adversarial review
+echo   Buju / Taipei-Maps - Canonical POI v0.1
+echo   Issue #56 - Overture raw records to Buju physical stores
 echo ==========================================================
 echo.
-echo v0.17 fixes the v0.16 bootstrap regression:
-echo   - patches the known-good v0.13 page directly (no loader-inside-loader)
-echo   - Taipei membership uses the 12 district polygons via point-in-polygon
- echo   - Yonghe / Xindian New Taipei POIs must NOT be treated as Taipei conflicts
- echo   - Jinmen St in Zhongzheng remains valid Taipei data
- echo   - hard anomaly quarantine requires a coordinate actually inside Taipei City
- echo     plus an explicit outside-city structured address
- echo   - duplicate review continues the adversarial false-positive hunt
+echo This round stops manual edge-case hunting and starts the canonical POI layer:
+echo   - target chains only: 7-ELEVEN / FamilyMart / Hi-Life / OK / PX Mart / Carrefour / Simple Mart
+echo   - high-confidence duplicate evidence is auto-merged conservatively
+ echo   - unresolved nearby same-brand pairs remain separate instead of being guessed
+ echo   - canonical coordinates use the strongest real source record, never a midpoint
+ echo   - provenance, source names, source ids and merge reasons are retained
+ echo   - raw Overture records can be toggled on for visual comparison
+ echo   - this is still loaded-tile scope; NOT a Taipei citywide final count
+ echo   - structured OSM hole-filler has not started yet
 echo.
-echo Visual audit checklist:
+echo Smoke checklist:
 echo   1. Wait for READY.
-echo   2. Re-check the Yonghe FamilyMart shown in the previous smoke: it must NOT
- echo      appear as an admin-coordinate anomaly.
-echo   3. Confirm Zhongzheng Jinmen Simple Mart remains non-anomalous.
-echo   4. Then continue ^"找反例 Top 15^".
-echo   5. All judgments remain audit-only; nothing is automatically deleted or merged.
+echo   2. Canonical points should render blue/orange and remain clickable.
+echo   3. Turn Raw records ON: obvious close duplicates should sometimes collapse to
+ echo      one canonical point while unresolved cases remain separate.
+echo   4. Click a merged canonical point and confirm source rows ^> 1 plus merge evidence.
+echo   5. Switch Daan / Xinyi / Songshan / Zhongshan / Zhongzheng and confirm pan remains usable.
 echo.
 echo Keep this window open. Press Ctrl+C to stop the local server.
 echo.
-"%NODE_CMD%" tools\dev\serve_single_engine_core.mjs 5173 "/daily-life-poi-overture-spike-v17.html"
+"%NODE_CMD%" tools\dev\serve_single_engine_core.mjs 5173 "/daily-life-poi-canonical-v01.html"
 exit /b %errorlevel%

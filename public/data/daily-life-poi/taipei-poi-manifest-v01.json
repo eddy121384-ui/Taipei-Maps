@@ -23,19 +23,19 @@
   "point_candidate_count": 5687,
   "inside_taipei_count": 3293,
   "classified_target_count": 1991,
-  "canonical_count": 1785,
-  "unresolved_count": 49,
+  "canonical_count": 1781,
+  "unresolved_count": 45,
   "counts_by_category": {
-    "convenience_store": 1568,
-    "supermarket": 217
+    "convenience_store": 1565,
+    "supermarket": 216
   },
   "counts_by_brand": {
     "7-ELEVEN": 819,
-    "全家": 624,
-    "全聯": 165,
+    "全家": 622,
+    "全聯": 164,
     "美廉社": 28,
     "家樂福": 24,
-    "萊爾富": 87,
+    "萊爾富": 86,
     "OK Mart": 38
   },
   "source_dataset_counts": {
@@ -44,5 +44,5 @@
     "meta": 829,
     "Overture": 1991
   },
-  "logical_dataset_sha256": "653a13414d68ac43d190fe661a48c1fd3785f1f8bb6a3864d8e3bc55f2db1e42"
+  "logical_dataset_sha256": "d24f3bd9e598acfb6cbc8ce07e73c295a299be0743691a9eda87c6e9e2784d5e"
 }

@@ -28381,40 +28381,6 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          121.52837217839927,
-          25.05187280839278
-        ]
-      },
-      "properties": {
-        "canonical_id": "buju-poi-11kh1ab",
-        "category": "convenience_store",
-        "brand": "全家",
-        "branch": "FamilyMart 鑫興亞門市",
-        "name": "全家 FamilyMart 鑫興亞門市",
-        "source_rows": 1,
-        "source_ids": [
-          "ac05716a-5058-4b7e-93ff-1c50e871d265"
-        ],
-        "source_names": [
-          "全家 FamilyMart 鑫興亞門市"
-        ],
-        "sources": [
-          "Foursquare",
-          "Overture"
-        ],
-        "representative_key": "ac05716a-5058-4b7e-93ff-1c50e871d265",
-        "representative_strength": 55,
-        "address": "南京東路二段20號 Taipei 104 TW",
-        "merge_reasons": [],
-        "branch_conflict": false,
-        "address_conflict": false
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
           121.574732,
           25.03244
         ]
@@ -28677,40 +28643,6 @@
         "representative_key": "2878dc2d-6dc1-463c-98b0-0804553382ca",
         "representative_strength": 100,
         "address": "台北市中山區德惠街１６－７號 中山區 104 台北市 TW",
-        "merge_reasons": [],
-        "branch_conflict": false,
-        "address_conflict": false
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          121.528621,
-          25.05189
-        ]
-      },
-      "properties": {
-        "canonical_id": "buju-poi-12ilew0",
-        "category": "convenience_store",
-        "brand": "全家",
-        "branch": "鑫興亞店",
-        "name": "全家 鑫興亞店",
-        "source_rows": 1,
-        "source_ids": [
-          "d759c515-a02a-42ec-afe2-7892daaf37f9"
-        ],
-        "source_names": [
-          "全家鑫興亞店"
-        ],
-        "sources": [
-          "AllThePlaces",
-          "Overture"
-        ],
-        "representative_key": "d759c515-a02a-42ec-afe2-7892daaf37f9",
-        "representative_strength": 100,
-        "address": "台北市中山區南京東路二段２０號１樓 中山區 104 台北市 TW",
         "merge_reasons": [],
         "branch_conflict": false,
         "address_conflict": false
@@ -29985,6 +29917,45 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
+          121.528621,
+          25.05189
+        ]
+      },
+      "properties": {
+        "canonical_id": "buju-poi-166acgd",
+        "category": "convenience_store",
+        "brand": "全家",
+        "branch": "鑫興亞店",
+        "name": "全家 鑫興亞店",
+        "source_rows": 2,
+        "source_ids": [
+          "ac05716a-5058-4b7e-93ff-1c50e871d265",
+          "d759c515-a02a-42ec-afe2-7892daaf37f9"
+        ],
+        "source_names": [
+          "全家 FamilyMart 鑫興亞門市",
+          "全家鑫興亞店"
+        ],
+        "sources": [
+          "Foursquare",
+          "Overture",
+          "AllThePlaces"
+        ],
+        "representative_key": "d759c515-a02a-42ec-afe2-7892daaf37f9",
+        "representative_strength": 100,
+        "address": "台北市中山區南京東路二段２０號１樓 中山區 104 台北市 TW",
+        "merge_reasons": [
+          "same-branch"
+        ],
+        "branch_conflict": false,
+        "address_conflict": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
           121.520657,
           25.081014
         ]
@@ -30032,8 +30003,8 @@
         "canonical_id": "buju-poi-16p4lv7",
         "category": "convenience_store",
         "brand": "全家",
-        "branch": "FamilyMart—新北大店",
-        "name": "全家 FamilyMart—新北大店",
+        "branch": "新北大店",
+        "name": "全家 新北大店",
         "source_rows": 2,
         "source_ids": [
           "d85309ee-78bb-445d-89ab-97f1f0725270",
@@ -31280,8 +31251,8 @@
         "canonical_id": "buju-poi-19b73gg",
         "category": "convenience_store",
         "brand": "全家",
-        "branch": "全家全家便利商店-松創店",
-        "name": "全家 全家全家便利商店-松創店",
+        "branch": "松創店",
+        "name": "全家 松創店",
         "source_rows": 1,
         "source_ids": [
           "8fe5fc0c-b090-4459-ad6b-82da83033013"
@@ -33547,40 +33518,6 @@
         "representative_key": "b8118206-e876-4012-99e8-d3070695cb82",
         "representative_strength": 43,
         "address": "天母東路30號 台北市 111 TW",
-        "merge_reasons": [],
-        "branch_conflict": false,
-        "address_conflict": false
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          121.562918,
-          24.982112
-        ]
-      },
-      "properties": {
-        "canonical_id": "buju-poi-1gldtsv",
-        "category": "convenience_store",
-        "brand": "全家",
-        "branch": "欣榮店",
-        "name": "全家 欣榮店",
-        "source_rows": 1,
-        "source_ids": [
-          "ce2fa8c4-3e5e-4896-8c54-bb5863b4987b"
-        ],
-        "source_names": [
-          "全家欣榮店"
-        ],
-        "sources": [
-          "AllThePlaces",
-          "Overture"
-        ],
-        "representative_key": "ce2fa8c4-3e5e-4896-8c54-bb5863b4987b",
-        "representative_strength": 100,
-        "address": "台北市文山區木新路三段９３號 文山區 116 台北市 TW",
         "merge_reasons": [],
         "branch_conflict": false,
         "address_conflict": false
@@ -38464,6 +38401,45 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
+          121.562918,
+          24.982112
+        ]
+      },
+      "properties": {
+        "canonical_id": "buju-poi-1vje0l1",
+        "category": "convenience_store",
+        "brand": "全家",
+        "branch": "欣榮店",
+        "name": "全家 欣榮店",
+        "source_rows": 2,
+        "source_ids": [
+          "15949bff-353a-4dea-80ae-486fed02e0bf",
+          "ce2fa8c4-3e5e-4896-8c54-bb5863b4987b"
+        ],
+        "source_names": [
+          "FamilyMart 全家便利商店 欣榮店",
+          "全家欣榮店"
+        ],
+        "sources": [
+          "Foursquare",
+          "Overture",
+          "AllThePlaces"
+        ],
+        "representative_key": "ce2fa8c4-3e5e-4896-8c54-bb5863b4987b",
+        "representative_strength": 100,
+        "address": "台北市文山區木新路三段９３號 文山區 116 台北市 TW",
+        "merge_reasons": [
+          "same-branch"
+        ],
+        "branch_conflict": false,
+        "address_conflict": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
           121.543861,
           25.025011
         ]
@@ -39196,40 +39172,6 @@
         ],
         "branch_conflict": false,
         "address_conflict": true
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          121.563133,
-          24.982157
-        ]
-      },
-      "properties": {
-        "canonical_id": "buju-poi-29ndti",
-        "category": "convenience_store",
-        "brand": "全家",
-        "branch": "全家便利商店 欣榮店",
-        "name": "全家 全家便利商店 欣榮店",
-        "source_rows": 1,
-        "source_ids": [
-          "15949bff-353a-4dea-80ae-486fed02e0bf"
-        ],
-        "source_names": [
-          "FamilyMart 全家便利商店 欣榮店"
-        ],
-        "sources": [
-          "Foursquare",
-          "Overture"
-        ],
-        "representative_key": "15949bff-353a-4dea-80ae-486fed02e0bf",
-        "representative_strength": 55,
-        "address": "文山區木新路三段95號 臺北市 116 TW",
-        "merge_reasons": [],
-        "branch_conflict": false,
-        "address_conflict": false
       }
     },
     {
@@ -41067,8 +41009,8 @@
         "canonical_id": "buju-poi-8tr9sz",
         "category": "convenience_store",
         "brand": "全家",
-        "branch": "Familymart 景中店",
-        "name": "全家 Familymart 景中店",
+        "branch": "景中店",
+        "name": "全家 景中店",
         "source_rows": 2,
         "source_ids": [
           "08afd2b4-69e1-48c1-bed8-643f7dba36a1",
@@ -49715,8 +49657,8 @@
         "canonical_id": "buju-poi-1095enh",
         "category": "convenience_store",
         "brand": "萊爾富",
-        "branch": "萊爾富台北湖玉店",
-        "name": "萊爾富 萊爾富台北湖玉店",
+        "branch": "台北湖玉店",
+        "name": "萊爾富 台北湖玉店",
         "source_rows": 1,
         "source_ids": [
           "82890912-94d3-4c85-b4de-0c5e8eb6699a"
@@ -50229,8 +50171,8 @@
         "canonical_id": "buju-poi-1f38maj",
         "category": "convenience_store",
         "brand": "萊爾富",
-        "branch": "Hi-Life 雙蝶店",
-        "name": "萊爾富 Hi-Life 雙蝶店",
+        "branch": "雙蝶店",
+        "name": "萊爾富 雙蝶店",
         "source_rows": 1,
         "source_ids": [
           "8f63682c-2171-4313-9422-2d237defd3c1"
@@ -50433,8 +50375,8 @@
         "canonical_id": "buju-poi-1k8vn3a",
         "category": "convenience_store",
         "brand": "萊爾富",
-        "branch": "Hi-Life — 北市松清店",
-        "name": "萊爾富 Hi-Life — 北市松清店",
+        "branch": "北市松清店",
+        "name": "萊爾富 北市松清店",
         "source_rows": 1,
         "source_ids": [
           "7e1e5768-cdc0-419f-99a8-0494f3cabecc"
@@ -50671,8 +50613,8 @@
         "canonical_id": "buju-poi-1rndhwh",
         "category": "convenience_store",
         "brand": "萊爾富",
-        "branch": "萊爾富 大安溫州店",
-        "name": "萊爾富 萊爾富 大安溫州店",
+        "branch": "大安溫州店",
+        "name": "萊爾富 大安溫州店",
         "source_rows": 2,
         "source_ids": [
           "0e1c7740-7b68-4e66-9d23-dbb851ea71ba",
@@ -50691,9 +50633,9 @@
         "representative_strength": 60,
         "address": "羅斯福路三段283巷11號 台北市 106 TW",
         "merge_reasons": [
-          "same-brand<=5m"
+          "same-branch"
         ],
-        "branch_conflict": true,
+        "branch_conflict": false,
         "address_conflict": true
       }
     },
@@ -50710,8 +50652,8 @@
         "canonical_id": "buju-poi-1ryilr6",
         "category": "convenience_store",
         "brand": "萊爾富",
-        "branch": "萊爾富成康店",
-        "name": "萊爾富 萊爾富成康店",
+        "branch": "成康店",
+        "name": "萊爾富 成康店",
         "source_rows": 1,
         "source_ids": [
           "e6ffdc29-29e6-49c6-b47a-1bfaf68bfcf0"
@@ -50744,8 +50686,8 @@
         "canonical_id": "buju-poi-1rzpvqm",
         "category": "convenience_store",
         "brand": "萊爾富",
-        "branch": "Hi-Life 北市貓空店",
-        "name": "萊爾富 Hi-Life 北市貓空店",
+        "branch": "北市貓空店",
+        "name": "萊爾富 北市貓空店",
         "source_rows": 1,
         "source_ids": [
           "36654f16-2403-40c3-8749-8c206c549b9a"
@@ -51084,8 +51026,8 @@
         "canonical_id": "buju-poi-2ntjsk",
         "category": "convenience_store",
         "brand": "萊爾富",
-        "branch": "Hi-Life 士林月圓店",
-        "name": "萊爾富 Hi-Life 士林月圓店",
+        "branch": "士林月圓店",
+        "name": "萊爾富 士林月圓店",
         "source_rows": 1,
         "source_ids": [
           "00293a68-ae36-4499-8585-b00fea8ff7d3"
@@ -51118,8 +51060,8 @@
         "canonical_id": "buju-poi-2sk114",
         "category": "convenience_store",
         "brand": "萊爾富",
-        "branch": "萊爾富 亞提店",
-        "name": "萊爾富 萊爾富 亞提店",
+        "branch": "亞提店",
+        "name": "萊爾富 亞提店",
         "source_rows": 1,
         "source_ids": [
           "822b18b5-b845-4a66-b3a0-dc654542c88d"
@@ -51322,8 +51264,8 @@
         "canonical_id": "buju-poi-7nk2rx",
         "category": "convenience_store",
         "brand": "萊爾富",
-        "branch": "萊爾富-北市延壽店",
-        "name": "萊爾富 萊爾富-北市延壽店",
+        "branch": "北市延壽店",
+        "name": "萊爾富 北市延壽店",
         "source_rows": 1,
         "source_ids": [
           "8591ecc2-6255-4bbf-b9e3-7fde47d610c9"
@@ -51586,40 +51528,6 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          121.56520761175166,
-          25.079723586703942
-        ]
-      },
-      "properties": {
-        "canonical_id": "buju-poi-d72t2k",
-        "category": "convenience_store",
-        "brand": "萊爾富",
-        "branch": "北市鑫湖店",
-        "name": "萊爾富 北市鑫湖店",
-        "source_rows": 1,
-        "source_ids": [
-          "4f41f676-2290-457c-be63-bc6f8136ebf6"
-        ],
-        "source_names": [
-          "萊爾富便利商店-北市鑫湖店"
-        ],
-        "sources": [
-          "meta",
-          "Overture"
-        ],
-        "representative_key": "4f41f676-2290-457c-be63-bc6f8136ebf6",
-        "representative_strength": 90,
-        "address": "台灣114台北市內湖區基湖路35巷11號 台北市 114 TW",
-        "merge_reasons": [],
-        "branch_conflict": false,
-        "address_conflict": false
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
           121.53192,
           25.04388
         ]
@@ -51662,8 +51570,8 @@
         "canonical_id": "buju-poi-e0hks3",
         "category": "convenience_store",
         "brand": "萊爾富",
-        "branch": "Hi-Life 天福店",
-        "name": "萊爾富 Hi-Life 天福店",
+        "branch": "天福店",
+        "name": "萊爾富 天福店",
         "source_rows": 1,
         "source_ids": [
           "1caa743a-a026-435c-abef-95986f379864"
@@ -51730,8 +51638,8 @@
         "canonical_id": "buju-poi-ei5ood",
         "category": "convenience_store",
         "brand": "萊爾富",
-        "branch": "hi-life 紗帽店",
-        "name": "萊爾富 hi-life 紗帽店",
+        "branch": "紗帽店",
+        "name": "萊爾富 紗帽店",
         "source_rows": 1,
         "source_ids": [
           "a0d7f17c-960b-4820-9e50-303c024da653"
@@ -51783,6 +51691,45 @@
         "merge_reasons": [],
         "branch_conflict": false,
         "address_conflict": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.56520761175166,
+          25.079723586703942
+        ]
+      },
+      "properties": {
+        "canonical_id": "buju-poi-fw5khk",
+        "category": "convenience_store",
+        "brand": "萊爾富",
+        "branch": "北市鑫湖店",
+        "name": "萊爾富 北市鑫湖店",
+        "source_rows": 2,
+        "source_ids": [
+          "202bd54f-5284-4166-956d-7eb1a2a13e65",
+          "4f41f676-2290-457c-be63-bc6f8136ebf6"
+        ],
+        "source_names": [
+          "Hi-Life 萊爾富 鑫湖店",
+          "萊爾富便利商店-北市鑫湖店"
+        ],
+        "sources": [
+          "Foursquare",
+          "Overture",
+          "meta"
+        ],
+        "representative_key": "4f41f676-2290-457c-be63-bc6f8136ebf6",
+        "representative_strength": 90,
+        "address": "台灣114台北市內湖區基湖路35巷11號 台北市 114 TW",
+        "merge_reasons": [
+          "branch-area-prefix-equivalent"
+        ],
+        "branch_conflict": true,
+        "address_conflict": true
       }
     },
     {
@@ -51892,40 +51839,6 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          121.56509369391509,
-          25.079810796095234
-        ]
-      },
-      "properties": {
-        "canonical_id": "buju-poi-j437fe",
-        "category": "convenience_store",
-        "brand": "萊爾富",
-        "branch": "萊爾富 鑫湖店",
-        "name": "萊爾富 萊爾富 鑫湖店",
-        "source_rows": 1,
-        "source_ids": [
-          "202bd54f-5284-4166-956d-7eb1a2a13e65"
-        ],
-        "source_names": [
-          "Hi-Life 萊爾富 鑫湖店"
-        ],
-        "sources": [
-          "Foursquare",
-          "Overture"
-        ],
-        "representative_key": "202bd54f-5284-4166-956d-7eb1a2a13e65",
-        "representative_strength": 55,
-        "address": "TW",
-        "merge_reasons": [],
-        "branch_conflict": false,
-        "address_conflict": false
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
           121.5249252319336,
           25.060501098632812
         ]
@@ -51934,8 +51847,8 @@
         "canonical_id": "buju-poi-ja290b",
         "category": "convenience_store",
         "brand": "萊爾富",
-        "branch": "Hi-Life B243門市",
-        "name": "萊爾富 Hi-Life B243門市",
+        "branch": "B243門市",
+        "name": "萊爾富 B243門市",
         "source_rows": 1,
         "source_ids": [
           "6ead6978-f56a-4b06-9445-b17bdafca233"
@@ -52036,8 +51949,8 @@
         "canonical_id": "buju-poi-l7c50l",
         "category": "convenience_store",
         "brand": "萊爾富",
-        "branch": "Hi-Life 北市羅捷店",
-        "name": "萊爾富 Hi-Life 北市羅捷店",
+        "branch": "北市羅捷店",
+        "name": "萊爾富 北市羅捷店",
         "source_rows": 1,
         "source_ids": [
           "32c731d1-0a12-4012-9bc8-5ccdc2a4712c"
@@ -57402,6 +57315,45 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
+          121.540532,
+          24.993061
+        ]
+      },
+      "properties": {
+        "canonical_id": "buju-poi-6ek434",
+        "category": "supermarket",
+        "brand": "全聯",
+        "branch": "文山景美",
+        "name": "全聯 文山景美",
+        "source_rows": 2,
+        "source_ids": [
+          "b70b844b-07fa-45ef-a964-12e22616caea",
+          "f081f796-2558-4eac-91c9-cab63d8b158d"
+        ],
+        "source_names": [
+          "文山景美",
+          "全聯福利中心 Pxmart 文山景美"
+        ],
+        "sources": [
+          "AllThePlaces",
+          "Overture",
+          "meta"
+        ],
+        "representative_key": "b70b844b-07fa-45ef-a964-12e22616caea",
+        "representative_strength": 100,
+        "address": "(11674)臺北市文山區羅斯福路６段218號B1 臺北市 TW",
+        "merge_reasons": [
+          "same-branch"
+        ],
+        "branch_conflict": false,
+        "address_conflict": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
           121.530432,
           25.060507
         ]
@@ -57721,40 +57673,6 @@
         ],
         "branch_conflict": true,
         "address_conflict": true
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          121.54064047,
-          24.99302632
-        ]
-      },
-      "properties": {
-        "canonical_id": "buju-poi-99ijjw",
-        "category": "supermarket",
-        "brand": "全聯",
-        "branch": "Pxmart 文山景美",
-        "name": "全聯 Pxmart 文山景美",
-        "source_rows": 1,
-        "source_ids": [
-          "f081f796-2558-4eac-91c9-cab63d8b158d"
-        ],
-        "source_names": [
-          "全聯福利中心 Pxmart 文山景美"
-        ],
-        "sources": [
-          "meta",
-          "Overture"
-        ],
-        "representative_key": "f081f796-2558-4eac-91c9-cab63d8b158d",
-        "representative_strength": 90,
-        "address": "B1, No. 218號, Section 6, Roosevelt Rd 台北市 11674 TW",
-        "merge_reasons": [],
-        "branch_conflict": false,
-        "address_conflict": false
       }
     },
     {
@@ -59735,40 +59653,6 @@
         "representative_key": "c923ae8f-ade1-4ff7-a718-577c7b8c259e",
         "representative_strength": 100,
         "address": "(10481)臺北市中山區興安街55號 臺北市 TW",
-        "merge_reasons": [],
-        "branch_conflict": false,
-        "address_conflict": false
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          121.540532,
-          24.993061
-        ]
-      },
-      "properties": {
-        "canonical_id": "buju-poi-z5a96p",
-        "category": "supermarket",
-        "brand": "全聯",
-        "branch": "文山景美",
-        "name": "全聯 文山景美",
-        "source_rows": 1,
-        "source_ids": [
-          "b70b844b-07fa-45ef-a964-12e22616caea"
-        ],
-        "source_names": [
-          "文山景美"
-        ],
-        "sources": [
-          "AllThePlaces",
-          "Overture"
-        ],
-        "representative_key": "b70b844b-07fa-45ef-a964-12e22616caea",
-        "representative_strength": 100,
-        "address": "(11674)臺北市文山區羅斯福路６段218號B1 臺北市 TW",
         "merge_reasons": [],
         "branch_conflict": false,
         "address_conflict": false

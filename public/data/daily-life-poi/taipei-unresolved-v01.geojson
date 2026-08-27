@@ -289,100 +289,6 @@
         "type": "LineString",
         "coordinates": [
           [
-            121.52837217839927,
-            25.05187280839278
-          ],
-          [
-            121.528621,
-            25.05189
-          ]
-        ]
-      },
-      "properties": {
-        "pair_id": "buju-unresolved-19ede4e79e44",
-        "category": "convenience_store",
-        "brand": "全家",
-        "distance_m": 25.1,
-        "reason": "needs-more-evidence",
-        "source_keys": [
-          "ac05716a-5058-4b7e-93ff-1c50e871d265",
-          "d759c515-a02a-42ec-afe2-7892daaf37f9"
-        ],
-        "source_ids": [
-          "ac05716a-5058-4b7e-93ff-1c50e871d265",
-          "d759c515-a02a-42ec-afe2-7892daaf37f9"
-        ],
-        "source_names": [
-          "全家 FamilyMart 鑫興亞門市",
-          "全家鑫興亞店"
-        ],
-        "branches": [
-          "FamilyMart 鑫興亞門市",
-          "鑫興亞店"
-        ],
-        "addresses": [
-          "南京東路二段20號 Taipei 104 TW",
-          "台北市中山區南京東路二段２０號１樓 中山區 104 台北市 TW"
-        ],
-        "same_branch": false,
-        "same_address": false,
-        "exact_raw_name": false,
-        "generic_specific": false
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "LineString",
-        "coordinates": [
-          [
-            121.56509369391509,
-            25.079810796095234
-          ],
-          [
-            121.56520761175166,
-            25.079723586703942
-          ]
-        ]
-      },
-      "properties": {
-        "pair_id": "buju-unresolved-24ae96f5fdef",
-        "category": "convenience_store",
-        "brand": "萊爾富",
-        "distance_m": 15,
-        "reason": "needs-more-evidence",
-        "source_keys": [
-          "202bd54f-5284-4166-956d-7eb1a2a13e65",
-          "4f41f676-2290-457c-be63-bc6f8136ebf6"
-        ],
-        "source_ids": [
-          "202bd54f-5284-4166-956d-7eb1a2a13e65",
-          "4f41f676-2290-457c-be63-bc6f8136ebf6"
-        ],
-        "source_names": [
-          "Hi-Life 萊爾富 鑫湖店",
-          "萊爾富便利商店-北市鑫湖店"
-        ],
-        "branches": [
-          "萊爾富 鑫湖店",
-          "北市鑫湖店"
-        ],
-        "addresses": [
-          "TW",
-          "台灣114台北市內湖區基湖路35巷11號 台北市 114 TW"
-        ],
-        "same_branch": false,
-        "same_address": false,
-        "exact_raw_name": false,
-        "generic_specific": false
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "LineString",
-        "coordinates": [
-          [
             121.54028134281967,
             25.04724490854062
           ],
@@ -469,53 +375,6 @@
         "same_address": false,
         "exact_raw_name": false,
         "generic_specific": true
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "LineString",
-        "coordinates": [
-          [
-            121.540532,
-            24.993061
-          ],
-          [
-            121.54064047,
-            24.99302632
-          ]
-        ]
-      },
-      "properties": {
-        "pair_id": "buju-unresolved-335b5b07a4b1",
-        "category": "supermarket",
-        "brand": "全聯",
-        "distance_m": 11.6,
-        "reason": "needs-more-evidence",
-        "source_keys": [
-          "b70b844b-07fa-45ef-a964-12e22616caea",
-          "f081f796-2558-4eac-91c9-cab63d8b158d"
-        ],
-        "source_ids": [
-          "b70b844b-07fa-45ef-a964-12e22616caea",
-          "f081f796-2558-4eac-91c9-cab63d8b158d"
-        ],
-        "source_names": [
-          "文山景美",
-          "全聯福利中心 Pxmart 文山景美"
-        ],
-        "branches": [
-          "文山景美",
-          "Pxmart 文山景美"
-        ],
-        "addresses": [
-          "(11674)臺北市文山區羅斯福路６段218號B1 臺北市 TW",
-          "B1, No. 218號, Section 6, Roosevelt Rd 台北市 11674 TW"
-        ],
-        "same_branch": false,
-        "same_address": false,
-        "exact_raw_name": false,
-        "generic_specific": false
       }
     },
     {
@@ -693,7 +552,7 @@
           "萊爾富便利商店 中山錦東店"
         ],
         "branches": [
-          "Hi-Life B243門市",
+          "B243門市",
           "中山錦東店"
         ],
         "addresses": [
@@ -2109,53 +1968,6 @@
         "addresses": [
           "台北市 TW",
           "(10464)臺北市中山區北安路655號B1 臺北市 TW"
-        ],
-        "same_branch": false,
-        "same_address": false,
-        "exact_raw_name": false,
-        "generic_specific": false
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "LineString",
-        "coordinates": [
-          [
-            121.563133,
-            24.982157
-          ],
-          [
-            121.562918,
-            24.982112
-          ]
-        ]
-      },
-      "properties": {
-        "pair_id": "buju-unresolved-e27bf3b0e891",
-        "category": "convenience_store",
-        "brand": "全家",
-        "distance_m": 22.2,
-        "reason": "needs-more-evidence",
-        "source_keys": [
-          "15949bff-353a-4dea-80ae-486fed02e0bf",
-          "ce2fa8c4-3e5e-4896-8c54-bb5863b4987b"
-        ],
-        "source_ids": [
-          "15949bff-353a-4dea-80ae-486fed02e0bf",
-          "ce2fa8c4-3e5e-4896-8c54-bb5863b4987b"
-        ],
-        "source_names": [
-          "FamilyMart 全家便利商店 欣榮店",
-          "全家欣榮店"
-        ],
-        "branches": [
-          "全家便利商店 欣榮店",
-          "欣榮店"
-        ],
-        "addresses": [
-          "文山區木新路三段95號 臺北市 116 TW",
-          "台北市文山區木新路三段９３號 文山區 116 台北市 TW"
         ],
         "same_branch": false,
         "same_address": false,

@@ -26,8 +26,7 @@ echo       * addresses both present and different
 echo       * both records are specific / strong
 echo       * distance near the category review ceiling
 echo   - same raw record appears at most once in the Top-15 round
-necho   - all verdicts remain audit-only; no automatic merge/delete
-
+echo   - all verdicts remain audit-only; no automatic merge/delete
 echo.
 echo Visual audit checklist:
 echo   1. Wait for READY.

@@ -13,8 +13,8 @@ if not defined NODE_CMD (
 )
 
 echo ==========================================================
-echo   Buju / Taipei-Maps - Overture Places audit spike v0.6
-echo   Issue #56 - hard duplicate + nearby review candidates
+echo   Buju / Taipei-Maps - Overture Places audit spike v0.7
+echo   Issue #56 - ranked false-positive review queue
 echo ==========================================================
 echo.
 echo This spike intentionally uses:
@@ -23,20 +23,21 @@ echo   - Overture Places as structured / clickable POI source
 echo   - v0.5 canonical brand/category normalization
 echo   - red rings for high-confidence duplicate candidates
 echo   - amber rings for nearby same-brand pairs needing human review
+echo   - Top 20 ranked review queue to avoid manual map hunting
 echo   - no automatic merge/delete
 echo   - no Google Places ingestion
 echo   - no OSM structured merge yet
 echo.
 echo Visual audit checklist:
 echo   1. classification overlaps should remain 0.
-echo   2. Red rings should preserve known high-confidence duplicates.
-echo   3. Amber rings should catch close same-brand pairs missed by v0.5.
-echo   4. Recheck the two FamilyMart misses reported around Renai/Hangzhou areas.
-echo   5. Click amber rings and inspect distance, raw names, branches, sources, and Overture IDs.
-echo   6. Mark amber examples as same physical store vs truly separate nearby stores.
-echo   7. hard-only dedup estimate is audit-only and must not feed Place Metrics yet.
+echo   2. Click ^"產生最可疑 Top 20^" after the target district finishes loading.
+echo   3. Queue should fly to each candidate automatically.
+echo   4. Priority should favor longer-distance / conflicting-name pairs.
+echo   5. Mark each as same store / different store / unsure.
+echo   6. Use ^"複製判讀結果^" and paste the summary back into the chat.
+echo   7. Any review result remains audit-only and must not feed Place Metrics yet.
 echo.
 echo Keep this window open. Press Ctrl+C to stop the local server.
 echo.
-"%NODE_CMD%" tools\dev\serve_single_engine_core.mjs 5173 "/daily-life-poi-overture-spike-v06.html"
+"%NODE_CMD%" tools\dev\serve_single_engine_core.mjs 5173 "/daily-life-poi-overture-spike-v07.html"
 exit /b %errorlevel%

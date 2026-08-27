@@ -1,0 +1,2308 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.540475,
+            25.047552
+          ],
+          [
+            121.54028134281967,
+            25.04724490854062
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-00198afe4056",
+        "category": "supermarket",
+        "brand": "全聯",
+        "distance_m": 39.3,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "5cfaf98b-2a96-4a66-ac95-68243918b9d9",
+          "62335f6b-2d34-4aae-ad21-631fb49e95aa"
+        ],
+        "source_ids": [
+          "5cfaf98b-2a96-4a66-ac95-68243918b9d9",
+          "62335f6b-2d34-4aae-ad21-631fb49e95aa"
+        ],
+        "source_names": [
+          "中山朱崙",
+          "全聯福利中心"
+        ],
+        "branches": [
+          "中山朱崙",
+          ""
+        ],
+        "addresses": [
+          "(10492)臺北市中山區龍江路15號1.2樓 臺北市 TW",
+          "龍江路15號 Taipei 104 臺北市 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.54471662,
+            25.09691363
+          ],
+          [
+            121.544754,
+            25.097101
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-01db5f881a3b",
+        "category": "convenience_store",
+        "brand": "全家",
+        "distance_m": 21.2,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "0d485dba-9de8-41a8-9af2-e91a3df8213d",
+          "a74657f9-7365-4bd2-a802-14c8714f4252"
+        ],
+        "source_ids": [
+          "0d485dba-9de8-41a8-9af2-e91a3df8213d",
+          "a74657f9-7365-4bd2-a802-14c8714f4252"
+        ],
+        "source_names": [
+          "FamilyMart",
+          "全家中影店"
+        ],
+        "branches": [
+          "",
+          "中影店"
+        ],
+        "addresses": [
+          "至善路二段34號 台北市 111 TW",
+          "台北市士林區至善路二段３４號 士林區 111 台北市 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.536228,
+            25.044269
+          ],
+          [
+            121.53622118289383,
+            25.044471139991614
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-02fc83e0a413",
+        "category": "convenience_store",
+        "brand": "7-ELEVEN",
+        "distance_m": 22.5,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "372dbb44-1ee4-4b65-a4d4-1f1c71975ffc",
+          "500f4641-b941-4691-806f-29947be5c336"
+        ],
+        "source_ids": [
+          "372dbb44-1ee4-4b65-a4d4-1f1c71975ffc",
+          "500f4641-b941-4691-806f-29947be5c336"
+        ],
+        "source_names": [
+          "7-Eleven",
+          "統一超商-科建門市"
+        ],
+        "branches": [
+          "",
+          "科建門市"
+        ],
+        "addresses": [
+          "台北市大安區建國南路一段28號30號 台北市 TW",
+          "建國南路一段28號 台北市 106 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.555215,
+            25.053172
+          ],
+          [
+            121.5550044,
+            25.05328165
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-0f7effd86982",
+        "category": "convenience_store",
+        "brand": "全家",
+        "distance_m": 24.5,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "a54904a6-0971-44e3-a71b-87f90c8e23f7",
+          "d8ac47b5-063b-41f3-a90e-9cc0d5565c08"
+        ],
+        "source_ids": [
+          "a54904a6-0971-44e3-a71b-87f90c8e23f7",
+          "d8ac47b5-063b-41f3-a90e-9cc0d5565c08"
+        ],
+        "source_names": [
+          "全家新健康店",
+          "全家"
+        ],
+        "branches": [
+          "新健康店",
+          ""
+        ],
+        "addresses": [
+          "台北市松山區南京東路四段１３３巷９弄２號 松山區 105 台北市 TW",
+          "健康路100號 台北市 105 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.613352,
+            25.06968208
+          ],
+          [
+            121.612781,
+            25.068991
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-152027760e09",
+        "category": "supermarket",
+        "brand": "全聯",
+        "distance_m": 96,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "36c87fa8-859d-4be3-8fae-ec3fab8a51d7",
+          "ed7f5bf0-017d-4f78-bccb-9fe69332d753"
+        ],
+        "source_ids": [
+          "36c87fa8-859d-4be3-8fae-ec3fab8a51d7",
+          "ed7f5bf0-017d-4f78-bccb-9fe69332d753"
+        ],
+        "source_names": [
+          "全聯福利中心",
+          "內湖康寧"
+        ],
+        "branches": [
+          "",
+          "內湖康寧"
+        ],
+        "addresses": [
+          "B1, No. 19號, Lane 33, Donghu Rd 台北市 11487 TW",
+          "(114060)臺北市內湖區東湖路1號1樓 臺北市 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.539124,
+            24.996796
+          ],
+          [
+            121.53840292154,
+            24.997295347102
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-1680510c72b5",
+        "category": "supermarket",
+        "brand": "全聯",
+        "distance_m": 91.5,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "3a44169c-840d-4162-9887-56d1658d576f",
+          "8d5e01cb-3e6a-48b3-b4ab-9b8ba0fa5102"
+        ],
+        "source_ids": [
+          "3a44169c-840d-4162-9887-56d1658d576f",
+          "8d5e01cb-3e6a-48b3-b4ab-9b8ba0fa5102"
+        ],
+        "source_names": [
+          "文山羅斯福",
+          "全聯羅斯福店"
+        ],
+        "branches": [
+          "文山羅斯福",
+          "羅斯福店"
+        ],
+        "addresses": [
+          "(11673)臺北市文山區羅斯福路６段142巷11號1樓 臺北市 TW",
+          "台北市 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.52837217839927,
+            25.05187280839278
+          ],
+          [
+            121.528621,
+            25.05189
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-19ede4e79e44",
+        "category": "convenience_store",
+        "brand": "全家",
+        "distance_m": 25.1,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "ac05716a-5058-4b7e-93ff-1c50e871d265",
+          "d759c515-a02a-42ec-afe2-7892daaf37f9"
+        ],
+        "source_ids": [
+          "ac05716a-5058-4b7e-93ff-1c50e871d265",
+          "d759c515-a02a-42ec-afe2-7892daaf37f9"
+        ],
+        "source_names": [
+          "全家 FamilyMart 鑫興亞門市",
+          "全家鑫興亞店"
+        ],
+        "branches": [
+          "FamilyMart 鑫興亞門市",
+          "鑫興亞店"
+        ],
+        "addresses": [
+          "南京東路二段20號 Taipei 104 TW",
+          "台北市中山區南京東路二段２０號１樓 中山區 104 台北市 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.56509369391509,
+            25.079810796095234
+          ],
+          [
+            121.56520761175166,
+            25.079723586703942
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-24ae96f5fdef",
+        "category": "convenience_store",
+        "brand": "萊爾富",
+        "distance_m": 15,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "202bd54f-5284-4166-956d-7eb1a2a13e65",
+          "4f41f676-2290-457c-be63-bc6f8136ebf6"
+        ],
+        "source_ids": [
+          "202bd54f-5284-4166-956d-7eb1a2a13e65",
+          "4f41f676-2290-457c-be63-bc6f8136ebf6"
+        ],
+        "source_names": [
+          "Hi-Life 萊爾富 鑫湖店",
+          "萊爾富便利商店-北市鑫湖店"
+        ],
+        "branches": [
+          "萊爾富 鑫湖店",
+          "北市鑫湖店"
+        ],
+        "addresses": [
+          "TW",
+          "台灣114台北市內湖區基湖路35巷11號 台北市 114 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.54028134281967,
+            25.04724490854062
+          ],
+          [
+            121.54064276667,
+            25.046843033333
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-275ccd09a77e",
+        "category": "supermarket",
+        "brand": "全聯",
+        "distance_m": 57.6,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "62335f6b-2d34-4aae-ad21-631fb49e95aa",
+          "80d18228-6e92-44d9-8292-2fe1ce99deb2"
+        ],
+        "source_ids": [
+          "62335f6b-2d34-4aae-ad21-631fb49e95aa",
+          "80d18228-6e92-44d9-8292-2fe1ce99deb2"
+        ],
+        "source_names": [
+          "全聯福利中心",
+          "全聯中崙店"
+        ],
+        "branches": [
+          "",
+          "中崙店"
+        ],
+        "addresses": [
+          "龍江路15號 Taipei 104 臺北市 TW",
+          "台北市 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.49780691,
+            25.02001
+          ],
+          [
+            121.4976336,
+            25.02011592
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-28ca63268ba1",
+        "category": "convenience_store",
+        "brand": "7-ELEVEN",
+        "distance_m": 21.1,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "6b7fa9de-5a67-4890-8a9f-df2169b14a8e",
+          "90f1274a-5224-4804-b6c5-701b2564a7fe"
+        ],
+        "source_ids": [
+          "6b7fa9de-5a67-4890-8a9f-df2169b14a8e",
+          "90f1274a-5224-4804-b6c5-701b2564a7fe"
+        ],
+        "source_names": [
+          "7-Eleven",
+          "7-11富帆門市"
+        ],
+        "branches": [
+          "",
+          "7-11富帆門市"
+        ],
+        "addresses": [
+          "Wanda Rd, 495號497號 台北市 108 TW",
+          "No. 464號, Wanda Rd 台北市 108 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.540532,
+            24.993061
+          ],
+          [
+            121.54064047,
+            24.99302632
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-335b5b07a4b1",
+        "category": "supermarket",
+        "brand": "全聯",
+        "distance_m": 11.6,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "b70b844b-07fa-45ef-a964-12e22616caea",
+          "f081f796-2558-4eac-91c9-cab63d8b158d"
+        ],
+        "source_ids": [
+          "b70b844b-07fa-45ef-a964-12e22616caea",
+          "f081f796-2558-4eac-91c9-cab63d8b158d"
+        ],
+        "source_names": [
+          "文山景美",
+          "全聯福利中心 Pxmart 文山景美"
+        ],
+        "branches": [
+          "文山景美",
+          "Pxmart 文山景美"
+        ],
+        "addresses": [
+          "(11674)臺北市文山區羅斯福路６段218號B1 臺北市 TW",
+          "B1, No. 218號, Section 6, Roosevelt Rd 台北市 11674 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.55362843357226,
+            25.000980113543942
+          ],
+          [
+            121.5542893,
+            25.0006747
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-37bfa28c9c90",
+        "category": "supermarket",
+        "brand": "全聯",
+        "distance_m": 74.8,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "3c16a3d9-bcac-4412-b7db-001f7578f9fd",
+          "b10b4136-9e3d-4d1a-a52d-d0ab20ceefee"
+        ],
+        "source_ids": [
+          "3c16a3d9-bcac-4412-b7db-001f7578f9fd",
+          "b10b4136-9e3d-4d1a-a52d-d0ab20ceefee"
+        ],
+        "source_names": [
+          "全聯福利中心",
+          "全聯文山辛亥店"
+        ],
+        "branches": [
+          "",
+          "文山辛亥店"
+        ],
+        "addresses": [
+          "台灣116台北市文山區興隆路二段220巷31弄1號 台北市 116 TW",
+          "興隆路二段252號 台北市 116 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.5044619,
+            25.0405071
+          ],
+          [
+            121.504023,
+            25.04031
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-3a597f447f5d",
+        "category": "supermarket",
+        "brand": "全聯",
+        "distance_m": 49.4,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "4d2daa3a-87a4-46f9-b872-a6d6626b2b7c",
+          "e2480d56-0c54-4431-81b8-4f0d9c5f10b7"
+        ],
+        "source_ids": [
+          "4d2daa3a-87a4-46f9-b872-a6d6626b2b7c",
+          "e2480d56-0c54-4431-81b8-4f0d9c5f10b7"
+        ],
+        "source_names": [
+          "全聯福利中心",
+          "萬華長沙"
+        ],
+        "branches": [
+          "",
+          "萬華長沙"
+        ],
+        "addresses": [
+          "長沙街二段110號 台北市 108 TW",
+          "(10845)臺北市萬華區長沙街２段110號 臺北市 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.601443,
+            25.086469
+          ],
+          [
+            121.6015291214,
+            25.086075021436
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-3f2007548fd3",
+        "category": "supermarket",
+        "brand": "全聯",
+        "distance_m": 44.7,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "3aa2be13-7666-46dc-992b-d350dcc86f45",
+          "f9261b33-4aca-4387-b387-d86890816538"
+        ],
+        "source_ids": [
+          "3aa2be13-7666-46dc-992b-d350dcc86f45",
+          "f9261b33-4aca-4387-b387-d86890816538"
+        ],
+        "source_names": [
+          "內湖成功",
+          "全聯福利中心"
+        ],
+        "branches": [
+          "內湖成功",
+          ""
+        ],
+        "addresses": [
+          "(11456)臺北市內湖區大湖山莊街148號 臺北市 TW",
+          "大湖山莊街148號 台北市 114 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.5249252319336,
+            25.060501098632812
+          ],
+          [
+            121.52492382,
+            25.0602177
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-4570eb505689",
+        "category": "convenience_store",
+        "brand": "萊爾富",
+        "distance_m": 31.5,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "6ead6978-f56a-4b06-9445-b17bdafca233",
+          "c27a7c1e-cff5-475f-8086-848addccaaaa"
+        ],
+        "source_ids": [
+          "6ead6978-f56a-4b06-9445-b17bdafca233",
+          "c27a7c1e-cff5-475f-8086-848addccaaaa"
+        ],
+        "source_names": [
+          "萊爾富 Hi-Life B243門市",
+          "萊爾富便利商店 中山錦東店"
+        ],
+        "branches": [
+          "Hi-Life B243門市",
+          "中山錦東店"
+        ],
+        "addresses": [
+          "錦州街32號 Taipei 104 台北市 TW",
+          "No. 32-1號, Jinzhou St 台北市 104 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.5557225,
+            25.0837899
+          ],
+          [
+            121.555941,
+            25.083639
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-46e5d443c718",
+        "category": "convenience_store",
+        "brand": "7-ELEVEN",
+        "distance_m": 27.7,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "4939e09c-9d50-4112-b5ee-b2d2f8ba1be7",
+          "f013b701-cb29-4338-a96f-1e359c61be36"
+        ],
+        "source_ids": [
+          "4939e09c-9d50-4112-b5ee-b2d2f8ba1be7",
+          "f013b701-cb29-4338-a96f-1e359c61be36"
+        ],
+        "source_names": [
+          "統一超商薇美門市",
+          "7-Eleven"
+        ],
+        "branches": [
+          "薇美門市",
+          ""
+        ],
+        "addresses": [
+          "中山區 台北市 104 TW",
+          "台北市中山區敬業三路11號1樓 台北市 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.585743,
+            25.067862
+          ],
+          [
+            121.58612266,
+            25.06808896
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-4aa4e9ac91fe",
+        "category": "supermarket",
+        "brand": "全聯",
+        "distance_m": 45.8,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "6d233247-48f0-47d1-83ca-d8b5246c428a",
+          "e2cb2ffe-fa69-47bb-b85f-1d926558e9ea"
+        ],
+        "source_ids": [
+          "6d233247-48f0-47d1-83ca-d8b5246c428a",
+          "e2cb2ffe-fa69-47bb-b85f-1d926558e9ea"
+        ],
+        "source_names": [
+          "內湖民權",
+          "全聯福利中心"
+        ],
+        "branches": [
+          "內湖民權",
+          ""
+        ],
+        "addresses": [
+          "(11465)臺北市內湖區民權東路６段90巷18號1樓 臺北市 TW",
+          "民權東路六段90巷18號 台北市 114 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.52078762,
+            25.06360447
+          ],
+          [
+            121.52056587451348,
+            25.063465055006233
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-5336f9252d41",
+        "category": "convenience_store",
+        "brand": "全家",
+        "distance_m": 27.2,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "11646719-b1ce-4f5c-9043-712932f73107",
+          "5754162b-ef01-4682-a2fc-4de611aac3fa"
+        ],
+        "source_ids": [
+          "11646719-b1ce-4f5c-9043-712932f73107",
+          "5754162b-ef01-4682-a2fc-4de611aac3fa"
+        ],
+        "source_names": [
+          "全家便利商店",
+          "全家超商-撫順店"
+        ],
+        "branches": [
+          "",
+          "超商-撫順店"
+        ],
+        "addresses": [
+          "Fushun St, 12之2號1樓 台北市 104 TW",
+          "台北市撫順街12-2號 中山區 104 台北市 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.58760070801,
+            25.06311416626
+          ],
+          [
+            121.58730898,
+            25.0628331
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-5555f9370c03",
+        "category": "convenience_store",
+        "brand": "全家",
+        "distance_m": 42.9,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "4ac4678f-e9bc-4698-b912-5c4ecc9a183b",
+          "89fb7119-6f7c-4c94-81a4-9baabca3d70c"
+        ],
+        "source_ids": [
+          "4ac4678f-e9bc-4698-b912-5c4ecc9a183b",
+          "89fb7119-6f7c-4c94-81a4-9baabca3d70c"
+        ],
+        "source_names": [
+          "全家金莊店",
+          "FamilyMart"
+        ],
+        "branches": [
+          "金莊店",
+          ""
+        ],
+        "addresses": [
+          "石潭路67號 台北市 114 TW",
+          "No. 67號, Shitan Rd 台北市 114 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.5216825,
+            25.0263412
+          ],
+          [
+            121.52218,
+            25.02583
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-5dd8b618f416",
+        "category": "supermarket",
+        "brand": "全聯",
+        "distance_m": 75.8,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "66655029-d44f-4d92-8d98-e75bb5eeeeea",
+          "affef25a-86ff-486f-adb4-39c56e2a6e2e"
+        ],
+        "source_ids": [
+          "66655029-d44f-4d92-8d98-e75bb5eeeeea",
+          "affef25a-86ff-486f-adb4-39c56e2a6e2e"
+        ],
+        "source_names": [
+          "全聯福利中心桃園桃企店",
+          "全聯福利中心同安店"
+        ],
+        "branches": [
+          "桃園桃企店",
+          "同安店"
+        ],
+        "addresses": [
+          "寧波東街18號 台北市 100 TW",
+          "南昌路二段112號 台北市 100 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.521246,
+            25.062598
+          ],
+          [
+            121.521138,
+            25.063023
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-6731672c7526",
+        "category": "convenience_store",
+        "brand": "全家",
+        "distance_m": 48.5,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "85907b46-6801-4833-a410-147784887e56",
+          "f6340924-9b10-40a8-a0e3-1165f60c7222"
+        ],
+        "source_ids": [
+          "85907b46-6801-4833-a410-147784887e56",
+          "f6340924-9b10-40a8-a0e3-1165f60c7222"
+        ],
+        "source_names": [
+          "全家中山民權店",
+          "全家民權西路店"
+        ],
+        "branches": [
+          "中山民權店",
+          "民權西路店"
+        ],
+        "addresses": [
+          "台北市中山區民權西路３８之１號１樓 中山區 104 台北市 TW",
+          "台北市中山區民權西路３５號１樓 中山區 104 台北市 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.516746,
+            25.04691
+          ],
+          [
+            121.517044,
+            25.047203
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-6740ecb79464",
+        "category": "convenience_store",
+        "brand": "全家",
+        "distance_m": 44.3,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "8a6c1abc-be2c-430a-b1f6-611d7b0242a3",
+          "902043e1-82ca-43f6-b024-b6aae09dbff4"
+        ],
+        "source_ids": [
+          "8a6c1abc-be2c-430a-b1f6-611d7b0242a3",
+          "902043e1-82ca-43f6-b024-b6aae09dbff4"
+        ],
+        "source_names": [
+          "全家台北地下街店",
+          "全家台鐵南店"
+        ],
+        "branches": [
+          "台北地下街店",
+          "台鐵南店"
+        ],
+        "addresses": [
+          "台北市中正區忠孝西路一段４７號Ｂ１（ＫＢ１１２） 中正區 100 台北市 TW",
+          "臺北市中正區北平西路３號（東南站） 中正區 100 台北市 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.55835330316665,
+            25.081116212462206
+          ],
+          [
+            121.558342,
+            25.080941
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-6d7628c83f59",
+        "category": "supermarket",
+        "brand": "全聯",
+        "distance_m": 19.5,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "596aefb1-c975-4d9d-8f9d-906f645aafcb",
+          "bd0b5f7e-2777-400a-ab20-6974c2c31e6c"
+        ],
+        "source_ids": [
+          "596aefb1-c975-4d9d-8f9d-906f645aafcb",
+          "bd0b5f7e-2777-400a-ab20-6974c2c31e6c"
+        ],
+        "source_names": [
+          "全聯慶祥慈善事業基金會",
+          "大直敬業"
+        ],
+        "branches": [
+          "慶祥慈善事業基金會",
+          "大直敬業"
+        ],
+        "addresses": [
+          "敬業四路33號 台北市 104 TW",
+          "(10466)臺北市中山區敬業四路33號B1 臺北市 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.526838,
+            25.050269
+          ],
+          [
+            121.52679369,
+            25.04985351
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-6ec2b7417427",
+        "category": "convenience_store",
+        "brand": "全家",
+        "distance_m": 46.4,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "e384a21f-b7ae-441c-abb0-4627d65b523c",
+          "e435dd79-62ef-4ebe-ba0b-01b01a31a402"
+        ],
+        "source_ids": [
+          "e384a21f-b7ae-441c-abb0-4627d65b523c",
+          "e435dd79-62ef-4ebe-ba0b-01b01a31a402"
+        ],
+        "source_names": [
+          "全家新林森北路店",
+          "Family Mart"
+        ],
+        "branches": [
+          "新林森北路店",
+          ""
+        ],
+        "addresses": [
+          "台北市中山區林森北路１１９巷５０號１樓 中山區 104 台北市 TW",
+          "台北市中山區林森北路１０７巷５４號 林森北路 台北市 104 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.525815,
+            25.064571
+          ],
+          [
+            121.525817,
+            25.065098
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-73bc61b1a832",
+        "category": "supermarket",
+        "brand": "全聯",
+        "distance_m": 58.6,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "947c2283-0a5e-4f75-b41e-46c0d4593ae4",
+          "fd63557d-0576-49da-b20c-648c594bff84"
+        ],
+        "source_ids": [
+          "947c2283-0a5e-4f75-b41e-46c0d4593ae4",
+          "fd63557d-0576-49da-b20c-648c594bff84"
+        ],
+        "source_names": [
+          "中山林森",
+          "中山晴光"
+        ],
+        "branches": [
+          "中山林森",
+          "中山晴光"
+        ],
+        "addresses": [
+          "(10453)臺北市中山區林森北路561號 臺北市 TW",
+          "(10460)臺北市中山區林森北路575之1號 臺北市 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.520851,
+            25.111516
+          ],
+          [
+            121.52086304534741,
+            25.111581811220745
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-7cafe30e2aa6",
+        "category": "supermarket",
+        "brand": "家樂福",
+        "distance_m": 7.4,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "059e58fd-01b6-45b8-8a75-15d59b1d14a2",
+          "d46a6d80-bbef-4dc1-9e37-81fc2b5920d8"
+        ],
+        "source_ids": [
+          "059e58fd-01b6-45b8-8a75-15d59b1d14a2",
+          "d46a6d80-bbef-4dc1-9e37-81fc2b5920d8"
+        ],
+        "source_names": [
+          "Carrefour Market",
+          "家樂福便利購北投明德店"
+        ],
+        "branches": [
+          "",
+          "便利購北投明德店"
+        ],
+        "addresses": [
+          "明德路161號B1樓 北投區 112 台北 TW",
+          "明德路161號 台北市 112 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.549724,
+            25.028109
+          ],
+          [
+            121.550109,
+            25.028229
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-7cf32aa5c759",
+        "category": "convenience_store",
+        "brand": "全家",
+        "distance_m": 41,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "26b5b541-2ec4-40f0-a32c-f6aa9dc4c91f",
+          "5228dd4b-3a8c-410a-b469-94fe36beb4e1"
+        ],
+        "source_ids": [
+          "26b5b541-2ec4-40f0-a32c-f6aa9dc4c91f",
+          "5228dd4b-3a8c-410a-b469-94fe36beb4e1"
+        ],
+        "source_names": [
+          "Family Mart",
+          "全家樂和店"
+        ],
+        "branches": [
+          "",
+          "樂和店"
+        ],
+        "addresses": [
+          "安和路二段171巷1號 Da-an District 106 Taipei TW",
+          "台北市大安區安和路二段１６９號 大安區 106 台北市 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.51662474,
+            25.0462202
+          ],
+          [
+            121.516417,
+            25.046254
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-9a7125b06554",
+        "category": "convenience_store",
+        "brand": "全家",
+        "distance_m": 21.3,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "3751694e-6a91-4db6-b9b2-02e728dae5a1",
+          "eeb0ab81-ce9d-42a8-8013-459f11182cdf"
+        ],
+        "source_ids": [
+          "3751694e-6a91-4db6-b9b2-02e728dae5a1",
+          "eeb0ab81-ce9d-42a8-8013-459f11182cdf"
+        ],
+        "source_names": [
+          "Family Mart",
+          "全家凱撒店"
+        ],
+        "branches": [
+          "",
+          "凱撒店"
+        ],
+        "addresses": [
+          "忠孝西路一段38號 捷運出口旁邊 台北市 100 TW",
+          "台北市中正區忠孝西路一段３８號１樓（部份） 中正區 100 台北市 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.5287273,
+            25.0512917
+          ],
+          [
+            121.528364,
+            25.051374
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-9c056103cb00",
+        "category": "supermarket",
+        "brand": "全聯",
+        "distance_m": 37.7,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "6f282022-bfce-4970-9199-a7fb81afa425",
+          "81c70f02-f91c-4607-9294-d88703931346"
+        ],
+        "source_ids": [
+          "6f282022-bfce-4970-9199-a7fb81afa425",
+          "81c70f02-f91c-4607-9294-d88703931346"
+        ],
+        "source_names": [
+          "全聯福利中心",
+          "中山南京"
+        ],
+        "branches": [
+          "",
+          "中山南京"
+        ],
+        "addresses": [
+          "吉林路26巷34號 台北市 104 TW",
+          "臺北市中山區吉林路26巷34號 臺北市 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.539445,
+            25.05216667
+          ],
+          [
+            121.539493,
+            25.051757
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-9f169b4f3117",
+        "category": "convenience_store",
+        "brand": "7-ELEVEN",
+        "distance_m": 45.8,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "899437c3-7da5-4dbc-b14c-e3eb731da5eb",
+          "f720203a-da37-4157-b611-a42ef85cb554"
+        ],
+        "source_ids": [
+          "899437c3-7da5-4dbc-b14c-e3eb731da5eb",
+          "f720203a-da37-4157-b611-a42ef85cb554"
+        ],
+        "source_names": [
+          "統一超商京典門市",
+          "7-Eleven"
+        ],
+        "branches": [
+          "京典門市",
+          ""
+        ],
+        "addresses": [
+          "南京東路三段86號 台北市 104103 TW",
+          "台北市中山區南京東路三段86號1樓 台北市 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.53268716,
+            25.11761992
+          ],
+          [
+            121.532665,
+            25.117927
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-a0ff03dd77e6",
+        "category": "convenience_store",
+        "brand": "全家",
+        "distance_m": 34.2,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "35e79818-e15b-426b-8f7d-1e268a36e098",
+          "fb88ae92-8519-4ea4-8f66-b9c4906a78a0"
+        ],
+        "source_ids": [
+          "35e79818-e15b-426b-8f7d-1e268a36e098",
+          "fb88ae92-8519-4ea4-8f66-b9c4906a78a0"
+        ],
+        "source_names": [
+          "Family Mart",
+          "全家天成店"
+        ],
+        "branches": [
+          "",
+          "天成店"
+        ],
+        "addresses": [
+          "之5,之6, No. 36號, Tianmu E Rd 台北市 111 TW",
+          "台北市士林區天福里天母東路３６號之５，之６ 士林區 111 台北市 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.544235,
+            25.048468
+          ],
+          [
+            121.54419898,
+            25.0487547
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-b6994f85cd48",
+        "category": "convenience_store",
+        "brand": "7-ELEVEN",
+        "distance_m": 32.1,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "a01bb19d-9025-4fac-87f9-316d7150543b",
+          "ac36c35c-b28d-4e99-86fb-5f2734cd870a"
+        ],
+        "source_ids": [
+          "a01bb19d-9025-4fac-87f9-316d7150543b",
+          "ac36c35c-b28d-4e99-86fb-5f2734cd870a"
+        ],
+        "source_names": [
+          "7-Eleven",
+          "統一超商復星門市"
+        ],
+        "branches": [
+          "",
+          "復星門市"
+        ],
+        "addresses": [
+          "台北市松山區復興北路15-6號1樓 台北市 TW",
+          "No. 15-6號, Fuxing N Rd 台北市 105 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.519001,
+            25.026617
+          ],
+          [
+            121.519649,
+            25.026395
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-b735398214a6",
+        "category": "supermarket",
+        "brand": "全聯",
+        "distance_m": 69.8,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "543b5430-e87b-46fc-839b-b01a3465cc05",
+          "8f9471a1-951b-4b12-a214-04ab0366d90d"
+        ],
+        "source_ids": [
+          "543b5430-e87b-46fc-839b-b01a3465cc05",
+          "8f9471a1-951b-4b12-a214-04ab0366d90d"
+        ],
+        "source_names": [
+          "全聯福利中心",
+          "中正牯嶺"
+        ],
+        "branches": [
+          "",
+          "中正牯嶺"
+        ],
+        "addresses": [
+          "和平西路一段54號 Zhongzheng Qu 100 T’ai-pei Shih TW",
+          "(10078)臺北市中正區和平西路１段54號 臺北市 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.60658737,
+            25.07206879
+          ],
+          [
+            121.60595,
+            25.072335
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-bb5a182007f6",
+        "category": "supermarket",
+        "brand": "全聯",
+        "distance_m": 70.7,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "6cbdabb7-1359-4c84-b0b2-a06f893f3b85",
+          "c3abc86d-5d2f-4153-a151-4940aa544130"
+        ],
+        "source_ids": [
+          "6cbdabb7-1359-4c84-b0b2-a06f893f3b85",
+          "c3abc86d-5d2f-4153-a151-4940aa544130"
+        ],
+        "source_names": [
+          "全聯福利中心東湖二店",
+          "內湖葫洲"
+        ],
+        "branches": [
+          "東湖二店",
+          "內湖葫洲"
+        ],
+        "addresses": [
+          "民權東路六段296巷20號 台北市 114 TW",
+          "(11483)臺北市內湖區民權東路６段296巷20號 臺北市 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.52569159621284,
+            25.06456470473367
+          ],
+          [
+            121.525817,
+            25.065098
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-c27cf51e1aba",
+        "category": "supermarket",
+        "brand": "全聯",
+        "distance_m": 60.6,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "5e1602c3-4a73-4191-ad9c-342f2589d380",
+          "fd63557d-0576-49da-b20c-648c594bff84"
+        ],
+        "source_ids": [
+          "5e1602c3-4a73-4191-ad9c-342f2589d380",
+          "fd63557d-0576-49da-b20c-648c594bff84"
+        ],
+        "source_names": [
+          "全聯福利中心 林森店",
+          "中山晴光"
+        ],
+        "branches": [
+          "林森店",
+          "中山晴光"
+        ],
+        "addresses": [
+          "林森北路561號 台北市 104 TW",
+          "(10460)臺北市中山區林森北路575之1號 臺北市 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.53701126575469,
+            25.041218894686217
+          ],
+          [
+            121.536991,
+            25.041029
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-c371a1131771",
+        "category": "convenience_store",
+        "brand": "全家",
+        "distance_m": 21.2,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "3896f417-3b45-49eb-9ffa-cde57286cf44",
+          "fafd60ba-4aee-4393-9522-1da6975d8661"
+        ],
+        "source_ids": [
+          "3896f417-3b45-49eb-9ffa-cde57286cf44",
+          "fafd60ba-4aee-4393-9522-1da6975d8661"
+        ],
+        "source_names": [
+          "全家便利商店",
+          "全家新建南店"
+        ],
+        "branches": [
+          "",
+          "新建南店"
+        ],
+        "addresses": [
+          "建國南路一段158號 Taipei 106 台北市 TW",
+          "台北市大安區建國南路１段１６２、１６４號１樓 大安區 106 台北市 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.59374577659798,
+            25.050503639244173
+          ],
+          [
+            121.59396924,
+            25.05070903
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-c9211010689c",
+        "category": "convenience_store",
+        "brand": "7-ELEVEN",
+        "distance_m": 32.1,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "971c924d-497a-4713-bb9c-297818e132f3",
+          "d652ad94-ca64-4b4d-bca5-6a5a5fcc8f87"
+        ],
+        "source_ids": [
+          "971c924d-497a-4713-bb9c-297818e132f3",
+          "d652ad94-ca64-4b4d-bca5-6a5a5fcc8f87"
+        ],
+        "source_names": [
+          "7-ELEVEN 玉成門市",
+          "7-Eleven昆陽門市"
+        ],
+        "branches": [
+          "玉成門市",
+          "昆陽門市"
+        ],
+        "addresses": [
+          "南港區南港路三段9號 Taipei 115 TW",
+          "No. 465號, Section 6, Zhongxiao E Rd 台北市 115 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.5502324,
+            25.0037716
+          ],
+          [
+            121.550026,
+            25.003963
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-cff0839ca39f",
+        "category": "supermarket",
+        "brand": "全聯",
+        "distance_m": 29.8,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "52400dc1-5bb4-4988-981b-22d58550d743",
+          "a50fd473-2292-4271-9113-cd2ff0883585"
+        ],
+        "source_ids": [
+          "52400dc1-5bb4-4988-981b-22d58550d743",
+          "a50fd473-2292-4271-9113-cd2ff0883585"
+        ],
+        "source_names": [
+          "全聯福興店",
+          "文山福興"
+        ],
+        "branches": [
+          "福興店",
+          "文山福興"
+        ],
+        "addresses": [
+          "臺北市文山區福興路 台北市 TW",
+          "(11691)臺北市文山區福興路62號1樓 臺北市 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.5216825,
+            25.0263412
+          ],
+          [
+            121.522124,
+            25.025784
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-d4b8307dd24a",
+        "category": "supermarket",
+        "brand": "全聯",
+        "distance_m": 76.3,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "66655029-d44f-4d92-8d98-e75bb5eeeeea",
+          "754730b0-ce3f-4dcb-9fdd-c7833bfda146"
+        ],
+        "source_ids": [
+          "66655029-d44f-4d92-8d98-e75bb5eeeeea",
+          "754730b0-ce3f-4dcb-9fdd-c7833bfda146"
+        ],
+        "source_names": [
+          "全聯福利中心桃園桃企店",
+          "中正同安"
+        ],
+        "branches": [
+          "桃園桃企店",
+          "中正同安"
+        ],
+        "addresses": [
+          "寧波東街18號 台北市 100 TW",
+          "(10084)臺北市中正區南昌路２段112號B1 臺北市 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.51859,
+            25.094805
+          ],
+          [
+            121.51842,
+            25.09471
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-d7b7d2783eec",
+        "category": "convenience_store",
+        "brand": "7-ELEVEN",
+        "distance_m": 20.1,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "9461663a-ed0c-4396-aa15-6ecb41984833",
+          "9fade365-fce2-4ee0-af79-7be52c6698da"
+        ],
+        "source_ids": [
+          "9461663a-ed0c-4396-aa15-6ecb41984833",
+          "9fade365-fce2-4ee0-af79-7be52c6698da"
+        ],
+        "source_names": [
+          "7-Eleven",
+          "統一超商 豐基門市"
+        ],
+        "branches": [
+          "",
+          "豐基門市"
+        ],
+        "addresses": [
+          "台北市士林區基河路368號370號 台北市 TW",
+          "基河路370號 台北市 111013 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.499661,
+            25.141115
+          ],
+          [
+            121.49972926,
+            25.1411232
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-d933f7f8faa7",
+        "category": "convenience_store",
+        "brand": "全家",
+        "distance_m": 6.9,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "663e0124-b04f-473d-97a2-f87e7846f408",
+          "98b22961-23f8-4fd4-af17-ae5feb644e94"
+        ],
+        "source_ids": [
+          "663e0124-b04f-473d-97a2-f87e7846f408",
+          "98b22961-23f8-4fd4-af17-ae5feb644e94"
+        ],
+        "source_names": [
+          "全家鑫復中店",
+          "全家便利商店-龜山樂高店"
+        ],
+        "branches": [
+          "鑫復中店",
+          "龜山樂高店"
+        ],
+        "addresses": [
+          "台北市北投區中和街３２２號 北投區 112 台北市 TW",
+          "文化路97號 新北市 234 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.55777492,
+            25.03218233
+          ],
+          [
+            121.557596,
+            25.032031
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-dc3f8f0a0d37",
+        "category": "convenience_store",
+        "brand": "全家",
+        "distance_m": 24.7,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "810ccaeb-49ee-4558-8fa4-c3758c6184de",
+          "f2935210-38f7-49c6-9a8a-528eb09a161c"
+        ],
+        "source_ids": [
+          "810ccaeb-49ee-4558-8fa4-c3758c6184de",
+          "f2935210-38f7-49c6-9a8a-528eb09a161c"
+        ],
+        "source_names": [
+          "FamilyMart",
+          "全家復昌店"
+        ],
+        "branches": [
+          "",
+          "復昌店"
+        ],
+        "addresses": [
+          "No. 505號, Guangfu S Rd 台北市 110 TW",
+          "台北市信義區光復南路５０５號、５０７號及文昌街３２ 信義區 110 台北市 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.540475,
+            25.047552
+          ],
+          [
+            121.54064276667,
+            25.046843033333
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-dda95fa423ce",
+        "category": "supermarket",
+        "brand": "全聯",
+        "distance_m": 80.6,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "5cfaf98b-2a96-4a66-ac95-68243918b9d9",
+          "80d18228-6e92-44d9-8292-2fe1ce99deb2"
+        ],
+        "source_ids": [
+          "5cfaf98b-2a96-4a66-ac95-68243918b9d9",
+          "80d18228-6e92-44d9-8292-2fe1ce99deb2"
+        ],
+        "source_names": [
+          "中山朱崙",
+          "全聯中崙店"
+        ],
+        "branches": [
+          "中山朱崙",
+          "中崙店"
+        ],
+        "addresses": [
+          "(10492)臺北市中山區龍江路15號1.2樓 臺北市 TW",
+          "台北市 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.616957,
+            25.044368
+          ],
+          [
+            121.61738936,
+            25.04471082
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-df554dddb6a8",
+        "category": "supermarket",
+        "brand": "全聯",
+        "distance_m": 57.9,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "aaf7d44d-048c-4d7a-86c9-5bc680bee150",
+          "c3b100d4-df18-43ce-b3c9-04cfc9c4e69a"
+        ],
+        "source_ids": [
+          "aaf7d44d-048c-4d7a-86c9-5bc680bee150",
+          "c3b100d4-df18-43ce-b3c9-04cfc9c4e69a"
+        ],
+        "source_names": [
+          "南港中研",
+          "全聯南港學園店"
+        ],
+        "branches": [
+          "南港中研",
+          "南港學園店"
+        ],
+        "addresses": [
+          "(11565)臺北市南港區研究院路２段61巷15號1樓、B1 臺北市 TW",
+          "No. 15號, Lane 61, Section 2, Yanjiuyuan Rd 台北市 115 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.5489688,
+            25.0844028
+          ],
+          [
+            121.54915,
+            25.084449
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-e1be024ed40a",
+        "category": "supermarket",
+        "brand": "全聯",
+        "distance_m": 19,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "1afc4041-2390-40e4-b53a-36bd8feddb21",
+          "518da422-0727-430d-bdb1-59a933ff41fa"
+        ],
+        "source_ids": [
+          "1afc4041-2390-40e4-b53a-36bd8feddb21",
+          "518da422-0727-430d-bdb1-59a933ff41fa"
+        ],
+        "source_names": [
+          "全聯實踐店",
+          "大直實踐"
+        ],
+        "branches": [
+          "實踐店",
+          "大直實踐"
+        ],
+        "addresses": [
+          "台北市 TW",
+          "(10464)臺北市中山區北安路655號B1 臺北市 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.563133,
+            24.982157
+          ],
+          [
+            121.562918,
+            24.982112
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-e27bf3b0e891",
+        "category": "convenience_store",
+        "brand": "全家",
+        "distance_m": 22.2,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "15949bff-353a-4dea-80ae-486fed02e0bf",
+          "ce2fa8c4-3e5e-4896-8c54-bb5863b4987b"
+        ],
+        "source_ids": [
+          "15949bff-353a-4dea-80ae-486fed02e0bf",
+          "ce2fa8c4-3e5e-4896-8c54-bb5863b4987b"
+        ],
+        "source_names": [
+          "FamilyMart 全家便利商店 欣榮店",
+          "全家欣榮店"
+        ],
+        "branches": [
+          "全家便利商店 欣榮店",
+          "欣榮店"
+        ],
+        "addresses": [
+          "文山區木新路三段95號 臺北市 116 TW",
+          "台北市文山區木新路三段９３號 文山區 116 台北市 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.5855477,
+            25.03997016
+          ],
+          [
+            121.58543352,
+            25.03993347
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-e50eaadf4d69",
+        "category": "supermarket",
+        "brand": "美廉社",
+        "distance_m": 12.2,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "9b8be64c-4230-4ee6-99eb-13a93d2f6e59",
+          "cc2cbdfb-455d-49b0-9b36-6981388a03e4"
+        ],
+        "source_ids": [
+          "9b8be64c-4230-4ee6-99eb-13a93d2f6e59",
+          "cc2cbdfb-455d-49b0-9b36-6981388a03e4"
+        ],
+        "source_names": [
+          "Simple Mart",
+          "美廉社"
+        ],
+        "branches": [
+          "",
+          ""
+        ],
+        "addresses": [
+          "福德街308號 台北市 110 TW",
+          "福德街268巷25號 台北市 110 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.55139160156,
+            25.048055648804
+          ],
+          [
+            121.55149571,
+            25.0481037
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-f317a79933c3",
+        "category": "convenience_store",
+        "brand": "全家",
+        "distance_m": 11.8,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "7fac6ccd-66f6-42c1-9dc6-3551f1785040",
+          "8677602f-fd56-489d-934c-1dac05992140"
+        ],
+        "source_ids": [
+          "7fac6ccd-66f6-42c1-9dc6-3551f1785040",
+          "8677602f-fd56-489d-934c-1dac05992140"
+        ],
+        "source_names": [
+          "全家咖啡旗艦店",
+          "全家便利商店 台發店"
+        ],
+        "branches": [
+          "咖啡旗艦店",
+          "台發店"
+        ],
+        "addresses": [
+          "台北市 TW",
+          "1樓, No. 30號, Section 3, Bade Rd 台北市 105 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            121.512067,
+            25.068809
+          ],
+          [
+            121.51236868337314,
+            25.068787509725613
+          ]
+        ]
+      },
+      "properties": {
+        "pair_id": "buju-unresolved-f68034e6234a",
+        "category": "supermarket",
+        "brand": "全聯",
+        "distance_m": 30.5,
+        "reason": "needs-more-evidence",
+        "source_keys": [
+          "35dd5493-bc71-4d78-bcb7-8f97f056ea98",
+          "af4466fc-c5b6-4515-a2d0-85b04b2902d2"
+        ],
+        "source_ids": [
+          "35dd5493-bc71-4d78-bcb7-8f97f056ea98",
+          "af4466fc-c5b6-4515-a2d0-85b04b2902d2"
+        ],
+        "source_names": [
+          "大同民族西",
+          "全聯福利中心民族西店"
+        ],
+        "branches": [
+          "大同民族西",
+          "民族西店"
+        ],
+        "addresses": [
+          "(10374)臺北市大同區民族西路235號 臺北市 TW",
+          "台北市民族西路235號 大同區 103 台北市 TW"
+        ],
+        "same_branch": false,
+        "same_address": false,
+        "exact_raw_name": false,
+        "generic_specific": false
+      }
+    }
+  ]
+}

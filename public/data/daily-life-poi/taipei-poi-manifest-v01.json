@@ -1,0 +1,48 @@
+{
+  "dataset_version": "taipei-daily-life-poi-v01",
+  "build_timestamp": "2026-08-19T00:00:00.000Z",
+  "overture_release": "2026-08-19.0",
+  "overture_theme": "places",
+  "overture_type": "place",
+  "overture_s3_path": "s3://overturemaps-us-west-2/release/2026-08-19.0/theme=places/type=place/*",
+  "boundary_source": "https://raw.githubusercontent.com/xashiex/taiwan-district-boundary-to-geojson/43b3b1a858043d94f780f1f13e6efd682e57e505/docs/data/63.json",
+  "boundary_source_repo": "xashiex/taiwan-district-boundary-to-geojson",
+  "boundary_source_commit": "43b3b1a858043d94f780f1f13e6efd682e57e505",
+  "boundary_source_path": "docs/data/63.json",
+  "boundary_version": "taipei-district-boundary-v01",
+  "boundary_feature_count": 12,
+  "boundary_sha256": "c8a44cf484331338677d9cea2d6c623d84a41861e89a53e1e313d4dce79282ce",
+  "boundary_bbox": [
+    121.45714,
+    24.9605,
+    121.66593,
+    25.21018
+  ],
+  "canonical_engine_version": "buju-poi-canonical-v0.2",
+  "raw_input_count": 5687,
+  "point_candidate_count": 5687,
+  "inside_taipei_count": 3293,
+  "classified_target_count": 1991,
+  "canonical_count": 1785,
+  "unresolved_count": 49,
+  "counts_by_category": {
+    "convenience_store": 1568,
+    "supermarket": 217
+  },
+  "counts_by_brand": {
+    "7-ELEVEN": 819,
+    "全家": 624,
+    "全聯": 165,
+    "美廉社": 28,
+    "家樂福": 24,
+    "萊爾富": 87,
+    "OK Mart": 38
+  },
+  "source_dataset_counts": {
+    "AllThePlaces": 1079,
+    "Foursquare": 83,
+    "meta": 829,
+    "Overture": 1991
+  },
+  "logical_dataset_sha256": "653a13414d68ac43d190fe661a48c1fd3785f1f8bb6a3864d8e3bc55f2db1e42"
+}

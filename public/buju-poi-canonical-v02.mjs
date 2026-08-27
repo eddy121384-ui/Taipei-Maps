@@ -24,16 +24,25 @@ export function chainRule(p){
 export function normalizeToken(v){
   return String(v||'').toLowerCase().replace(/臺/g,'台').replace(/[\s\-_‐‑–—·・()（）\[\]【】]/g,'').replace(/(?:福利中心|便利商店|超市|門市|分店|店)$/g,'').trim();
 }
+function stripBrandPrefixOnce(s,label){
+  if(label==='7-ELEVEN')return s.replace(/^(?:7\s*[-‐‑–—]?\s*eleven|統一超商)/i,'');
+  if(label==='全家')return s.replace(/^(?:family\s*mart|全家(?:便利商店)?)/i,'');
+  if(label==='萊爾富')return s.replace(/^(?:hi\s*[-‐‑–—]?\s*life|萊爾富(?:便利商店)?)/i,'');
+  if(label==='OK Mart')return s.replace(/^(?:ok\s*mart|ok超商)/i,'');
+  if(label==='全聯')return s.replace(/^(?:px\s*mart|全聯(?:福利中心)?)/i,'');
+  if(label==='家樂福')return s.replace(/^(?:carrefour(?:\s*market)?|家樂福(?:超市)?)/i,'');
+  if(label==='美廉社')return s.replace(/^(?:simple\s*mart|美廉社)/i,'');
+  return s;
+}
 export function branchName(p){
   const rule=chainRule(p),name=primaryName(p);if(!rule||!name)return'';
   let s=name;
-  if(rule.label==='7-ELEVEN')s=s.replace(/^(?:7\s*[-‐‑–—]?\s*eleven|統一超商)/i,'');
-  else if(rule.label==='全家')s=s.replace(/^(?:family\s*mart|全家(?:便利商店)?)/i,'');
-  else if(rule.label==='萊爾富')s=s.replace(/^(?:hi\s*[-‐‑–—]?\s*life|萊爾富(?:便利商店)?)/i,'');
-  else if(rule.label==='OK Mart')s=s.replace(/^(?:ok\s*mart|ok超商)/i,'');
-  else if(rule.label==='全聯')s=s.replace(/^(?:px\s*mart|全聯(?:福利中心)?)/i,'');
-  else if(rule.label==='家樂福')s=s.replace(/^(?:carrefour(?:\s*market)?|家樂福(?:超市)?)/i,'');
-  else if(rule.label==='美廉社')s=s.replace(/^(?:simple\s*mart|美廉社)/i,'');
+  for(let i=0;i<3;i++){
+    const trimmed=s.replace(/^[\s·・\-–—:：]+/,'').trim();
+    const next=stripBrandPrefixOnce(trimmed,rule.label);
+    if(next===trimmed){s=trimmed;break;}
+    s=next;
+  }
   return s.replace(/^[\s·・\-–—:：]+/,'').trim();
 }
 export function sourceDatasets(p){

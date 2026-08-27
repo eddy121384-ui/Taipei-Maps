@@ -24,12 +24,14 @@ const rows = [
   feature('g', '全聯同安店', '全聯福利中心', [121.52007, 25.02], '10 Tongan St', ['meta']),
   feature('h', '全聯萬華西藏店', '全聯福利中心', [121.5300, 25.03], '台北市萬華區西藏路100號', ['AllThePlaces']),
   feature('i', '全聯萬華長沙店', '全聯福利中心', [121.5301, 25.03], '台北市萬華區長沙街100號', ['AllThePlaces']),
+  feature('j', '文山景美', '全聯福利中心', [121.54, 25.0], '(11674)臺北市文山區羅斯福路６段218號B1 臺北市 TW', ['AllThePlaces']),
+  feature('k', '全聯福利中心 Pxmart 文山景美', 'PX Mart', [121.5401, 25.0], 'B1, No. 218號, Section 6, Roosevelt Rd 台北市 11674 TW', ['meta']),
 ];
 
 const result = buildCanonical(rows);
 
-if (result.stats.raw_records !== 9) throw new Error(`raw_records: ${result.stats.raw_records}`);
-if (result.stats.raw_rows_absorbed !== 3) throw new Error(`raw_rows_absorbed: ${result.stats.raw_rows_absorbed}`);
+if (result.stats.raw_records !== 11) throw new Error(`raw_records: ${result.stats.raw_records}`);
+if (result.stats.raw_rows_absorbed !== 4) throw new Error(`raw_rows_absorbed: ${result.stats.raw_rows_absorbed}`);
 
 const family = result.entities.find(e => e.brand === '全家' && e.source_rows === 2);
 if (!family) throw new Error('expected generic/specific FamilyMart pair to merge');
@@ -39,6 +41,9 @@ if (!typo || typo.source_rows !== 2 || !typo.merge_reasons.includes('near-branch
 
 const prefix = result.entities.find(e => e.brand === '全聯' && e.source_names.includes('全聯中正同安店') && e.source_names.includes('全聯同安店'));
 if (!prefix || prefix.source_rows !== 2 || !prefix.merge_reasons.includes('branch-area-prefix-equivalent')) throw new Error('expected district-prefix-equivalent branch pair to merge');
+
+const repeatedBrandAlias = result.entities.find(e => e.brand === '全聯' && e.source_names.includes('文山景美') && e.source_names.includes('全聯福利中心 Pxmart 文山景美'));
+if (!repeatedBrandAlias || repeatedBrandAlias.source_rows !== 2 || repeatedBrandAlias.branch !== '文山景美' || !repeatedBrandAlias.merge_reasons.includes('same-branch')) throw new Error('expected repeated PX Mart aliases to normalize to the same branch');
 
 const dangerous = result.entities.filter(e => e.source_names.includes('全聯萬華西藏店') || e.source_names.includes('全聯萬華長沙店'));
 if (dangerous.length !== 2) throw new Error('distinct nearby branch names must remain separate');

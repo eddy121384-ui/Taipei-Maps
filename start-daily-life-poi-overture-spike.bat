@@ -13,26 +13,27 @@ if not defined NODE_CMD (
 )
 
 echo ==========================================================
-echo   Buju / Taipei-Maps - Overture Places audit spike v0.15
-echo   Issue #56 - precision geo guard + adversarial duplicate review
+echo   Buju / Taipei-Maps - Overture Places audit spike v0.16
+echo   Issue #56 - exact Taipei boundary guard + adversarial review
 echo ==========================================================
 echo.
-echo v0.15 tightens anomaly detection after a false positive on a real Taipei store:
-echo   - bare place-name tokens in store names/branches are NOT enough for quarantine
-echo   - example: Zhongzheng Jinmen store on Jinmen St is valid Taipei data
-echo   - hard geo quarantine now requires structured address text to explicitly name
-echo     an outside-Taipei city/county such as Taoyuan City or Kinmen County
-echo   - generic/missing-brand records remain out of automatic ghost quarantine
-echo   - duplicate review still hunts adversarial false positives first
+echo v0.16 fixes the New Taipei false-positive class:
+echo   - the old broad Taipei bbox also covered Yonghe / parts of New Taipei
+echo   - city membership now uses Taipei's 12 district polygons via point-in-polygon
+echo   - an outside-city structured address is anomalous only when the coordinate
+ echo     is actually inside the Taipei City boundary
+echo   - Jinmen St remains valid; Yonghe / Xindian points should remain New Taipei
+ echo   - duplicate review still hunts adversarial false positives first
 echo.
 echo Visual audit checklist:
 echo   1. Wait for READY.
-echo   2. Confirm the Zhongzheng Jinmen Simple Mart is NOT an anomaly candidate.
-echo   3. Anomaly queue should now contain only explicit admin-address conflicts.
-echo   4. Click ^"找反例 Top 15^" and look for real same-brand stores that should stay separate.
+echo   2. Re-check the Yonghe FamilyMart / other New Taipei examples: they must NOT
+ echo      appear as Taipei admin-coordinate conflicts.
+echo   3. The Zhongzheng Jinmen Simple Mart must remain non-anomalous.
+echo   4. Then continue ^"找反例 Top 15^" for real same-brand separate-store cases.
 echo   5. All judgments remain audit-only; nothing is automatically deleted or merged.
 echo.
 echo Keep this window open. Press Ctrl+C to stop the local server.
 echo.
-"%NODE_CMD%" tools\dev\serve_single_engine_core.mjs 5173 "/daily-life-poi-overture-spike-v15.html"
+"%NODE_CMD%" tools\dev\serve_single_engine_core.mjs 5173 "/daily-life-poi-overture-spike-v16.html"
 exit /b %errorlevel%

@@ -1,0 +1,41 @@
+name: Place Metrics v0.1
+
+on:
+  push:
+    branches:
+      - feat/place-metrics-v01
+    paths:
+      - 'public/buju-place-metrics-v01.mjs'
+      - 'public/place-metrics-v01.html'
+      - 'public/data/daily-life-poi/taipei-canonical-reconciled-v01.geojson'
+      - 'public/data/daily-life-poi/taipei-poi-reconciled-manifest-v01.json'
+      - 'tools/dev/test_buju_place_metrics_v01.mjs'
+      - 'tools/data/validate_place_metrics_v01.mjs'
+      - '.github/workflows/place-metrics-v01.yml'
+  pull_request:
+    paths:
+      - 'public/buju-place-metrics-v01.mjs'
+      - 'public/place-metrics-v01.html'
+      - 'public/data/daily-life-poi/taipei-canonical-reconciled-v01.geojson'
+      - 'public/data/daily-life-poi/taipei-poi-reconciled-manifest-v01.json'
+      - 'tools/dev/test_buju_place_metrics_v01.mjs'
+      - 'tools/data/validate_place_metrics_v01.mjs'
+      - '.github/workflows/place-metrics-v01.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Synthetic Place Metrics regression
+        run: node tools/dev/test_buju_place_metrics_v01.mjs
+
+      - name: Accepted POI baseline integration
+        run: node tools/data/validate_place_metrics_v01.mjs

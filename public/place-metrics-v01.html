@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>卜居 · Place Metrics v0.1</title>
+<link href="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.css" rel="stylesheet">
+<script src="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.js"></script>
+<style>
+html,body,#map{height:100%;margin:0}body{font-family:Inter,system-ui,"Noto Sans TC",sans-serif;color:#17212b}.panel{position:absolute;z-index:2;left:12px;top:12px;width:min(390px,calc(100vw - 48px));background:rgba(255,255,255,.96);padding:14px 16px;border-radius:14px;box-shadow:0 5px 20px #0002;font-size:13px}.panel h1{font-size:16px;margin:0 0 5px}.muted{color:#62717d;line-height:1.45}.status{font-size:12px;margin:7px 0 10px}.metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px}.metric{border:1px solid #dde4e8;border-radius:10px;padding:9px;background:#fff}.metric .label{font-size:11px;color:#667681}.metric .value{font-size:19px;font-weight:700;margin-top:2px}.metric .detail{font-size:11px;color:#667681;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;font-size:11px;color:#53636e}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}.conv{background:#2474c6}.super{background:#d97706}.hint{margin-top:9px;padding-top:8px;border-top:1px solid #e5eaed}.maplibregl-canvas{cursor:crosshair}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div class="panel">
+  <h1>Place Metrics v0.1</h1>
+  <div class="muted">點地圖任意位置，計算 canonical POI 的地理直線距離。不是步行路網距離。</div>
+  <div id="status" class="status">Loading accepted POI baseline…</div>
+  <div class="metrics">
+    <div class="metric"><div class="label">最近便利商店</div><div id="nearest-conv" class="value">—</div><div id="nearest-conv-name" class="detail">點地圖開始</div></div>
+    <div class="metric"><div class="label">500m 內便利商店</div><div id="count-conv" class="value">—</div><div class="detail">canonical stores</div></div>
+    <div class="metric"><div class="label">最近超市</div><div id="nearest-super" class="value">—</div><div id="nearest-super-name" class="detail">點地圖開始</div></div>
+    <div class="metric"><div class="label">800m 內超市</div><div id="count-super" class="value">—</div><div class="detail">canonical stores</div></div>
+  </div>
+  <div class="legend"><span><i class="dot conv"></i>便利商店</span><span><i class="dot super"></i>超市</span><span>細圈：500m / 800m</span></div>
+  <div id="query" class="muted hint">尚未選擇位置</div>
+</div>
+<script type="module">
+import { computeDailyLifeMetrics } from './buju-place-metrics-v01.mjs';
+
+const statusEl=document.getElementById('status');
+const queryEl=document.getElementById('query');
+const nearestConvEl=document.getElementById('nearest-conv');
+const nearestConvNameEl=document.getElementById('nearest-conv-name');
+const countConvEl=document.getElementById('count-conv');
+const nearestSuperEl=document.getElementById('nearest-super');
+const nearestSuperNameEl=document.getElementById('nearest-super-name');
+const countSuperEl=document.getElementById('count-super');
+
+function destination(lon,lat,distanceM,bearingDeg){
+  const R=6371008.8,δ=distanceM/R,θ=bearingDeg*Math.PI/180,φ1=lat*Math.PI/180,λ1=lon*Math.PI/180;
+  const sinφ2=Math.sin(φ1)*Math.cos(δ)+Math.cos(φ1)*Math.sin(δ)*Math.cos(θ);
+  const φ2=Math.asin(sinφ2);
+  const y=Math.sin(θ)*Math.sin(δ)*Math.cos(φ1),x=Math.cos(δ)-Math.sin(φ1)*Math.sin(φ2);
+  const λ2=λ1+Math.atan2(y,x);
+  return [((λ2*180/Math.PI+540)%360)-180,φ2*180/Math.PI];
+}
+function circleFeature(lon,lat,radiusM,kind){
+  const ring=[];for(let i=0;i<=72;i++)ring.push(destination(lon,lat,radiusM,i*5));
+  return {type:'Feature',properties:{kind,radius_m:radiusM},geometry:{type:'Polygon',coordinates:[ring]}};
+}
+function formatNearest(item){return item?`${Math.round(item.distance_m)} m`:'—';}
+function formatName(item){return item?`${item.name||item.brand||item.canonical_id} · ${item.canonical_id}`:'沒有可用 POI';}
+
+try{
+  const [datasetResponse,manifestResponse]=await Promise.all([
+    fetch('/data/daily-life-poi/taipei-canonical-reconciled-v01.geojson',{cache:'no-store'}),
+    fetch('/data/daily-life-poi/taipei-poi-reconciled-manifest-v01.json',{cache:'no-store'}),
+  ]);
+  if(!datasetResponse.ok||!manifestResponse.ok)throw new Error(`dataset missing: ${datasetResponse.status}/${manifestResponse.status}`);
+  const data=await datasetResponse.json(),manifest=await manifestResponse.json();
+  statusEl.textContent=`READY · ${manifest.final_canonical_count} canonical POIs · convenience ${manifest.final_counts_by_category?.convenience_store??'—'} · supermarket ${manifest.final_counts_by_category?.supermarket??'—'}`;
+
+  const map=new maplibregl.Map({container:'map',center:[121.545,25.055],zoom:11.7,style:{version:8,sources:{osm:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,attribution:'© OpenStreetMap contributors'}},layers:[{id:'osm',type:'raster',source:'osm'}]}});
+  map.addControl(new maplibregl.NavigationControl(),'top-right');
+  let marker=null;
+
+  map.on('load',()=>{
+    map.addSource('poi',{type:'geojson',data});
+    map.addLayer({id:'poi',type:'circle',source:'poi',minzoom:10.5,paint:{'circle-radius':['interpolate',['linear'],['zoom'],10.5,2,14,4.5],'circle-color':['match',['get','category'],'supermarket','#d97706','#2474c6'],'circle-stroke-color':'#fff','circle-stroke-width':.8,'circle-opacity':.82}});
+    map.addSource('metric-radii',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
+    map.addLayer({id:'metric-radius-fill',type:'fill',source:'metric-radii',paint:{'fill-color':['match',['get','kind'],'500m','#2474c6','#d97706'],'fill-opacity':.035}});
+    map.addLayer({id:'metric-radius-line',type:'line',source:'metric-radii',paint:{'line-color':['match',['get','kind'],'500m','#2474c6','#d97706'],'line-width':2,'line-opacity':.7}});
+
+    map.on('click',event=>{
+      const {lng,lat}=event.lngLat;
+      const result=computeDailyLifeMetrics({lon:lng,lat},data.features);
+      nearestConvEl.textContent=formatNearest(result.nearest_convenience_store);
+      nearestConvNameEl.textContent=formatName(result.nearest_convenience_store);
+      countConvEl.textContent=`${result.convenience_store_count_500m} 家`;
+      nearestSuperEl.textContent=formatNearest(result.nearest_supermarket);
+      nearestSuperNameEl.textContent=formatName(result.nearest_supermarket);
+      countSuperEl.textContent=`${result.supermarket_count_800m} 家`;
+      queryEl.textContent=`查詢點：${lng.toFixed(6)}, ${lat.toFixed(6)} · great-circle distance`;
+      if(!marker)marker=new maplibregl.Marker({color:'#17212b'}).setLngLat([lng,lat]).addTo(map);else marker.setLngLat([lng,lat]);
+      map.getSource('metric-radii').setData({type:'FeatureCollection',features:[circleFeature(lng,lat,800,'800m'),circleFeature(lng,lat,500,'500m')]});
+    });
+  });
+}catch(error){
+  statusEl.textContent=`ERROR · ${error.message}`;
+  statusEl.style.color='#b42318';
+}
+</script>
+</body></html>

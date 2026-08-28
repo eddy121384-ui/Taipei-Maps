@@ -4,7 +4,7 @@ cd /d "%~dp0"
 
 echo ==========================================================
 echo   Taipei-Maps - Desktop full-stack smoke test
-echo   Flat 2D + full overlays + Location Summary v0.1
+echo   Flat 2D + full overlays + Location Summary + Inventory UX
 echo ==========================================================
 echo.
 
@@ -35,74 +35,79 @@ if not exist public\generated\taipei_building_height_citywide.pmtiles (
   exit /b 1
 )
 
-echo [1/14] Preparing Taipei healthcare cache...
+echo [1/15] Preparing Taipei healthcare cache...
 "%NODE_CMD%" tools\data\build_taipei_healthcare.mjs --if-missing
 if errorlevel 1 goto :fail
 
 echo.
-echo [2/14] Preparing Taipei official MRT line cache...
+echo [2/15] Preparing Taipei official MRT line cache...
 "%NODE_CMD%" tools\data\build_taipei_mrt_official.mjs --if-missing
 if errorlevel 1 goto :fail
 
 echo.
-echo [3/14] Preparing Taipei official MRT station cache...
+echo [3/15] Preparing Taipei official MRT station cache...
 "%NODE_CMD%" tools\data\build_taipei_mrt_stations_official.mjs --if-missing
 if errorlevel 1 goto :fail
 
 echo.
-echo [4/14] Preparing North Taiwan urban rail cache...
+echo [4/15] Preparing North Taiwan urban rail cache...
 "%NODE_CMD%" tools\data\build_north_taiwan_urban_rail.mjs --if-missing
 if errorlevel 1 goto :fail
 
 echo.
-echo [5/14] Preparing Taiwan intercity rail cache...
+echo [5/15] Preparing Taiwan intercity rail cache...
 "%NODE_CMD%" tools\data\build_taiwan_intercity_rail.mjs --if-missing
 if errorlevel 1 goto :fail
 
 echo.
-echo [6/14] Validating healthcare + shared-core integration...
+echo [6/15] Validating healthcare + shared-core integration...
 "%NODE_CMD%" tools\data\validate_healthcare_layer.mjs
 if errorlevel 1 goto :fail
 
 echo.
-echo [7/14] Validating transit data + rendering contract...
+echo [7/15] Validating transit data + rendering contract...
 "%NODE_CMD%" tools\data\validate_transit_layer.mjs
 if errorlevel 1 goto :fail
 
 echo.
-echo [8/14] Validating committed Taipei 115 school-district runtime...
+echo [8/15] Validating committed Taipei 115 school-district runtime...
 "%NODE_CMD%" tools\data\validate_taipei_school_districts.mjs
 if errorlevel 1 goto :fail
 
 echo.
-echo [9/14] Validating school-layer pagination and viewport caches...
+echo [9/15] Validating school-layer pagination and viewport caches...
 "%NODE_CMD%" tools\data\validate_school_layer_performance.mjs
 if errorlevel 1 goto :fail
 
 echo.
-echo [10/14] Running Location Summary synthetic regression...
+echo [10/15] Running Location Summary synthetic regression...
 "%NODE_CMD%" tools\dev\test_buju_location_summary_v01.mjs
 if errorlevel 1 goto :fail
 
 echo.
-echo [11/14] Running school point-resolver regression...
+echo [11/15] Running school point-resolver regression...
 "%NODE_CMD%" tools\dev\test_buju_school_district_resolver_v01.mjs
 if errorlevel 1 goto :fail
 
 echo.
-echo [12/14] Validating accepted POI baseline + Location Summary sources...
+echo [12/15] Validating accepted POI baseline + Location Summary sources...
 "%NODE_CMD%" tools\data\validate_place_metrics_v01.mjs
 if errorlevel 1 goto :fail
 "%NODE_CMD%" tools\data\validate_location_summary_sources_v01.mjs
 if errorlevel 1 goto :fail
 
 echo.
-echo [13/14] Validating desktop Location Summary integration contract...
+echo [13/15] Validating desktop Location Summary integration contract...
 "%NODE_CMD%" tools\dev\test_location_summary_desktop_integration_v01.mjs
 if errorlevel 1 goto :fail
 
 echo.
-echo [14/14] Opening desktop full-stack validation page...
+echo [14/15] Validating School District Inventory prototype semantics...
+"%NODE_CMD%" tools\dev\test_school_inventory_prototype_v01.mjs
+if errorlevel 1 goto :fail
+
+echo.
+echo [15/15] Opening desktop full-stack validation page...
 echo.
 echo Smoke checklist:
 echo   - initial view: OSM map, top-down north-up, 3D OFF, Terrain OFF
@@ -113,7 +118,12 @@ echo   - healthcare + transit overlays remain visible and usable
 echo   - map / aerial toggle and north-up N control remain normal
 echo   - Location Summary: initial button reads OFF and right panel is hidden
 echo   - Location Summary: turn ON, click a Taipei point, right panel shows daily-life / MRT / healthcare / school
-echo   - Location Summary: closing the card keeps query mode ON; toggling OFF removes card + marker
+echo   - Inventory: initial button reads OFF; turn ON and verify the right-side inventory panel appears
+echo   - Inventory / 金華: verified count is 3; 大安MONEY is clearly labelled as a shared/common catchment
+echo   - Inventory / 中正: verified count is 1; 中正名門 is NOT counted by default
+echo   - Inventory debug: enable mismatch and confirm 中正名門 appears as mismatch with official 弘道
+echo   - Inventory pin/card: asking price, area/layout, official school truth and source handoff are visible
+echo   - Location Summary and Inventory panels are mutually exclusive
 echo   - Location Summary: click outside Taipei and verify explicit unsupported message, never fake Taipei nearest results
 echo   - Banqiao: Taipei healthcare disappears while base map / transit remain normal
 echo   - Shanghai / Tokyo: NEVER black-screen; no Taipei-only healthcare leaks overseas

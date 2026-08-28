@@ -51,5 +51,5 @@
   "canonical_engine_version": "buju-poi-canonical-v0.2",
   "reconciliation_engine_version": "buju-poi-reconcile-v0.1",
   "logical_dataset_sha256": "84a9a8594023693e694dc326995391576c6929012f529765ae6aa3c47f989182",
-  "osm_overpass_raw_sha256": "2a0c1fe940446d0fb082045eed0b281c01e285d63967a449a8ba13d4e3ee5ee7"
+  "osm_overpass_raw_sha256": "df59aac88638b1c0fee40cb4191da9af992ea88a4196a19e32cbc0fa41a07620"
 }

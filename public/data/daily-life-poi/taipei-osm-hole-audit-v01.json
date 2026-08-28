@@ -12,19 +12,19 @@
     "note": "Priority and nearby candidates are visual-QA metadata only. They do not alter reconciliation decisions or widen merge thresholds."
   },
   "stats": {
-    "total_safe_holes": 506,
-    "high_priority": 45,
+    "total_safe_holes": 505,
+    "high_priority": 44,
     "medium_priority": 104,
     "low_priority": 357,
     "thin_evidence": 255,
     "with_branch": 2,
-    "with_address": 247,
+    "with_address": 246,
     "multi_source_rows": 7,
-    "multi_candidate_clusters": 46
+    "multi_candidate_clusters": 45
   },
   "counts_by_brand": {
     "7-ELEVEN": 172,
-    "全家": 79,
+    "全家": 78,
     "全聯": 15,
     "美廉社": 34,
     "家樂福": 41,
@@ -32,24 +32,24 @@
     "OK Mart": 42
   },
   "counts_by_category": {
-    "convenience_store": 416,
+    "convenience_store": 415,
     "supermarket": 90
   },
   "counts_by_distance_band": {
     ">3.00x": 323,
     "1.00x-1.25x": 16,
-    "1.25x-1.50x": 29,
+    "1.25x-1.50x": 28,
     "1.50x-2.00x": 55,
     "2.00x-3.00x": 83
   },
   "counts_by_priority": {
-    "high": 45,
+    "high": 44,
     "low": 357,
     "medium": 104
   },
   "high_priority_by_brand": {
     "7-ELEVEN": 29,
-    "全家": 13,
+    "全家": 12,
     "全聯": 1,
     "萊爾富": 2
   },
@@ -850,67 +850,6 @@
             25.044468
           ],
           "distance_m": 145.6
-        }
-      ]
-    },
-    {
-      "canonical_id": "buju-poi-osm-1pm6w09",
-      "osm_canonical_id": "buju-poi-1pm6w09",
-      "brand": "全家",
-      "category": "convenience_store",
-      "name": "全家",
-      "coordinates": [
-        121.5440172,
-        25.0968505
-      ],
-      "nearest_same_brand_distance_m": 70.8,
-      "review_radius_m": 50,
-      "distance_ratio_to_review_radius": 1.416,
-      "distance_band": "1.25x-1.50x",
-      "review_priority": "high",
-      "branch": "",
-      "address": "11143臺北市士林區至善路二段34號",
-      "source_rows": 1,
-      "has_branch": false,
-      "has_address": true,
-      "thin_evidence": false,
-      "latest_osm_timestamp": "2026-03-19T09:23:53Z",
-      "osm_source_ids": [
-        "osm:node/2179272081"
-      ],
-      "nearest_overture": {
-        "canonical_id": "buju-poi-13kwzln",
-        "name": "全家",
-        "branch": "",
-        "address": "至善路二段34號 台北市 111 TW",
-        "coordinates": [
-          121.54471662,
-          25.09691363
-        ],
-        "distance_m": 70.8
-      },
-      "nearby_overture": [
-        {
-          "canonical_id": "buju-poi-13kwzln",
-          "name": "全家",
-          "branch": "",
-          "address": "至善路二段34號 台北市 111 TW",
-          "coordinates": [
-            121.54471662,
-            25.09691363
-          ],
-          "distance_m": 70.8
-        },
-        {
-          "canonical_id": "buju-poi-g3vqp6",
-          "name": "全家 中影店",
-          "branch": "中影店",
-          "address": "台北市士林區至善路二段３４號 士林區 111 台北市 TW",
-          "coordinates": [
-            121.544754,
-            25.097101
-          ],
-          "distance_m": 79.2
         }
       ]
     },
@@ -4850,67 +4789,6 @@
             25.026283
           ],
           "distance_m": 70.4
-        }
-      ]
-    },
-    {
-      "canonical_id": "buju-poi-osm-1pm6w09",
-      "osm_canonical_id": "buju-poi-1pm6w09",
-      "brand": "全家",
-      "category": "convenience_store",
-      "name": "全家",
-      "coordinates": [
-        121.5440172,
-        25.0968505
-      ],
-      "nearest_same_brand_distance_m": 70.8,
-      "review_radius_m": 50,
-      "distance_ratio_to_review_radius": 1.416,
-      "distance_band": "1.25x-1.50x",
-      "review_priority": "high",
-      "branch": "",
-      "address": "11143臺北市士林區至善路二段34號",
-      "source_rows": 1,
-      "has_branch": false,
-      "has_address": true,
-      "thin_evidence": false,
-      "latest_osm_timestamp": "2026-03-19T09:23:53Z",
-      "osm_source_ids": [
-        "osm:node/2179272081"
-      ],
-      "nearest_overture": {
-        "canonical_id": "buju-poi-13kwzln",
-        "name": "全家",
-        "branch": "",
-        "address": "至善路二段34號 台北市 111 TW",
-        "coordinates": [
-          121.54471662,
-          25.09691363
-        ],
-        "distance_m": 70.8
-      },
-      "nearby_overture": [
-        {
-          "canonical_id": "buju-poi-13kwzln",
-          "name": "全家",
-          "branch": "",
-          "address": "至善路二段34號 台北市 111 TW",
-          "coordinates": [
-            121.54471662,
-            25.09691363
-          ],
-          "distance_m": 70.8
-        },
-        {
-          "canonical_id": "buju-poi-g3vqp6",
-          "name": "全家 中影店",
-          "branch": "中影店",
-          "address": "台北市士林區至善路二段３４號 士林區 111 台北市 TW",
-          "coordinates": [
-            121.544754,
-            25.097101
-          ],
-          "distance_m": 79.2
         }
       ]
     },

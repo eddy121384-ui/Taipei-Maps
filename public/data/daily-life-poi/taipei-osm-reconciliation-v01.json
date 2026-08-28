@@ -4,14 +4,14 @@
   "stats": {
     "overture_baseline": 1781,
     "osm_canonical": 1751,
-    "matched": 1163,
-    "safe_holes": 506,
+    "matched": 1164,
+    "safe_holes": 505,
     "cross_source_unresolved": 82,
     "reviewed_match_overrides": 1,
-    "reviewed_cluster_overrides": 0,
-    "retired_overture_canonical": 0,
-    "coordinate_overrides": 1,
-    "final_canonical": 2287
+    "reviewed_cluster_overrides": 1,
+    "retired_overture_canonical": 1,
+    "coordinate_overrides": 2,
+    "final_canonical": 2285
   },
   "matched": [
     {
@@ -5117,6 +5117,22 @@
       "overture_name": "7-ELEVEN Yanshou Store",
       "decision": "matched",
       "match_reason": "canonical-v0.2"
+    },
+    {
+      "osm_canonical_id": "buju-poi-1pm6w09",
+      "overture_canonical_id": "buju-poi-g3vqp6",
+      "retired_overture_canonical_ids": [
+        "buju-poi-13kwzln"
+      ],
+      "brand": "全家",
+      "category": "convenience_store",
+      "distance_m": 79.2,
+      "osm_name": "全家",
+      "overture_name": "全家 中影店",
+      "decision": "matched",
+      "match_reason": "reviewed-cluster-override",
+      "reviewed_reason": "desktop-qa-confirmed-three-points-one-store-zhishan-familymart-2026-08-28",
+      "coordinate_source": "osm_secondary"
     },
     {
       "osm_canonical_id": "buju-poi-1pr5n63",
@@ -12811,6 +12827,9 @@
       "match_reason": "canonical-v0.2"
     }
   ],
+  "retired_overture_canonical_ids": [
+    "buju-poi-13kwzln"
+  ],
   "safe_holes": [
     {
       "canonical_id": "buju-poi-osm-1130ddc",
@@ -15669,20 +15688,6 @@
         25.1108334
       ],
       "nearest_same_brand_distance_m": 57.2
-    },
-    {
-      "canonical_id": "buju-poi-osm-1pm6w09",
-      "osm_source_ids": [
-        "osm:node/2179272081"
-      ],
-      "category": "convenience_store",
-      "brand": "全家",
-      "name": "全家",
-      "coordinates": [
-        121.5440172,
-        25.0968505
-      ],
-      "nearest_same_brand_distance_m": 70.8
     },
     {
       "canonical_id": "buju-poi-osm-1q945y2",

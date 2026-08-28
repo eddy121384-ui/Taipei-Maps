@@ -1,0 +1,6 @@
+home,sample_ids,claimed_junior,location_grade,lon,lat,official_district,official_village,official_neighbors,official_elementary,official_junior,verdict,notes
+大安MONEY賦寓,"AG-JH-03;RK-JH-02;591-JH-02",金華,A-,121.52751,25.0217,大安,古莊,17,古亭,"金華、民族、螢橋共同學區",verified,"Claim includes 金華, but official result is a three-school common catchment; do not collapse to 金華 only."
+臨沂雅典,RK-JH-05,金華,A,121.5314806,25.03718,中正,三愛,9,幸安,金華,verified,"Exact official 115 junior assignment is 金華."
+中正藏璽,591-ZZ-03,中正,A,121.5196671,25.0314651,中正,新營,10,"東門、市大附小共同學區",中正,verified,"Exact official 115 junior assignment is 中正."
+中正名門,RK-ZZ-03,中正,A,121.5183008,25.0317572,中正,龍福,3,市大附小,弘道,mismatch,"Listing/benchmark claim 中正 does not match official 115 assignment 弘道 at the verified building point."
+永康麗園,RK-JH-01,金華,A-,121.53159,25.031582,大安,福住,1,新生,金華,verified,"Exact official 115 junior assignment is 金華; coordinate normalization documented in verification probe."

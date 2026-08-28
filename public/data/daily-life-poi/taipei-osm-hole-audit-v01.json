@@ -11,17 +11,17 @@
     "note": "Priority is for visual QA only. It does not alter reconciliation decisions or widen merge thresholds."
   },
   "stats": {
-    "total_safe_holes": 507,
-    "high_priority": 46,
+    "total_safe_holes": 506,
+    "high_priority": 45,
     "medium_priority": 104,
     "low_priority": 357,
-    "thin_evidence": 256,
+    "thin_evidence": 255,
     "with_branch": 2,
     "with_address": 247,
     "multi_source_rows": 7
   },
   "counts_by_brand": {
-    "7-ELEVEN": 173,
+    "7-ELEVEN": 172,
     "全家": 79,
     "全聯": 15,
     "美廉社": 34,
@@ -30,23 +30,23 @@
     "OK Mart": 42
   },
   "counts_by_category": {
-    "convenience_store": 417,
+    "convenience_store": 416,
     "supermarket": 90
   },
   "counts_by_distance_band": {
     ">3.00x": 323,
-    "1.00x-1.25x": 17,
+    "1.00x-1.25x": 16,
     "1.25x-1.50x": 29,
     "1.50x-2.00x": 55,
     "2.00x-3.00x": 83
   },
   "counts_by_priority": {
-    "high": 46,
+    "high": 45,
     "low": 357,
     "medium": 104
   },
   "high_priority_by_brand": {
-    "7-ELEVEN": 30,
+    "7-ELEVEN": 29,
     "全家": 13,
     "全聯": 1,
     "萊爾富": 2
@@ -469,43 +469,6 @@
           25.062745
         ],
         "distance_m": 57.4
-      }
-    },
-    {
-      "canonical_id": "buju-poi-osm-1sdpvuc",
-      "osm_canonical_id": "buju-poi-1sdpvuc",
-      "brand": "7-ELEVEN",
-      "category": "convenience_store",
-      "name": "7-ELEVEN",
-      "coordinates": [
-        121.5562945,
-        24.9804556
-      ],
-      "nearest_same_brand_distance_m": 58.7,
-      "review_radius_m": 50,
-      "distance_ratio_to_review_radius": 1.174,
-      "distance_band": "1.00x-1.25x",
-      "review_priority": "high",
-      "branch": "",
-      "address": "",
-      "source_rows": 1,
-      "has_branch": false,
-      "has_address": false,
-      "thin_evidence": true,
-      "latest_osm_timestamp": "2023-10-03T10:26:53Z",
-      "osm_source_ids": [
-        "osm:node/3087416316"
-      ],
-      "nearest_overture": {
-        "canonical_id": "buju-poi-am0ftj",
-        "name": "7-ELEVEN",
-        "branch": "",
-        "address": "台北市文山區木新路三段351號353號1樓 台北市 TW",
-        "coordinates": [
-          121.55576,
-          24.980245
-        ],
-        "distance_m": 58.7
       }
     },
     {

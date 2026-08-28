@@ -4,12 +4,12 @@
   "stats": {
     "overture_baseline": 1781,
     "osm_canonical": 1751,
-    "matched": 1162,
-    "safe_holes": 507,
+    "matched": 1163,
+    "safe_holes": 506,
     "cross_source_unresolved": 82,
-    "reviewed_match_overrides": 0,
+    "reviewed_match_overrides": 1,
     "coordinate_overrides": 1,
-    "final_canonical": 2288
+    "final_canonical": 2287
   },
   "matched": [
     {
@@ -5610,6 +5610,19 @@
       "overture_name": "全家 新北鄰店",
       "decision": "matched",
       "match_reason": "canonical-v0.2"
+    },
+    {
+      "osm_canonical_id": "buju-poi-1sdpvuc",
+      "overture_canonical_id": "buju-poi-am0ftj",
+      "brand": "7-ELEVEN",
+      "category": "convenience_store",
+      "distance_m": 58.7,
+      "osm_name": "7-ELEVEN",
+      "overture_name": "7-ELEVEN",
+      "decision": "matched",
+      "match_reason": "reviewed-pair-override",
+      "reviewed_reason": "desktop-qa-confirmed-same-store-jingmei-girls-high-school-2026-08-28",
+      "coordinate_source": "overture_baseline"
     },
     {
       "osm_canonical_id": "buju-poi-1semddd",
@@ -13820,20 +13833,6 @@
         25.0434612
       ],
       "nearest_same_brand_distance_m": 187.2
-    },
-    {
-      "canonical_id": "buju-poi-osm-1sdpvuc",
-      "osm_source_ids": [
-        "osm:node/3087416316"
-      ],
-      "category": "convenience_store",
-      "brand": "7-ELEVEN",
-      "name": "7-ELEVEN",
-      "coordinates": [
-        121.5562945,
-        24.9804556
-      ],
-      "nearest_same_brand_distance_m": 58.7
     },
     {
       "canonical_id": "buju-poi-osm-1son9jh",

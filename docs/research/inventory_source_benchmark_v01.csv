@@ -1,0 +1,34 @@
+sample_id,source,school_claim,area,address_or_street,asking_wan,total_ping,unit_wan_per_ping,floor,layout,source_url,duplicate_cluster_hint,notes
+AG-JH-01,AlleyGuide,金華國中,大安區,羅斯福路三段,3090,18.20,169.8,8/15,,https://www.alleyguide.com.tw/listing/vQLANqlFJ,,discovery sample; not yet official-catchment verified
+AG-JH-02,AlleyGuide,金華國中,中正區,臨沂街,4980,43.23,115.2,4,6房4廳3衛,https://www.alleyguide.com.tw/listing/tpmrLUsub,,listing markets 幸安國小/金華國中
+AG-JH-03,AlleyGuide,金華國中,大安區,羅斯福路三段,2311,14.90,154.8,3/15,1廳1衛,https://www.alleyguide.com.tw/listing/lD9JFqFD,AG-MONEY,大安MONEY賦寓
+AG-JH-04,AlleyGuide,金華國中,大安區,新生南路一段,4788,30.45,,1/4,2房2廳2衛,https://www.alleyguide.com.tw/listing/6Av0q5rH1,,discovery sample
+AG-ZZ-01,AlleyGuide,中正國中,中正區,信義路二段,4380,25.32,173.0,10,2廳1衛,https://www.alleyguide.com.tw/listing/txuaeuBFy,,listing markets 東門國小/中正國中
+AG-ZZ-02,AlleyGuide,中正國中,大安區,杭州南路二段,3990,39.75,100.4,1/5,3房3廳1衛,https://www.alleyguide.com.tw/listing/8Dz1gqF5,CROSS-HANGZHOU-3990,cross-platform candidate with 5168-indexed result
+AG-ZZ-03,AlleyGuide,中正國中,中正區,和平西路一段,5638,,,1/14,3房2廳2衛,https://www.alleyguide.com.tw/listing/by98RsxN2,,asking includes parking
+AG-ZZ-04,AlleyGuide,中正國中,大安區,潮州街,3668,,,1/5,4套房/收租,https://www.alleyguide.com.tw/listing/2gozk1mAd,,discovery sample
+AG-ZZ-05,AlleyGuide,中正國中,中正區,愛國東路,4800,35.96,,10/12,3房2廳2衛,https://www.alleyguide.com.tw/listing/hFIbZ5yNA,,discovery sample
+AG-ZZ-06,AlleyGuide,中正國中,大安區,羅斯福路二段,3886,35.86,108.4,4/4,5房4廳2衛,https://www.alleyguide.com.tw/listing/9kEjCL7w,,listing markets 金華國小/中正國中
+RK-JH-01,Rakuya,金華國中,大安區,永康麗園,7680,63.41,121.12,4/9,3房2廳2衛,https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106,,search-surface sample
+RK-JH-02,Rakuya,金華國中,大安區,大安MONEY賦寓,2860,17.89,159.87,8/15,開放式格局,https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106,AG-MONEY,possible same-building overlap with AlleyGuide
+RK-JH-03,Rakuya,金華國中,大安區,新生南路一段,4980,30.92,161.06,1/7,4房2廳2衛,https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106,,search-surface sample
+RK-JH-04,Rakuya,金華國中,大安區,愛國東路,2000,11.69,171.09,4/6,1房1廳1衛,https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106,,search-surface sample
+RK-JH-05,Rakuya,金華國中,中正區,臨沂雅典,4588,37.58,130.31,6/6,2房2廳2衛,https://www.rakuya.com.tw/sell/result?agetype=P&zipcode=100,,search-surface sample
+RK-ZZ-01,Rakuya,中正國中,中正區,羅斯福路一段,3958,37.70,104.99,3/5,3房2廳2衛,https://www.rakuya.com.tw/sell/result?keyword=%E4%B8%AD%E6%AD%A3%E5%9C%8B%E4%B8%AD&zipcode=100,RK-ROS1-3958,multiple near-identical broker listings visible
+RK-ZZ-02,Rakuya,中正國中,中正區,杭州南路一段,2588,23.14,,1/7,1房2廳1衛,https://www.rakuya.com.tw/sell/result?city=0&keyword=%E4%B8%AD%E6%AD%A3%E5%9C%8B%E4%B8%AD&sort=21&upd=1,,search-surface sample
+RK-ZZ-03,Rakuya,中正國中,中正區,中正名門,4600,39.95,115.13,10/12,3房2廳2衛,https://www.rakuya.com.tw/sell/result?city=0&keyword=%E4%B8%AD%E6%AD%A3%E5%9C%8B%E4%B8%AD&sort=21&upd=1,,search-surface sample
+RK-ZZ-04,Rakuya,中正國中,中正區,寧波東街,4388,29.75,147.47,11/12,2房2廳1衛,https://www.rakuya.com.tw/sell/result?city=0&keyword=%E4%B8%AD%E6%AD%A3%E5%9C%8B%E4%B8%AD&page=5&sort=11,,search-surface sample
+RK-ZZ-05,Rakuya,中正國中,中正區,南昌路二段,5500,57.87,95.04,8/8,4房2廳4衛,https://www.rakuya.com.tw/sell/result?city=0&keyword=%E4%B8%AD%E6%AD%A3%E5%9C%8B%E4%B8%AD&page=5&sort=11,,search-surface sample
+HP-JH-01,5168,金華國中,大安區,永康街,3298,25.62,136.6,2/4,3房2廳1衛,https://buy.houseprice.tw/list/%E5%8F%B0%E5%8C%97%E5%B8%82_city/%E5%A4%A7%E5%AE%89%E5%8D%80_zip/%E4%BD%8F%E5%AE%85_use/%E7%84%A1%E9%9B%BB%E6%A2%AF%E5%85%AC%E5%AF%93_type/%E6%96%B0%E7%94%9F%E5%9C%8B%E5%B0%8F_kw/price-asc_sort/,,listing title markets 新生/金華
+HP-JH-02,5168,金華國中,大安區,和平東路一段,4800,41.47,115.7,9/12,3房2廳2衛,https://buy.houseprice.tw/list/%E5%8F%B0%E5%8C%97%E5%B8%82_city/%E5%A4%A7%E5%AE%89%E5%8D%80_zip/%E4%BD%8F%E5%AE%85_use/%E7%84%A1%E9%9B%BB%E6%A2%AF%E5%85%AC%E5%AF%93_type/%E6%96%B0%E7%94%9F%E5%9C%8B%E5%B0%8F_kw/price-asc_sort/,,listing title markets 新生/金華
+HP-JH-03,5168,金華國中,大安區,永康街,5500,39.07,140.8,1/4,4房2廳2衛,https://buy.houseprice.tw/list/%E5%8F%B0%E5%8C%97%E5%B8%82_city/%E5%A4%A7%E5%AE%89%E5%8D%80_zip/%E4%BD%8F%E5%AE%85_use/%E7%84%A1%E9%9B%BB%E6%A2%AF%E5%85%AC%E5%AF%93_type/%E6%96%B0%E7%94%9F%E5%9C%8B%E5%B0%8F_kw/price-asc_sort/,HP-YONGKANG-5500,multiple same-price/same-area broker rows visible
+HP-ZZ-01,5168,中正國中,大安區,羅斯福路二段,2456,18.19,,1/4,2房1廳1衛,https://buy.houseprice.tw/list/%E4%BD%8F%E5%AE%85_use/1500-2500_price/,,search-surface sample
+HP-ZZ-02,5168,中正國中,中正區,羅斯福路一段,2598,18.59,139.8,4/12,2房1廳1衛,https://buy.houseprice.tw/list/%E5%8F%B0%E5%8C%97%E5%B8%82_city/%E7%BE%85%E6%96%AF%E7%A6%8F%E8%B7%AF%E4%B8%80%E6%AE%B5_kw/,HP-ROS1-2598,multiple same-price/same-area broker rows visible
+HP-ZZ-03,5168,中正國中,中正區,羅斯福路一段,2800,26.26,106.6,11/11,2房1廳1衛,https://buy.houseprice.tw/list/%E5%8F%B0%E5%8C%97%E5%B8%82_city/%E7%BE%85%E6%96%AF%E7%A6%8F%E8%B7%AF%E4%B8%80%E6%AE%B5_kw/,,same structured row appears more than once on source list
+HP-ZZ-04,5168,中正國中,中正區,羅斯福路一段,11888,70.33,169.0,15/15,5房2廳2衛,https://buy.houseprice.tw/list/%E5%8F%B0%E5%8C%97%E5%B8%82_city/%E7%BE%85%E6%96%AF%E7%A6%8F%E8%B7%AF%E4%B8%80%E6%AE%B5_kw/,HP-HUAGU-11888,multiple same-price/same-area broker rows visible
+HP-ZZ-05,5168,中正國中,大安區,潮州街,3280,31.23,105.0,4/4,3房2廳2衛,https://buy.houseprice.tw/house/21356690_1804319,,direct detail page
+591-JH-01,591,金華國中,大安區,,3000-4000區間,,,,3房,https://sale.591.com.tw/home/house/detail/2/20389365.html,,exact asking value not reliably exposed in indexed text snapshot
+591-JH-02,591,金華國中,大安區,羅斯福路三段,,,,,微型住宅,https://sale.591.com.tw/home/house/detail/2/19976893.html,AG-MONEY,possible same-building family around 台電大樓; needs structured comparison
+591-ZZ-01,591,中正國中,大安區,,3000-4000區間,,,,可隔3房,https://sale.591.com.tw/home/house/detail/2/20643814.html,,current indexed detail candidate
+591-ZZ-02,591,中正國中,大安區,,1500-2000區間,,,,套房/車位,https://sale.591.com.tw/home/house/detail/2/20307022.html,,current indexed detail candidate
+591-ZZ-03,591,中正國中,中正區,中正藏璽,4000-5000區間,,,,3房/雙車,https://sale.591.com.tw/home/house/detail/2/19529099.html,591-ZANGXI,community page shows many broker duplicates for similar unit

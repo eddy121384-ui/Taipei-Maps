@@ -48,6 +48,6 @@
   ],
   "canonical_engine_version": "buju-poi-canonical-v0.2",
   "reconciliation_engine_version": "buju-poi-reconcile-v0.1",
-  "logical_dataset_sha256": "26a4e1c47a83738e7ee2c979edcf02842d0a21d72a9c3b4dd129b993ac1ebbb7",
-  "osm_overpass_raw_sha256": "30d1bc87e95e88979773b0b9eedc014958a17968dc5d5d6cff572f68bff8841c"
+  "logical_dataset_sha256": "7eb5d5783a74367e25192f5b249efbe78df341bef96eb4540c420f428867f8dd",
+  "osm_overpass_raw_sha256": "8fd24ddb4d31c299be1d8bd111e60432bbb2beec86515b5b31b08536a60dae0d"
 }

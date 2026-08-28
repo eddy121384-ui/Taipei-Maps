@@ -1,0 +1,25 @@
+name: Inventory school-claim verification v0.1
+
+on:
+  push:
+    branches:
+      - research/inventory-source-audit-v01
+    paths:
+      - 'tools/research/verify_inventory_school_claims_v01.mjs'
+      - '.github/workflows/inventory-school-verification-v01.yml'
+      - 'public/buju-school-district-resolver-v01.mjs'
+      - 'public/taipei-school-districts-115.js'
+      - 'public/school-districts-115/**'
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Query official Taipei neighbor geometry and verify listing school claims
+        run: node tools/research/verify_inventory_school_claims_v01.mjs

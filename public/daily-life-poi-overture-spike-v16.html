@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>卜居 · POI boundary-aware anomaly audit v0.16 loader</title>
+  <style>
+    html,body{margin:0;width:100%;height:100%;font-family:Inter,system-ui,"Noto Sans TC",sans-serif;background:#eef1f4;color:#263238}
+    .boot{padding:24px}.err{white-space:pre-wrap;color:#b42318;background:#fff;border:1px solid #efb4ae;border-radius:12px;padding:14px;max-width:1000px}
+  </style>
+</head>
+<body>
+<div class="boot" id="boot">Loading boundary-aware POI audit v0.16…</div>
+<script>
+(async()=>{
+  'use strict';
+  const boot=document.getElementById('boot');
+  const fail=msg=>{throw new Error(msg)};
+  try{
+    const [pageRes,boundaryRes]=await Promise.all([
+      fetch('/daily-life-poi-overture-spike-v15.html',{cache:'no-store'}),
+      fetch('https://raw.githubusercontent.com/xashiex/taiwan-district-boundary-to-geojson/master/docs/data/63.json',{cache:'force-cache'})
+    ]);
+    if(!pageRes.ok)fail(`failed to load v0.15 source: HTTP ${pageRes.status}`);
+    if(!boundaryRes.ok)fail(`failed to load Taipei district boundary: HTTP ${boundaryRes.status}`);
+    const boundary=await boundaryRes.json();
+    if(boundary?.type!=='FeatureCollection'||!Array.isArray(boundary.features)||boundary.features.length<12)fail('Taipei district boundary malformed');
+
+    let src=await pageRes.text();
+    src=src.replaceAll('v0.15','v0.16');
+    src=src.replace(
+      'v0.16 進入 adversarial audit：hard quarantine 只接受「結構化地址明確寫了外縣市行政區」這種高精度衝突；店名／branch 單獨出現「金門、桃園」不再判錯位，避免把金門街這類台北合法路名誤殺。Duplicate queue 仍優先找最可能是兩間真店的反例。',
+      'v0.16 修正行政區判定：不再用包住大台北的粗略 bounding box 判斷「座標在台北」。現在先用臺北市 12 區實際邊界做 point-in-polygon；只有點位真的落在臺北市內、但結構化 address 明確寫外縣市行政區，才進 hard quarantine。Duplicate queue 仍優先找最可能是兩間真店的反例。'
+    );
+    src=src.replace(
+      '<b>這輪核心：</b>正例已經很多，現在缺反例；同時 anomaly 規則改成 precision-first：只有結構化地址的行政區與台北座標明確矛盾才自動 quarantine。',
+      '<b>這輪核心：</b>行政區衝突必須同時有「實際臺北市 polygon 內座標」＋「結構化外縣市 address」。永和／新店等新北點位不再因落在舊 bbox 裡被誤判。'
+    );
+
+    const oldFn="function inTaipeiApprox(coord){return coord[0]>=121.43&&coord[0]<=121.69&&coord[1]>=24.95&&coord[1]<=25.22;}";
+    if(!src.includes(oldFn))fail('v0.16 bbox patch target missing');
+    const boundaryJson=JSON.stringify(boundary);
+    const exactFn="const TAIPEI_DISTRICT_BOUNDARY="+boundaryJson+";function pointInRing(pt,ring){let inside=false;for(let i=0,j=ring.length-1;i<ring.length;j=i++){const xi=ring[i][0],yi=ring[i][1],xj=ring[j][0],yj=ring[j][1];const hit=((yi>pt[1])!==(yj>pt[1]))&&(pt[0]<(xj-xi)*(pt[1]-yi)/((yj-yi)||1e-15)+xi);if(hit)inside=!inside;}return inside;}function pointInPolygon(pt,poly){if(!poly?.length||!pointInRing(pt,poly[0]))return false;for(let i=1;i<poly.length;i++)if(pointInRing(pt,poly[i]))return false;return true;}function pointInGeometry(pt,g){if(!g)return false;if(g.type==='Polygon')return pointInPolygon(pt,g.coordinates);if(g.type==='MultiPolygon')return g.coordinates.some(poly=>pointInPolygon(pt,poly));return false;}function inTaipeiApprox(coord){return TAIPEI_DISTRICT_BOUNDARY.features.some(f=>pointInGeometry(coord,f.geometry));}";
+    src=src.replace(oldFn,exactFn);
+    src=src.replace(
+      "status.textContent=`READY · ${selected.release} · precision geo guard + adversarial false-positive hunt v0.16`;",
+      "status.textContent=`READY · ${selected.release} · exact Taipei boundary guard + adversarial false-positive hunt v0.16`;"
+    );
+
+    const openTag='<script>';
+    const closeTag='</scr'+'ipt>';
+    const start=src.lastIndexOf(openTag),end=src.lastIndexOf(closeTag);
+    if(start<0||end<=start)fail('v0.16 patched loader script not found');
+    const inline=src.slice(start+openTag.length,end);
+    try{new Function(inline);}catch(err){fail(`v0.16 patched loader syntax error: ${err.message}`);}
+
+    document.open();document.write(src);document.close();
+  }catch(err){boot.className='boot err';boot.textContent='Boundary-aware audit v0.16 bootstrap failed:\n'+(err?.stack||err);}
+})();
+</script>
+</body>
+</html>

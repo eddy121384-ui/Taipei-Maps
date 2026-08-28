@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>卜居 · Canonical POI v0.2 loader</title>
+  <style>
+    html,body{margin:0;width:100%;height:100%;font-family:Inter,system-ui,"Noto Sans TC",sans-serif;background:#eef1f4;color:#263238}
+    .boot{padding:24px}.err{white-space:pre-wrap;color:#b42318;background:#fff;border:1px solid #efb4ae;border-radius:12px;padding:14px;max-width:1000px}
+  </style>
+</head>
+<body>
+<div class="boot" id="boot">Loading Buju canonical POI v0.2…</div>
+<script>
+(async()=>{
+  'use strict';
+  const boot=document.getElementById('boot');
+  try{
+    const res=await fetch('/daily-life-poi-canonical-v01.html',{cache:'no-store'});
+    if(!res.ok)throw new Error(`failed to load v0.1 page: HTTP ${res.status}`);
+    let html=await res.text();
+    html=html.replaceAll('Canonical POI v0.1','Canonical POI v0.2');
+    html=html.replaceAll('CANONICAL POI v0.1','CANONICAL POI v0.2');
+    html=html.replaceAll('canonical POI v0.1','canonical POI v0.2');
+    html=html.replace("./buju-poi-canonical-v01.mjs","./buju-poi-canonical-v02.mjs");
+    html=html.replace(
+      '<b>v0.1 auto-merge gate：</b>同品牌同類別，且符合高信心證據才合併：完全相同地址／分店名／raw name，5m 內極近點，或 generic + specific 的近距離組合。Union 後仍受 category span guard 約束；其他 pair 一律留在 unresolved，不拿去算「已合併」。',
+      '<b>v0.2 auto-merge gate：</b>保留 v0.1 高信心規則，另外只新增兩條已由人工樣本驗證的 branch evidence：行政區前綴等價（例如「中正同安」≈「同安」）可在 25m 內合併；長度至少 4 字、只差 1 個字的近距離 branch typo 可在 20m 內合併（例如「萬華莒光」≈「萬華劍光」）。其他近鄰仍保持 unresolved。'
+    );
+    html=html.replace(
+      '這版停止人工追每一個瑕疵，改做保守的 canonicalization prototype：只自動合併高信心 duplicate；證據不足的近鄰維持兩筆，不硬猜。Canonical 點使用最可信 raw record 的實際座標，不畫在平均中點。這仍是 loaded-tile prototype，尚未加入 structured OSM hole-filler。',
+      'v0.2 仍採保守 canonicalization，但把已人工確認的兩種 branch pattern 升格成高信心 evidence：行政區前綴差異、以及近距離單字 typo。像「萬華莒光／萬華劍光」這種已確認同店的 pair 現在應吸收到同一 canonical POI；明顯不同 branch 仍不合併。'
+    );
+    document.open();document.write(html);document.close();
+  }catch(err){boot.className='boot err';boot.textContent='Canonical POI v0.2 bootstrap failed:\n'+(err?.stack||err);}
+})();
+</script>
+</body>
+</html>

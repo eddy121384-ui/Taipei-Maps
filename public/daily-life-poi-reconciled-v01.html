@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>卜居 · OSM Reconciled POI v0.1</title>
+<link href="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.css" rel="stylesheet">
+<script src="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.js"></script>
+<style>
+html,body,#map{height:100%;margin:0}body{font-family:Inter,system-ui,"Noto Sans TC",sans-serif}.panel{position:absolute;z-index:2;left:12px;top:12px;max-width:430px;background:rgba(255,255,255,.95);padding:12px 14px;border-radius:12px;box-shadow:0 4px 18px #0002;font-size:13px}.panel h1{font-size:15px;margin:0 0 7px}.legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:7px}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}.base{background:#2474c6}.hole{background:#18a558}.ring{box-sizing:border-box;background:transparent;border:2px solid #d97706}.muted{color:#61707a}.maplibregl-popup-content{font:13px/1.45 Inter,system-ui,"Noto Sans TC",sans-serif;max-width:380px}
+</style>
+</head>
+<body><div id="map"></div><div class="panel"><h1>Reconciled Daily-life POI v0.1</h1><div id="status">Loading…</div><div class="legend"><span><i class="dot base"></i>Overture baseline</span><span><i class="dot hole"></i>OSM safe hole</span><span><i class="dot ring"></i>near-threshold review</span></div><div class="muted">橘圈不是判錯，只代表 OSM hole 離最近同品牌 Overture 剛超過保守 review radius，人工 smoke 優先看這批。OSM 不直接與 Overture 加總。</div></div>
+<script>
+(async()=>{const status=document.getElementById('status'),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));try{
+const [d,m]=await Promise.all([fetch('/data/daily-life-poi/taipei-canonical-reconciled-v01.geojson',{cache:'no-store'}),fetch('/data/daily-life-poi/taipei-poi-reconciled-manifest-v01.json',{cache:'no-store'})]);if(!d.ok||!m.ok)throw new Error(`dataset missing: ${d.status}/${m.status}`);const data=await d.json(),manifest=await m.json();
+const isReview=f=>{const p=f.properties||{};if(p.source_kind!=='osm_hole_fill')return false;const dist=Number(p.nearest_same_brand_distance_m);if(!Number.isFinite(dist))return false;return p.category==='supermarket'?dist<=150:dist<=75;};const reviewCount=data.features.filter(isReview).length;
+status.textContent=`READY · final ${manifest.final_canonical_count} · OSM holes ${manifest.safe_hole_count} · near-threshold ${reviewCount} · matched ${manifest.matched_count} · unresolved ${manifest.cross_source_unresolved_count}`;
+const map=new maplibregl.Map({container:'map',center:[121.545,25.055],zoom:11.1,style:{version:8,sources:{osm:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,attribution:'© OpenStreetMap contributors'}},layers:[{id:'osm',type:'raster',source:'osm'}]}});map.addControl(new maplibregl.NavigationControl(),'top-right');
+map.on('load',()=>{map.addSource('final',{type:'geojson',data});map.addLayer({id:'final',type:'circle',source:'final',minzoom:10.3,paint:{'circle-radius':['interpolate',['linear'],['zoom'],10.3,2.3,14,5.4],'circle-color':['match',['get','source_kind'],'osm_hole_fill','#18a558','#2474c6'],'circle-stroke-color':'#fff','circle-stroke-width':1,'circle-opacity':.9}});
+map.addLayer({id:'near-threshold-review',type:'circle',source:'final',minzoom:10.3,filter:['all',['==',['get','source_kind'],'osm_hole_fill'],['any',['all',['==',['get','category'],'convenience_store'],['<=',['to-number',['get','nearest_same_brand_distance_m'],999999],75]],['all',['==',['get','category'],'supermarket'],['<=',['to-number',['get','nearest_same_brand_distance_m'],999999],150]]]],paint:{'circle-radius':['interpolate',['linear'],['zoom'],10.3,4.2,14,8.3],'circle-color':'rgba(0,0,0,0)','circle-stroke-color':'#d97706','circle-stroke-width':2,'circle-opacity':1}});
+map.on('mouseenter','final',()=>map.getCanvas().style.cursor='pointer');map.on('mouseleave','final',()=>map.getCanvas().style.cursor='');map.on('click','final',e=>{const f=e.features?.[0];if(!f)return;const p=f.properties||{};const nearest=p.source_kind==='osm_hole_fill'&&Number.isFinite(Number(p.nearest_same_brand_distance_m))?`<br>nearest same-brand Overture: ${esc(Number(p.nearest_same_brand_distance_m).toFixed(1))} m`:'';new maplibregl.Popup().setLngLat(f.geometry.coordinates).setHTML(`<strong>${esc(p.name||p.brand)}</strong><br>${esc(p.category)} · ${esc(p.brand)}<br>source: ${esc(p.source_kind)}<br>branch: ${esc(p.branch)}<br>address: ${esc(p.address)}<br>source rows: ${esc(p.source_rows)}${nearest}<br>id: ${esc(p.canonical_id)}`).addTo(map);});});
+}catch(err){status.textContent=`ERROR · ${err.message}`;status.style.color='#b42318';}})();
+</script></body></html>

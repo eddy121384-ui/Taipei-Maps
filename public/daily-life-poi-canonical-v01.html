@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>卜居 · Canonical POI v0.1</title>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" />
+  <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+  <script src="https://unpkg.com/pmtiles@4.4.1/dist/pmtiles.js"></script>
+  <style>
+    html,body,#map{width:100%;height:100%;margin:0}body{font-family:Inter,system-ui,"Noto Sans TC",sans-serif;overflow:hidden}#map{background:#eef1f4}
+    .panel{position:absolute;z-index:5;top:14px;left:14px;width:min(590px,calc(100vw - 28px));max-height:calc(100vh - 28px);overflow:auto;padding:14px;border:1px solid #ccd3d9;border-radius:14px;background:rgba(255,255,255,.96);box-shadow:0 10px 28px rgba(0,0,0,.14)}
+    .eyebrow{font-size:11px;font-weight:800;letter-spacing:.12em;color:#68727d}h1{font-size:20px;margin:5px 0}.sub,.note{font-size:11.5px;color:#5e6872;line-height:1.55}.controls{display:flex;gap:6px;flex-wrap:wrap;margin:9px 0}button{border:1px solid #c8d0d7;border-radius:9px;padding:7px 9px;background:#fff;font-weight:700;cursor:pointer}.active{background:#25313b;color:#fff}.legend{display:flex;gap:12px;align-items:center;font-size:11.5px;margin:8px 0;flex-wrap:wrap}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}.blue{background:#2f6fdf}.orange{background:#d97706}.gray{background:#7c8792}.metrics{display:grid;grid-template-columns:1fr auto;gap:4px 10px;border-top:1px solid #dde2e7;border-bottom:1px solid #dde2e7;padding:9px 0;margin:9px 0;font-size:12px}.metrics span:nth-child(odd){color:#66717b}.metrics span:nth-child(even){font-weight:800;font-variant-numeric:tabular-nums;text-align:right}.good{color:#137333}.error{color:#b42318}#status{font-size:12px;font-weight:700;line-height:1.45}.rulebox{font-size:11px;line-height:1.5;background:#f6f8fa;border:1px solid #e1e6ea;border-radius:10px;padding:9px;margin-top:9px}.brands{font-size:11px;color:#455a64;line-height:1.45;word-break:break-word}
+  </style>
+</head>
+<body>
+<div id="map"></div>
+<section class="panel">
+  <div class="eyebrow">ISSUE #56 · BUJU CANONICAL POI v0.1</div>
+  <h1>生活 POI：第一次把 raw records 變成「卜居店家」</h1>
+  <div class="sub">這版停止人工追每一個瑕疵，改做保守的 canonicalization prototype：只自動合併高信心 duplicate；證據不足的近鄰維持兩筆，不硬猜。Canonical 點使用最可信 raw record 的實際座標，不畫在平均中點。這仍是 loaded-tile prototype，尚未加入 structured OSM hole-filler。</div>
+  <div class="controls"><button class="district active" data-district="daan">大安</button><button class="district" data-district="xinyi">信義</button><button class="district" data-district="songshan">松山</button><button class="district" data-district="zhongshan">中山</button><button class="district" data-district="zhongzheng">中正</button></div>
+  <div class="controls"><button id="toggleCanonical" class="active">Canonical ON</button><button id="toggleRaw">Raw records OFF</button></div>
+  <div class="legend"><span><i class="dot blue"></i>canonical 便利商店</span><span><i class="dot orange"></i>canonical 超市</span><span><i class="dot gray"></i>raw record（可切換）</span></div>
+  <div class="metrics">
+    <span>Overture release</span><span id="release">—</span>
+    <span>target-chain raw records</span><span id="rawCount">—</span>
+    <span>canonical POI total</span><span id="canonicalCount">—</span>
+    <span>canonical convenience</span><span id="convenienceCount">—</span>
+    <span>canonical supermarket</span><span id="supermarketCount">—</span>
+    <span>auto-merged groups</span><span id="mergedGroups">—</span>
+    <span>raw rows absorbed</span><span id="absorbedRows">—</span>
+    <span>unresolved nearby pairs</span><span id="unresolvedPairs">—</span>
+    <span>move → idle</span><span id="idleMs">—</span>
+  </div>
+  <div id="brands" class="brands">目標連鎖：—</div>
+  <div class="rulebox"><b>v0.1 auto-merge gate：</b>同品牌同類別，且符合高信心證據才合併：完全相同地址／分店名／raw name，5m 內極近點，或 generic + specific 的近距離組合。Union 後仍受 category span guard 約束；其他 pair 一律留在 unresolved，不拿去算「已合併」。</div>
+  <div id="status">Booting canonical POI v0.1…</div>
+  <div class="note" style="margin-top:8px"><b>重要：</b>這裡的數字是目前 MapLibre 已載入 source tiles 的 prototype scope，不是「台北市總店數」。下一步通過 smoke 後才做 citywide canonical dataset，再接 structured OSM 補洞。</div>
+</section>
+<script type="module">
+import {buildCanonical,canonicalGeoJSON,rawGeoJSON} from './buju-poi-canonical-v01.mjs';
+const $=s=>document.querySelector(s);
+const status=$('#status'),releaseEl=$('#release'),rawCountEl=$('#rawCount'),canonicalCountEl=$('#canonicalCount'),convenienceCountEl=$('#convenienceCount'),supermarketCountEl=$('#supermarketCount'),mergedGroupsEl=$('#mergedGroups'),absorbedRowsEl=$('#absorbedRows'),unresolvedPairsEl=$('#unresolvedPairs'),idleMsEl=$('#idleMs'),brandsEl=$('#brands');
+if(!window.maplibregl||!window.pmtiles){status.textContent='ERROR: MapLibre / PMTiles CDN 未載入';status.className='error';throw new Error('MapLibre / PMTiles missing');}
+const releases=[{release:'2026-08-19.0',url:'https://overturemaps-extras-us-west-2.s3.us-west-2.amazonaws.com/tiles/2026-08-19.0/places.pmtiles'},{release:'2026-07-22.0',url:'https://overturemaps-extras-us-west-2.s3.us-west-2.amazonaws.com/tiles/2026-07-22.0/places.pmtiles'}];
+const districts={daan:{center:[121.5434,25.0268],zoom:15.2},xinyi:{center:[121.5645,25.0340],zoom:15.2},songshan:{center:[121.5608,25.0525],zoom:15.2},zhongshan:{center:[121.5332,25.0561],zoom:15.2},zhongzheng:{center:[121.5199,25.0324],zoom:15.2}};
+let selected=null;
+for(const c of releases){try{const archive=new pmtiles.PMTiles(c.url),meta=await archive.getMetadata();if((meta?.vector_layers||[]).some(v=>v?.id==='place')){selected=c;break;}}catch{}}
+if(!selected){status.textContent='ERROR: Overture Places preflight failed';status.className='error';throw new Error('Overture preflight failed');}
+releaseEl.textContent=selected.release;
+const protocol=new pmtiles.Protocol({metadata:true});maplibregl.addProtocol('pmtiles',protocol.tile);
+const OVERTURE='overture',CANON='canonical',RAW='raw';
+const map=new maplibregl.Map({container:'map',center:districts.daan.center,zoom:15.2,pitch:0,bearing:0,maxZoom:19,minZoom:12,maxBounds:[[121.39,24.90],[121.76,25.25]],style:{version:8,sources:{osm:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,maxzoom:19,attribution:'© OpenStreetMap contributors'},[OVERTURE]:{type:'vector',url:`pmtiles://${selected.url}`},[CANON]:{type:'geojson',data:{type:'FeatureCollection',features:[]}},[RAW]:{type:'geojson',data:{type:'FeatureCollection',features:[]}}},layers:[
+  {id:'osm',type:'raster',source:'osm'},
+  {id:'overture-loader',type:'circle',source:OVERTURE,'source-layer':'place',minzoom:14,paint:{'circle-radius':0,'circle-opacity':0}},
+  {id:'raw-points',type:'circle',source:RAW,layout:{visibility:'none'},paint:{'circle-radius':3,'circle-color':'#7c8792','circle-opacity':.7,'circle-stroke-color':'#fff','circle-stroke-width':.8}},
+  {id:'canonical-convenience',type:'circle',source:CANON,filter:['==',['get','category'],'convenience_store'],paint:{'circle-radius':6,'circle-color':'#2f6fdf','circle-stroke-color':'#fff','circle-stroke-width':1.4}},
+  {id:'canonical-supermarket',type:'circle',source:CANON,filter:['==',['get','category'],'supermarket'],paint:{'circle-radius':6.5,'circle-color':'#d97706','circle-stroke-color':'#fff','circle-stroke-width':1.4}},
+  {id:'canonical-label',type:'symbol',source:CANON,minzoom:16,layout:{'text-field':['get','brand'],'text-size':11,'text-offset':[0,1.1],'text-anchor':'top'},paint:{'text-color':['case',['==',['get','category'],'convenience_store'],'#1f4fa5','#9a5400'],'text-halo-color':'#fff','text-halo-width':1.4}}
+]}});
+map.addControl(new maplibregl.NavigationControl({showCompass:false}),'top-right');
+let moveStarted=null,popup=null,lastResult=null;
+function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
+function refresh(){
+  if(!map.isStyleLoaded())return;
+  let loaded=[];try{loaded=map.querySourceFeatures(OVERTURE,{sourceLayer:'place'});}catch{}
+  lastResult=buildCanonical(loaded);
+  map.getSource(CANON)?.setData(canonicalGeoJSON(lastResult.entities));
+  map.getSource(RAW)?.setData(rawGeoJSON(lastResult.rawItems));
+  const s=lastResult.stats;
+  rawCountEl.textContent=s.raw_records;canonicalCountEl.textContent=s.canonical_poi;convenienceCountEl.textContent=s.canonical_convenience;supermarketCountEl.textContent=s.canonical_supermarket;mergedGroupsEl.textContent=s.auto_merged_groups;absorbedRowsEl.textContent=s.raw_rows_absorbed;unresolvedPairsEl.textContent=s.unresolved_nearby_pairs;
+  const counts=new Map();for(const e of lastResult.entities)counts.set(e.brand,(counts.get(e.brand)||0)+1);brandsEl.textContent='Canonical：'+[...counts.entries()].sort((a,b)=>b[1]-a[1]).map(([k,v])=>`${k} ${v}`).join(' · ');
+}
+function openCanonical(f){const p=f.properties||{};popup?.remove();popup=new maplibregl.Popup({offset:10,maxWidth:'430px'}).setLngLat(f.geometry.coordinates.slice()).setHTML(`<div style="min-width:300px"><div style="font-size:11px;font-weight:800;color:${p.category==='convenience_store'?'#2f6fdf':'#d97706'}">${escapeHtml(p.category)}</div><div style="font-size:16px;font-weight:800">${escapeHtml(p.brand)}${p.branch?` · ${escapeHtml(p.branch)}`:''}</div><div style="font-size:11px;margin-top:6px;line-height:1.5;color:#455a64">canonical id: ${escapeHtml(p.canonical_id)}<br>source rows: <b>${escapeHtml(p.source_rows)}</b><br>merge evidence: ${escapeHtml(p.merge_reasons||'single record / unresolved') }<br>representative address: ${escapeHtml(p.address||'—')}<br>sources: ${escapeHtml(p.sources||'—')}<br>source names: ${escapeHtml(p.source_names||'—')}<br>branch conflict: ${escapeHtml(p.branch_conflict||'no')} · address conflict: ${escapeHtml(p.address_conflict||'no')}</div></div>`).addTo(map);}
+function openRaw(f){const p=f.properties||{};popup?.remove();popup=new maplibregl.Popup({offset:8,maxWidth:'390px'}).setLngLat(f.geometry.coordinates.slice()).setHTML(`<div style="min-width:280px"><div style="font-size:11px;font-weight:800;color:#607d8b">RAW OVERTURE RECORD</div><div style="font-size:15px;font-weight:800">${escapeHtml(p.brand||'—')}</div><div style="font-size:11px;margin-top:6px;line-height:1.5;color:#455a64">raw name: ${escapeHtml(p.raw_name||'—')}<br>raw brand: ${escapeHtml(p.raw_brand||'—')}<br>branch: ${escapeHtml(p.branch||'—')}<br>address: ${escapeHtml(p.address||'—')}<br>sources: ${escapeHtml(p.sources||'—')}</div></div>`).addTo(map);}
+for(const id of ['canonical-convenience','canonical-supermarket']){map.on('click',id,e=>{const f=e.features?.[0];if(f)openCanonical(f);});map.on('mouseenter',id,()=>map.getCanvas().style.cursor='pointer');map.on('mouseleave',id,()=>map.getCanvas().style.cursor='');}
+map.on('click','raw-points',e=>{const f=e.features?.[0];if(f)openRaw(f);});map.on('mouseenter','raw-points',()=>map.getCanvas().style.cursor='pointer');map.on('mouseleave','raw-points',()=>map.getCanvas().style.cursor='');
+$('#toggleCanonical').onclick=()=>{const on=$('#toggleCanonical').classList.toggle('active');for(const id of ['canonical-convenience','canonical-supermarket','canonical-label'])map.setLayoutProperty(id,'visibility',on?'visible':'none');$('#toggleCanonical').textContent=`Canonical ${on?'ON':'OFF'}`;};
+$('#toggleRaw').onclick=()=>{const on=$('#toggleRaw').classList.toggle('active');map.setLayoutProperty('raw-points','visibility',on?'visible':'none');$('#toggleRaw').textContent=`Raw records ${on?'ON':'OFF'}`;};
+document.querySelectorAll('.district').forEach(btn=>btn.onclick=()=>{document.querySelectorAll('.district').forEach(b=>b.classList.remove('active'));btn.classList.add('active');map.easeTo({...districts[btn.dataset.district],pitch:0,bearing:0,duration:500});});
+map.on('load',()=>{refresh();status.textContent=`READY · ${selected.release} · Buju canonical POI v0.1`;status.className='good';});
+map.on('movestart',()=>{moveStarted=performance.now();});
+map.on('idle',()=>{if(moveStarted!=null){idleMsEl.textContent=`${Math.round(performance.now()-moveStarted)} ms`;moveStarted=null;}refresh();});
+map.on('error',e=>console.warn('Map error',e?.error||e));
+</script>
+</body>
+</html>

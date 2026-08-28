@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>卜居 · Overture Places daily-life POI spike</title>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" />
+  <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+  <script src="https://unpkg.com/pmtiles@4.4.1/dist/pmtiles.js"></script>
+  <style>
+    html,body,#map{width:100%;height:100%;margin:0}body{font-family:Inter,system-ui,"Noto Sans TC",sans-serif;overflow:hidden}#map{background:#eef1f4}
+    .panel{position:absolute;z-index:5;top:14px;left:14px;width:min(500px,calc(100vw - 28px));max-height:calc(100vh - 28px);overflow:auto;padding:14px;border:1px solid #ccd3d9;border-radius:14px;background:rgba(255,255,255,.96);box-shadow:0 10px 28px rgba(0,0,0,.14)}
+    .eyebrow{font-size:11px;font-weight:800;letter-spacing:.12em;color:#68727d}h1{font-size:20px;margin:5px 0}.sub,.note{font-size:11.5px;color:#5e6872;line-height:1.5}.controls{display:flex;gap:6px;flex-wrap:wrap;margin:9px 0}button{border:1px solid #c8d0d7;border-radius:9px;padding:7px 9px;background:#fff;font-weight:700;cursor:pointer}.active{background:#25313b;color:#fff}.metrics{display:grid;grid-template-columns:1fr auto;gap:4px 10px;border-top:1px solid #dde2e7;border-bottom:1px solid #dde2e7;padding:9px 0;margin:9px 0;font-size:12px}.metrics span:nth-child(odd){color:#66717b}.metrics span:nth-child(even){font-weight:800;font-variant-numeric:tabular-nums;text-align:right}.legend{display:flex;gap:12px;align-items:center;font-size:11.5px;margin:8px 0;flex-wrap:wrap}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}.convenience{background:#2f6fdf}.supermarket{background:#d97706}.duplicate{background:transparent;border:2px solid #c62828;box-sizing:border-box}#status{font-size:12px;font-weight:700;line-height:1.45}.error{color:#b42318}.good{color:#137333}.mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}.brands{font-size:11px;color:#455a64;line-height:1.45;word-break:break-word}
+  </style>
+</head>
+<body>
+<div id="map"></div>
+<section class="panel">
+  <div class="eyebrow">ISSUE #56 · CANONICAL CATEGORY AUDIT v0.4</div>
+  <h1>生活 POI：品牌化 + 類別一致化 + 重複檢查</h1>
+  <div class="sub">Overture Places 仍是唯一 structured source；OSM raster 只做目視 cross-check。v0.4 將 map color、popup、audit count 與 duplicate detection 全部統一到同一套 canonical category。</div>
+  <div class="controls">
+    <button class="district active" data-district="daan">大安</button><button class="district" data-district="xinyi">信義</button><button class="district" data-district="songshan">松山</button><button class="district" data-district="zhongshan">中山</button><button class="district" data-district="zhongzheng">中正</button>
+  </div>
+  <div class="controls"><button id="togglePoi" class="active">生活 POI ON</button><button id="toggleDuplicates" class="active">疑似重複圈 ON</button></div>
+  <div class="legend"><span><i class="dot convenience"></i>便利商店</span><span><i class="dot supermarket"></i>超市 / grocery</span><span><i class="dot duplicate"></i>疑似同店重複</span></div>
+  <div class="metrics">
+    <span>Overture release</span><span id="release">—</span>
+    <span>Schema expectation</span><span>v1.18.0</span>
+    <span>source-layer</span><span id="sourceLayer">—</span>
+    <span>raw convenience</span><span id="convenienceCount">—</span>
+    <span>raw supermarket</span><span id="supermarketCount">—</span>
+    <span>raw classified total</span><span id="rawTotal">—</span>
+    <span>suspect duplicate groups</span><span id="duplicateGroups">—</span>
+    <span>audit dedup estimate</span><span id="dedupEstimate">—</span>
+    <span>rendered POI</span><span id="renderedCount">—</span>
+    <span>move → idle</span><span id="idleMs">—</span>
+  </div>
+  <div id="brands" class="brands">正規化品牌：—</div>
+  <div id="status">Booting canonical-category audit…</div>
+  <div class="note" style="margin-top:8px">主要連鎖品牌可覆寫互相衝突的 raw category：7-ELEVEN／全家／萊爾富／OK → 便利商店；全聯／家樂福／美廉社 → 超市。未知品牌才依 Overture basic_category / taxonomy fallback。紅圈仍只是 audit candidate，不自動刪除。</div>
+</section>
+<script>
+(async()=>{
+  const $=s=>document.querySelector(s);
+  const status=$('#status'),releaseEl=$('#release'),sourceLayerEl=$('#sourceLayer'),convenienceCountEl=$('#convenienceCount'),supermarketCountEl=$('#supermarketCount'),rawTotalEl=$('#rawTotal'),duplicateGroupsEl=$('#duplicateGroups'),dedupEstimateEl=$('#dedupEstimate'),renderedCountEl=$('#renderedCount'),idleMsEl=$('#idleMs'),brandsEl=$('#brands'),togglePoiBtn=$('#togglePoi'),toggleDuplicatesBtn=$('#toggleDuplicates');
+  if(!window.maplibregl||!window.pmtiles){status.textContent='ERROR: MapLibre / PMTiles CDN 未載入';status.className='error';return;}
+
+  const candidates=[
+    {release:'2026-08-19.0',schema:'v1.18.0',url:'https://overturemaps-extras-us-west-2.s3.us-west-2.amazonaws.com/tiles/2026-08-19.0/places.pmtiles'},
+    {release:'2026-07-22.0',schema:'v1.18.0',url:'https://overturemaps-extras-us-west-2.s3.us-west-2.amazonaws.com/tiles/2026-07-22.0/places.pmtiles'}
+  ];
+  const districts={
+    daan:{center:[121.5434,25.0268],zoom:15.2},
+    xinyi:{center:[121.5645,25.0340],zoom:15.2},
+    songshan:{center:[121.5608,25.0525],zoom:15.2},
+    zhongshan:{center:[121.5332,25.0561],zoom:15.2},
+    zhongzheng:{center:[121.5199,25.0324],zoom:15.2}
+  };
+  const poiLayerIds=['daily-life-convenience','daily-life-supermarket','daily-life-convenience-label','daily-life-supermarket-label'];
+  const DUPLICATE_SOURCE='daily-life-duplicate-audit';
+  const DUPLICATE_LAYER='daily-life-duplicate-ring';
+  const OTHER='其他 / 未標準化';
+  const primaryChains=[
+    {label:'7-ELEVEN',category:'convenience_store',re:/7\s*[-‐‑–—]?\s*eleven|統一超商/i,clean:/7\s*[-‐‑–—]?\s*eleven|統一超商/ig},
+    {label:'全家',category:'convenience_store',re:/family\s*mart|全家/i,clean:/family\s*mart|全家便利商店|全家/ig},
+    {label:'萊爾富',category:'convenience_store',re:/hi\s*[-‐‑–—]?\s*life|萊爾富/i,clean:/hi\s*[-‐‑–—]?\s*life|萊爾富便利商店|萊爾富/ig},
+    {label:'OK Mart',category:'convenience_store',re:/ok\s*mart|ok超商/i,clean:/ok\s*mart|ok超商/ig},
+    {label:'全聯',category:'supermarket',re:/px\s*mart|全聯/i,clean:/px\s*mart|全聯福利中心|全聯/ig},
+    {label:'家樂福',category:'supermarket',re:/carrefour|家樂福/i,clean:/carrefour(?:\s*market)?|家樂福超市|家樂福/ig},
+    {label:'美廉社',category:'supermarket',re:/simple\s*mart|美廉社/i,clean:/simple\s*mart|美廉社/ig}
+  ];
+
+  function parseMaybeJson(value){if(value==null||typeof value!=='string')return value;const s=value.trim();if(!s||(!s.startsWith('{')&&!s.startsWith('[')))return value;try{return JSON.parse(s);}catch{return value;}}
+  function stringified(value){if(value==null)return'';return typeof value==='string'?value:JSON.stringify(value);}
+  function categoryBlob(p){return [p.basic_category,stringified(parseMaybeJson(p.taxonomy)),stringified(parseMaybeJson(p.categories))].join(' ').toLowerCase();}
+  function primaryName(p){return String(p['@name']||parseMaybeJson(p.names)?.primary||'').trim();}
+  function rawBrand(p){const brand=parseMaybeJson(p.brand);return String(brand?.names?.primary||brand?.name||'').trim();}
+  function inferredChainRule(p){const text=`${primaryName(p)} ${rawBrand(p)}`;for(const chain of primaryChains)if(chain.re.test(text))return chain;return null;}
+  function inferredChain(p){return inferredChainRule(p)?.label||rawBrand(p)||OTHER;}
+  function sourceNormalizedCategory(p){
+    const basic=String(p.basic_category||'').toLowerCase();
+    if(basic==='convenience_store')return'convenience_store';
+    if(basic==='supermarket'||basic==='grocery_store')return'supermarket';
+    const blob=categoryBlob(p);
+    if(blob.includes('convenience_store'))return'convenience_store';
+    if(blob.includes('supermarket')||blob.includes('grocery_store'))return'supermarket';
+    return null;
+  }
+  function normalizedCategory(p){return inferredChainRule(p)?.category||sourceNormalizedCategory(p);}
+  function sourceDatasets(p){const sources=parseMaybeJson(p.sources);if(!Array.isArray(sources))return'';return [...new Set(sources.map(s=>s?.dataset).filter(Boolean))].join(', ');}
+  function taxonomyPrimary(p){const taxonomy=parseMaybeJson(p.taxonomy);return taxonomy?.primary||p.basic_category||parseMaybeJson(p.categories)?.primary||'';}
+  function normalizeToken(value){return String(value||'').toLowerCase().replace(/[\s\-_‐‑–—·・()（）\[\]【】]/g,'').replace(/(?:福利中心|便利商店|超市|門市|分店|店)$/g,'').trim();}
+  function branchName(p){
+    const chain=inferredChain(p),sourceName=primaryName(p);if(!sourceName)return'';
+    let branch=sourceName;
+    const rule=primaryChains.find(x=>x.label===chain);if(rule)branch=branch.replace(rule.clean,' ');
+    const raw=rawBrand(p);if(raw)branch=branch.replace(new RegExp(raw.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'ig'),' ');
+    branch=branch.replace(/(?:福利中心|便利商店|超市|門市|分店)/g,' ').replace(/[|｜·・\-–—:：]+/g,' ').replace(/\s+/g,' ').trim();
+    if(!branch||normalizeToken(branch)===normalizeToken(chain)||normalizeToken(branch)===normalizeToken(raw))return'';
+    return branch;
+  }
+  function displayBrand(p){const chain=inferredChain(p);if(chain!==OTHER)return chain;return rawBrand(p)||primaryName(p)||'(unnamed place)';}
+  function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
+  function haversineMeters(a,b){const toRad=x=>x*Math.PI/180,R=6371000;const dLat=toRad(b[1]-a[1]),dLng=toRad(b[0]-a[0]),lat1=toRad(a[1]),lat2=toRad(b[1]);const h=Math.sin(dLat/2)**2+Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLng/2)**2;return 2*R*Math.asin(Math.min(1,Math.sqrt(h)));}
+  function sourceFeatureKey(f){const p=f.properties||{};return p.id||`${f.geometry?.coordinates?.join(',')}|${primaryName(p)}|${categoryBlob(p)}`;}
+  function dedupeSourceTiles(features){const byId=new Map();for(const f of features){const key=sourceFeatureKey(f);if(!byId.has(key))byId.set(key,f);}return [...byId.values()];}
+  function duplicateNameKey(p){const branch=branchName(p);if(branch)return normalizeToken(branch);return normalizeToken(primaryName(p));}
+  function duplicateIdentity(p){const chain=inferredChain(p);if(chain!==OTHER)return chain;return normalizeToken(rawBrand(p)||primaryName(p));}
+  function shouldLinkDuplicate(a,b,distance,sameBranch,exactRaw){
+    if(a.cat==='supermarket'){
+      if(distance<=45)return true;
+      return distance<=80&&(sameBranch||exactRaw);
+    }
+    return distance<=8||(distance<=30&&(sameBranch||exactRaw));
+  }
+  function findDuplicateClusters(items){
+    const parent=items.map((_,i)=>i);const find=i=>parent[i]===i?i:(parent[i]=find(parent[i]));const union=(a,b)=>{a=find(a);b=find(b);if(a!==b)parent[b]=a;};
+    for(let i=0;i<items.length;i++)for(let j=i+1;j<items.length;j++){
+      const a=items[i],b=items[j];if(a.cat!==b.cat)continue;
+      const pa=a.f.properties||{},pb=b.f.properties||{};const identityA=duplicateIdentity(pa),identityB=duplicateIdentity(pb);if(!identityA||identityA!==identityB)continue;
+      const ca=a.f.geometry?.coordinates,cb=b.f.geometry?.coordinates;if(!Array.isArray(ca)||!Array.isArray(cb))continue;
+      const distance=haversineMeters(ca,cb);if(distance>80)continue;
+      const nameA=duplicateNameKey(pa),nameB=duplicateNameKey(pb);const exactRaw=normalizeToken(primaryName(pa))===normalizeToken(primaryName(pb));const sameBranch=Boolean(nameA&&nameB&&nameA===nameB);
+      if(shouldLinkDuplicate(a,b,distance,sameBranch,exactRaw))union(i,j);
+    }
+    const groups=new Map();for(let i=0;i<items.length;i++){const root=find(i);if(!groups.has(root))groups.set(root,[]);groups.get(root).push(items[i]);}
+    return [...groups.values()].filter(group=>group.length>1);
+  }
+  function duplicateGeoJson(groups){return {type:'FeatureCollection',features:groups.map((group,index)=>{const coords=group.map(x=>x.f.geometry.coordinates);const center=[coords.reduce((s,c)=>s+c[0],0)/coords.length,coords.reduce((s,c)=>s+c[1],0)/coords.length];const names=[...new Set(group.map(x=>primaryName(x.f.properties||{})).filter(Boolean))];const brand=displayBrand(group[0].f.properties||{});let maxSpan=0;for(let i=0;i<coords.length;i++)for(let j=i+1;j<coords.length;j++)maxSpan=Math.max(maxSpan,haversineMeters(coords[i],coords[j]));return {type:'Feature',geometry:{type:'Point',coordinates:center},properties:{group_id:index+1,count:group.length,brand,category:group[0].cat,max_span_m:Math.round(maxSpan),names:names.join(' / ')}};})};}
+
+  status.textContent='Preflighting latest Overture Places PMTiles…';
+  let selected=null,metadata=null;const failures=[];
+  for(const candidate of candidates){
+    try{
+      const archive=new pmtiles.PMTiles(candidate.url);const [,m]=await Promise.all([archive.getHeader(),archive.getMetadata()]);
+      const ids=(m?.vector_layers||[]).map(v=>v?.id).filter(Boolean);if(!ids.includes('place'))throw new Error(`missing place source-layer (${ids.join(', ')||'none'})`);
+      selected=candidate;metadata=m;break;
+    }catch(error){failures.push(`${candidate.release}: ${error?.message||error}`);}
+  }
+  if(!selected){status.textContent='ERROR: Overture Places preflight failed · '+failures.join(' | ');status.className='error';return;}
+  releaseEl.textContent=selected.release;sourceLayerEl.textContent=(metadata?.vector_layers||[]).map(v=>v?.id).join(', ');
+
+  const protocol=new pmtiles.Protocol({metadata:true});maplibregl.addProtocol('pmtiles',protocol.tile);
+  const taxonomyText=['to-string',['coalesce',['get','taxonomy'],'']];
+  const categoriesText=['to-string',['coalesce',['get','categories'],'']];
+  const basicCategory=['coalesce',['get','basic_category'],''];
+  const labelSearch=['concat',['coalesce',['get','@name'],''],' ',['to-string',['coalesce',['get','brand'],'']]];
+  const contains=value=>['>=',['index-of',value,labelSearch],0];
+  const convenienceBrandMatch=['any',
+    contains('7-ELEVEN'),contains('7-Eleven'),contains('7-eleven'),contains('統一超商'),
+    contains('FamilyMart'),contains('familymart'),contains('全家'),
+    contains('Hi-Life'),contains('Hi Life'),contains('hi-life'),contains('萊爾富'),
+    contains('OK Mart'),contains('OK mart'),contains('ok mart'),contains('OK超商')
+  ];
+  const supermarketBrandMatch=['any',
+    contains('PX Mart'),contains('px mart'),contains('全聯'),
+    contains('Carrefour'),contains('carrefour'),contains('家樂福'),
+    contains('Simple Mart'),contains('simple mart'),contains('美廉社')
+  ];
+  const basicConvenienceMatch=['==',basicCategory,'convenience_store'];
+  const basicSupermarketMatch=['match',basicCategory,['supermarket','grocery_store'],true,false];
+  const fallbackConvenienceMatch=['any',['>=',['index-of','convenience_store',taxonomyText],0],['>=',['index-of','convenience_store',categoriesText],0]];
+  const fallbackSupermarketMatch=['any',['>=',['index-of','supermarket',taxonomyText],0],['>=',['index-of','grocery_store',taxonomyText],0],['>=',['index-of','supermarket',categoriesText],0],['>=',['index-of','grocery_store',categoriesText],0]];
+  const sourceConvenienceMatch=['any',basicConvenienceMatch,['all',['!',basicSupermarketMatch],fallbackConvenienceMatch]];
+  const sourceSupermarketMatch=['any',basicSupermarketMatch,['all',['!',basicConvenienceMatch],['!',fallbackConvenienceMatch],fallbackSupermarketMatch]];
+  const convenienceFilter=['any',convenienceBrandMatch,['all',['!',supermarketBrandMatch],sourceConvenienceMatch]];
+  const supermarketFilter=['any',supermarketBrandMatch,['all',['!',convenienceBrandMatch],sourceSupermarketMatch]];
+  const brandLabel=['case',
+    ['any',contains('7-ELEVEN'),contains('7-Eleven'),contains('7-eleven'),contains('統一超商')],'7-ELEVEN',
+    ['any',contains('FamilyMart'),contains('familymart'),contains('全家')],'全家',
+    ['any',contains('Hi-Life'),contains('Hi Life'),contains('hi-life'),contains('萊爾富')],'萊爾富',
+    ['any',contains('OK Mart'),contains('OK mart'),contains('ok mart'),contains('OK超商')],'OK Mart',
+    ['any',contains('PX Mart'),contains('px mart'),contains('全聯')],'全聯',
+    ['any',contains('Carrefour'),contains('carrefour'),contains('家樂福')],'家樂福',
+    ['any',contains('Simple Mart'),contains('simple mart'),contains('美廉社')],'美廉社',
+    ['coalesce',['get','@name'],'']
+  ];
+
+  const map=new maplibregl.Map({
+    container:'map',center:districts.daan.center,zoom:districts.daan.zoom,pitch:0,bearing:0,maxZoom:19,minZoom:12,maxBounds:[[121.39,24.90],[121.76,25.25]],
+    style:{version:8,sources:{
+      osm:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,attribution:'© OpenStreetMap contributors',maxzoom:19},
+      overturePlaces:{type:'vector',url:`pmtiles://${selected.url}`,attribution:'© Overture Maps Foundation / source contributors'},
+      [DUPLICATE_SOURCE]:{type:'geojson',data:{type:'FeatureCollection',features:[]}}
+    },layers:[
+      {id:'osm',type:'raster',source:'osm'},
+      {id:'daily-life-convenience',type:'circle',source:'overturePlaces','source-layer':'place',minzoom:14,filter:convenienceFilter,paint:{'circle-radius':['interpolate',['linear'],['zoom'],14,3,16,4.5,19,6],'circle-color':'#2f6fdf','circle-opacity':.9,'circle-stroke-color':'#fff','circle-stroke-width':1.3}},
+      {id:'daily-life-supermarket',type:'circle',source:'overturePlaces','source-layer':'place',minzoom:14,filter:supermarketFilter,paint:{'circle-radius':['interpolate',['linear'],['zoom'],14,3.5,16,5,19,6.5],'circle-color':'#d97706','circle-opacity':.92,'circle-stroke-color':'#fff','circle-stroke-width':1.3}},
+      {id:DUPLICATE_LAYER,type:'circle',source:DUPLICATE_SOURCE,minzoom:14,paint:{'circle-radius':['interpolate',['linear'],['zoom'],14,8,16,11,19,15],'circle-color':'rgba(255,255,255,0)','circle-stroke-color':'#c62828','circle-stroke-width':2.7,'circle-opacity':1}},
+      {id:'daily-life-convenience-label',type:'symbol',source:'overturePlaces','source-layer':'place',minzoom:16,filter:convenienceFilter,layout:{'text-field':brandLabel,'text-size':11,'text-offset':[0,1.0],'text-anchor':'top','text-max-width':9,'text-allow-overlap':false},paint:{'text-color':'#1f4fa5','text-halo-color':'rgba(255,255,255,.98)','text-halo-width':1.4}},
+      {id:'daily-life-supermarket-label',type:'symbol',source:'overturePlaces','source-layer':'place',minzoom:16,filter:supermarketFilter,layout:{'text-field':brandLabel,'text-size':11,'text-offset':[0,1.0],'text-anchor':'top','text-max-width':9,'text-allow-overlap':false},paint:{'text-color':'#9a5400','text-halo-color':'rgba(255,255,255,.98)','text-halo-width':1.4}}
+    ]}
+  });
+  map.addControl(new maplibregl.NavigationControl({showCompass:false}),'top-right');map.addControl(new maplibregl.ScaleControl({maxWidth:120,unit:'metric'}),'bottom-right');
+
+  let enabled=true,duplicatesEnabled=true,popup=null,moveStartedAt=null;
+  function setEnabled(next){enabled=Boolean(next);for(const id of poiLayerIds)if(map.getLayer(id))map.setLayoutProperty(id,'visibility',enabled?'visible':'none');togglePoiBtn.classList.toggle('active',enabled);togglePoiBtn.textContent=`生活 POI ${enabled?'ON':'OFF'}`;}
+  function setDuplicatesEnabled(next){duplicatesEnabled=Boolean(next);if(map.getLayer(DUPLICATE_LAYER))map.setLayoutProperty(DUPLICATE_LAYER,'visibility',duplicatesEnabled?'visible':'none');toggleDuplicatesBtn.classList.toggle('active',duplicatesEnabled);toggleDuplicatesBtn.textContent=`疑似重複圈 ${duplicatesEnabled?'ON':'OFF'}`;}
+  function fIsPoint(f){return f?.geometry?.type==='Point'&&Array.isArray(f.geometry.coordinates);}
+  function refreshAuditStats(){
+    if(!map.isStyleLoaded())return;
+    let loaded=[];try{loaded=dedupeSourceTiles(map.querySourceFeatures('overturePlaces',{sourceLayer:'place'}));}catch{}
+    const classified=loaded.map(f=>({f,cat:normalizedCategory(f.properties||{})})).filter(x=>x.cat&&fIsPoint(x.f));
+    const convenience=classified.filter(x=>x.cat==='convenience_store'),supermarket=classified.filter(x=>x.cat==='supermarket');
+    const groups=findDuplicateClusters(classified);const duplicateExcess=groups.reduce((sum,g)=>sum+g.length-1,0);const dedupEstimate=Math.max(0,classified.length-duplicateExcess);
+    convenienceCountEl.textContent=convenience.length.toLocaleString();supermarketCountEl.textContent=supermarket.length.toLocaleString();rawTotalEl.textContent=classified.length.toLocaleString();duplicateGroupsEl.textContent=groups.length.toLocaleString();dedupEstimateEl.textContent=dedupEstimate.toLocaleString();
+    const duplicateSource=map.getSource(DUPLICATE_SOURCE);if(duplicateSource?.setData)duplicateSource.setData(duplicateGeoJson(groups));
+    const brandCounts=new Map();for(const {f} of classified){const label=inferredChain(f.properties||{});brandCounts.set(label,(brandCounts.get(label)||0)+1);}const top=[...brandCounts.entries()].sort((a,b)=>b[1]-a[1]).slice(0,12).map(([name,n])=>`${name} ${n}`);brandsEl.textContent='正規化品牌：'+(top.join(' · ')||'目前 loaded tiles 無符合 POI');
+    try{const rendered=dedupeSourceTiles(map.queryRenderedFeatures({layers:['daily-life-convenience','daily-life-supermarket']}));renderedCountEl.textContent=rendered.length.toLocaleString();}catch{renderedCountEl.textContent='—';}
+  }
+  function openPopup(e){
+    const feature=e?.features?.[0];if(!feature)return;const p=feature.properties||{},category=normalizedCategory(p)||'unclassified',sourceCategory=sourceNormalizedCategory(p)||'unclassified',brand=displayBrand(p),branch=branchName(p),sourceName=primaryName(p),sources=sourceDatasets(p),confidence=Number(p.confidence);const coords=feature.geometry.coordinates.slice();
+    const branchHtml=branch?`<div style="font-size:12px;color:#455a64;margin-top:2px">${escapeHtml(branch)}</div>`:'';
+    const rawNameHtml=sourceName&&normalizeToken(sourceName)!==normalizeToken(brand)?`<div style="margin-top:6px;font-size:10px;color:#78909c">原始名稱：${escapeHtml(sourceName)}</div>`:'';
+    const resolutionHtml=sourceCategory!==category?`<div style="margin-top:5px;font-size:10px;font-weight:700;color:#8e5a00">canonical override：${escapeHtml(sourceCategory)} → ${escapeHtml(category)}</div>`:'';
+    const html=`<div style="min-width:230px"><div style="font-size:11px;font-weight:800;color:${category==='convenience_store'?'#2f6fdf':'#d97706'}">${category==='convenience_store'?'便利商店':'超市 / grocery'}</div><div style="font-size:15px;font-weight:800;margin-top:2px">${escapeHtml(brand)}</div>${branchHtml}${rawNameHtml}${resolutionHtml}<div style="margin-top:6px;font-size:11px;color:#455a64">taxonomy: ${escapeHtml(taxonomyPrimary(p)||'—')}<br>basic_category: ${escapeHtml(p.basic_category||'—')}<br>operating_status: ${escapeHtml(p.operating_status||'—')}<br>confidence: ${Number.isFinite(confidence)?confidence.toFixed(3):'—'}<br>source: ${escapeHtml(sources||'—')}</div><div style="font-size:9.5px;color:#78909c;margin-top:7px;word-break:break-all">Overture id: ${escapeHtml(p.id||'—')} · release ${escapeHtml(selected.release)}</div></div>`;
+    popup?.remove();popup=new maplibregl.Popup({offset:9,maxWidth:'340px'}).setLngLat(coords).setHTML(html).addTo(map);
+  }
+  function openDuplicatePopup(e){const feature=e?.features?.[0];if(!feature)return;const p=feature.properties||{};const type=p.category==='supermarket'?'超市':'便利商店';const html=`<div style="min-width:220px"><div style="font-size:11px;font-weight:800;color:#c62828">疑似 duplicate candidate</div><div style="font-size:14px;font-weight:800;margin-top:2px">${escapeHtml(p.brand||'未標準化品牌')} × ${escapeHtml(p.count||'—')}</div><div style="margin-top:4px;font-size:10px;color:#78909c">${escapeHtml(type)} · group span 約 ${escapeHtml(p.max_span_m||'—')}m</div><div style="margin-top:5px;font-size:11px;color:#455a64">${escapeHtml(p.names||'—')}</div><div style="font-size:9.5px;color:#78909c;margin-top:7px">僅供 audit；尚未自動合併。</div></div>`;popup?.remove();popup=new maplibregl.Popup({offset:10,maxWidth:'340px'}).setLngLat(feature.geometry.coordinates).setHTML(html).addTo(map);}
+  for(const id of ['daily-life-convenience','daily-life-supermarket']){map.on('click',id,openPopup);map.on('mouseenter',id,()=>map.getCanvas().style.cursor='pointer');map.on('mouseleave',id,()=>map.getCanvas().style.cursor='');}
+  map.on('click',DUPLICATE_LAYER,openDuplicatePopup);map.on('mouseenter',DUPLICATE_LAYER,()=>map.getCanvas().style.cursor='pointer');map.on('mouseleave',DUPLICATE_LAYER,()=>map.getCanvas().style.cursor='');
+  map.on('load',()=>{setEnabled(true);setDuplicatesEnabled(true);refreshAuditStats();status.textContent=`READY · ${selected.release} · canonical-category audit v0.4`;status.className='good';});
+  map.on('movestart',()=>{moveStartedAt=performance.now();});
+  map.on('idle',()=>{if(moveStartedAt!=null){idleMsEl.textContent=`${Math.round(performance.now()-moveStartedAt)} ms`;moveStartedAt=null;}refreshAuditStats();});
+  map.on('error',e=>{console.warn('Map error',e?.error||e);});
+  togglePoiBtn.onclick=()=>setEnabled(!enabled);toggleDuplicatesBtn.onclick=()=>setDuplicatesEnabled(!duplicatesEnabled);
+  document.querySelectorAll('button.district').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('button.district').forEach(b=>b.classList.remove('active'));btn.classList.add('active');const view=districts[btn.dataset.district];map.easeTo({...view,pitch:0,bearing:0,duration:650});}));
+})();
+</script>
+</body>
+</html>

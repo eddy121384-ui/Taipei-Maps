@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>卜居 · POI boundary-aware adversarial audit v0.17 loader</title>
+  <style>
+    html,body{margin:0;width:100%;height:100%;font-family:Inter,system-ui,"Noto Sans TC",sans-serif;background:#eef1f4;color:#263238}
+    .boot{padding:24px}.err{white-space:pre-wrap;color:#b42318;background:#fff;border:1px solid #efb4ae;border-radius:12px;padding:14px;max-width:1000px}
+  </style>
+</head>
+<body>
+<div class="boot" id="boot">Loading boundary-aware adversarial audit v0.17…</div>
+<script>
+(async()=>{
+  'use strict';
+  const boot=document.getElementById('boot');
+  const fail=msg=>{throw new Error(msg)};
+  function replaceOnce(text,from,to,label){if(!text.includes(from))fail(`v0.17 patch target missing: ${label}`);return text.replace(from,to);}
+  function replaceBetween(text,startMarker,endMarker,replacement,label){const s=text.indexOf(startMarker);if(s<0)fail(`v0.17 start marker missing: ${label}`);const e=text.indexOf(endMarker,s+startMarker.length);if(e<0)fail(`v0.17 end marker missing: ${label}`);return text.slice(0,s)+replacement+text.slice(e);}
+  try{
+    // IMPORTANT: patch the known-good v0.13 page directly. Do not patch a loader-within-a-loader.
+    const [pageRes,boundaryRes]=await Promise.all([
+      fetch('/daily-life-poi-overture-spike-v13.html',{cache:'no-store'}),
+      fetch('https://raw.githubusercontent.com/xashiex/taiwan-district-boundary-to-geojson/master/docs/data/63.json',{cache:'force-cache'})
+    ]);
+    if(!pageRes.ok)fail(`failed to load v0.13 source: HTTP ${pageRes.status}`);
+    if(!boundaryRes.ok)fail(`failed to load Taipei district boundary: HTTP ${boundaryRes.status}`);
+    const boundary=await boundaryRes.json();
+    if(boundary?.type!=='FeatureCollection'||!Array.isArray(boundary.features)||boundary.features.length<12)fail('Taipei district boundary malformed');
+
+    let html=await pageRes.text();
+    html=html.replaceAll('v0.13','v0.17');
+    html=html.replaceAll('地名/座標衝突','行政區/座標衝突');
+    html=replaceOnce(html,
+      '<h1>生活 POI：先抓幽靈／錯位，再談 duplicate</h1>',
+      '<h1>生活 POI：用真實市界抓異常，專找 duplicate 反例</h1>',
+      'headline');
+    html=replaceOnce(html,
+      'v0.17 把兩種髒資料正式分流：疑似幽靈、過期、錯位 record 先進 anomaly quarantine；只有未被 provisional quarantine 的可信候選，才進 duplicate pair review。所有結果仍是 audit-only，不自動刪除或 merge。',
+      'v0.17 改回直接以穩定 v0.13 為基底，避免 loader 疊 loader。行政區異常先用臺北市 12 區 polygon 做 point-in-polygon；只有點真的在臺北市內、結構化 address 又明確寫外縣市行政區，才進 quarantine。Duplicate queue 則故意優先找最可能其實是兩家真店的反例。',
+      'subcopy');
+    html=replaceOnce(html,'<span>geo-name anomaly</span>','<span>explicit admin-address anomaly</span>','geo metric label');
+    html=replaceOnce(html,'<span>weak-shadow anomaly</span>','<span>weak-shadow quarantine (off)</span>','shadow metric label');
+    html=replaceOnce(html,'<span>🔎 Duplicate Pair Review Queue</span>','<span>🧪 Adversarial False-Positive Hunt</span>','duplicate queue title');
+    html=replaceOnce(html,'<button id="buildDup">再審重複 Top 15</button>','<button id="buildDup">找反例 Top 15</button>','duplicate queue button');
+    html=replaceOnce(html,
+      '這裡只看 provisional quarantine 以外的同品牌 A/B。先把幽靈抓掉，再問兩筆是不是同一家。',
+      '這裡故意挑最危險的同品牌 A/B：距離靠近上限、branch／address 明顯不同、兩筆都很具體。目標是找到「其實是兩家」的 false-positive counterexample。',
+      'duplicate queue intro');
+    html=replaceOnce(html,
+      '<b>核心原則：</b>Raw source 是證據，不是真相。先判 record 是否值得信任；可信 records 才進 entity reconciliation。',
+      '<b>這輪核心：</b>行政區 anomaly 必須同時有「真實臺北市 polygon 內座標」＋「結構化外縣市 address」。永和／新店等新北點位不會再被大台北矩形誤判。',
+      'footer note');
+
+    const boundaryJson=JSON.stringify(boundary).replace(/</g,'\\u003c');
+    const geoBlock="  function inTaipeiApprox(coord){return TAIPEI_DISTRICT_BOUNDARY.features.some(f=>pointInGeometry(coord,f.geometry));}\n"+
+      "  const TAIPEI_DISTRICT_BOUNDARY="+boundaryJson+";\n"+
+      "  function pointInRing(pt,ring){let inside=false;for(let i=0,j=ring.length-1;i<ring.length;j=i++){const xi=ring[i][0],yi=ring[i][1],xj=ring[j][0],yj=ring[j][1];const hit=((yi>pt[1])!==(yj>pt[1]))&&(pt[0]<(xj-xi)*(pt[1]-yi)/((yj-yi)||1e-15)+xi);if(hit)inside=!inside;}return inside;}\n"+
+      "  function pointInPolygon(pt,poly){if(!poly?.length||!pointInRing(pt,poly[0]))return false;for(let i=1;i<poly.length;i++)if(pointInRing(pt,poly[i]))return false;return true;}\n"+
+      "  function pointInGeometry(pt,g){if(!g)return false;if(g.type==='Polygon')return pointInPolygon(pt,g.coordinates);if(g.type==='MultiPolygon')return g.coordinates.some(poly=>pointInPolygon(pt,poly));return false;}\n"+
+      "  const OUTSIDE_ADMIN_RULES=[['新北',/(?:新北市)/],['基隆',/(?:基隆市)/],['桃園',/(?:桃園市|桃園縣)/],['新竹',/(?:新竹市|新竹縣)/],['苗栗',/(?:苗栗縣)/],['臺中',/(?:臺中市|台中市)/],['彰化',/(?:彰化縣)/],['南投',/(?:南投縣)/],['雲林',/(?:雲林縣)/],['嘉義',/(?:嘉義市|嘉義縣)/],['臺南',/(?:臺南市|台南市)/],['高雄',/(?:高雄市)/],['屏東',/(?:屏東縣)/],['宜蘭',/(?:宜蘭縣)/],['花蓮',/(?:花蓮縣)/],['臺東',/(?:臺東縣|台東縣)/],['澎湖',/(?:澎湖縣)/],['金門',/(?:金門縣)/],['連江',/(?:連江縣)/]];\n"+
+      "  function geoNameConflict(item){if(!inTaipeiApprox(item.f.geometry.coordinates))return'';const p=item.f.properties||{},address=addressText(p);if(!address)return'';for(const [label,re] of OUTSIDE_ADMIN_RULES)if(re.test(address))return label;return'';}\n";
+    html=replaceBetween(html,'  function inTaipeiApprox(coord){','  function escapeHtml(v){',geoBlock,'exact Taipei boundary guard');
+
+    html=replaceBetween(html,
+      '  function anomalyScan(items){',
+      '  function pairEvidence(a,b){',
+      "  function anomalyScan(items){const target=items.filter(x=>chainRule(x.f.properties||{})),out=[];for(const item of target){const conflict=geoNameConflict(item);if(conflict)out.push({item,anchor:null,kind:'geo',reason:`結構化 address 明確含「${conflict}」外縣市行政區，但座標真的落在臺北市界內`,score:200});}return out.sort((a,b)=>b.score-a.score);}\n",
+      'precision anomaly scan');
+
+    html=replaceBetween(html,
+      '  function pairPriority(p){',
+      '  function rankedNonOverlapping(pairs,limit=15){',
+      "  function pairPriority(p){const pa=p.a.f.properties||{},pb=p.b.f.properties||{},max=reviewMax(p.a.cat),ba=normalizeToken(branchName(pa)),bb=normalizeToken(branchName(pb)),aa=normalizeToken(addressText(pa)),ab=normalizeToken(addressText(pb)),na=normalizeToken(primaryName(pa)),nb=normalizeToken(primaryName(pb)),branchConflict=Boolean(ba&&bb&&ba!==bb),addressConflict=Boolean(aa&&ab&&aa!==ab),rawConflict=Boolean(na&&nb&&na!==nb),bothSpecific=!isGenericChainName(pa)&&!isGenericChainName(pb),bothStrong=strength(p.a)>=50&&strength(p.b)>=50,distanceRisk=Math.min(1,p.distance/max);let score=distanceRisk*55;if(branchConflict)score+=90;if(addressConflict)score+=65;if(rawConflict)score+=20;if(bothSpecific)score+=30;if(bothStrong)score+=20;if(p.sameBranch)score-=70;if(p.exactRaw)score-=55;if(isGenericChainName(pa))score-=15;if(isGenericChainName(pb))score-=15;return Math.round(score);}\n",
+      'adversarial pair priority');
+
+    html=replaceBetween(html,
+      '  function dupDetail(row){',
+      '  function renderAnomaly(){',
+      "  function dupDetail(row){const a=pointProps(row.pair.a),b=pointProps(row.pair.b),pa=row.pair.a.f.properties||{},pb=row.pair.b.f.properties||{},ba=normalizeToken(branchName(pa)),bb=normalizeToken(branchName(pb)),aa=normalizeToken(addressText(pa)),ab=normalizeToken(addressText(pb)),flags=[];if(ba&&bb&&ba!==bb)flags.push('branch 不同');if(aa&&ab&&aa!==ab)flags.push('address 不同');if(!isGenericChainName(pa)&&!isGenericChainName(pb))flags.push('兩筆皆具體');if(strength(row.pair.a)>=50&&strength(row.pair.b)>=50)flags.push('兩筆證據都強');return`<div class=\"warn\">反例風險：${escapeHtml(flags.join(' · ')||'距離接近 review 上限')}</div><strong>${escapeHtml(a.brand)}</strong> · 約 ${Math.round(row.pair.distance)}m · adversarial score ${row.score}<div class=\"record\"><strong>A</strong> ${escapeHtml(a.raw_name)}<br>raw brand: ${escapeHtml(a.raw_brand)} · branch: ${escapeHtml(a.branch)}<br>address: ${escapeHtml(a.address)}<br>source: ${escapeHtml(a.source)} · strength ${a.strength}</div><div class=\"record\"><strong>B</strong> ${escapeHtml(b.raw_name)}<br>raw brand: ${escapeHtml(b.raw_brand)} · branch: ${escapeHtml(b.branch)}<br>address: ${escapeHtml(b.address)}<br>source: ${escapeHtml(b.source)} · strength ${b.strength}</div>`;}\n",
+      'adversarial detail');
+
+    html=replaceOnce(html,
+      "$('#dupDetail').innerHTML=has?dupDetail(row):'這裡只看 provisional quarantine 以外的同品牌 A/B。';",
+      "$('#dupDetail').innerHTML=has?dupDetail(row):'這輪只找反例：優先看 branch/address 衝突、距離靠近上限、兩筆皆具體的同品牌 A/B。';",
+      'renderDup empty state');
+    html=replaceOnce(html,
+      "status.textContent=`READY · ${selected.release} · quarantine-first audit v0.17`;",
+      "status.textContent=`READY · ${selected.release} · exact Taipei boundary + adversarial hunt v0.17`;",
+      'ready status');
+
+    const openTag='<script>';
+    const closeTag='</scr'+'ipt>';
+    const start=html.lastIndexOf(openTag),end=html.lastIndexOf(closeTag);
+    if(start<0||end<=start)fail('final inline script not found');
+    const inline=html.slice(start+openTag.length,end);
+    try{new Function(inline);}catch(err){fail(`final patched inline JS syntax error: ${err.message}`);}
+
+    document.open();document.write(html);document.close();
+  }catch(err){boot.className='boot err';boot.textContent='Boundary-aware audit v0.17 bootstrap failed:\n'+(err?.stack||err);}
+})();
+</script>
+</body>
+</html>

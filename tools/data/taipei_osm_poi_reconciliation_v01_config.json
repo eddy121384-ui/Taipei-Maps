@@ -1,0 +1,32 @@
+{
+  "dataset_version": "taipei-daily-life-poi-reconciled-v01",
+  "osm_snapshot": "2026-08-19T23:59:59Z",
+  "overpass_endpoints": [
+    "https://overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter"
+  ],
+  "baseline_manifest_path": "public/data/daily-life-poi/taipei-poi-manifest-v01.json",
+  "baseline_canonical_path": "public/data/daily-life-poi/taipei-canonical-v01.geojson",
+  "canonical_engine_path": "public/buju-poi-canonical-v02.mjs",
+  "reconcile_engine_path": "public/buju-poi-reconcile-v01.mjs",
+  "boundary_config_path": "tools/data/taipei_daily_life_poi_v01_config.json",
+  "brands": ["7-ELEVEN", "全家", "萊爾富", "OK Mart", "全聯", "家樂福", "美廉社"],
+  "categories": ["convenience_store", "supermarket"],
+  "reviewed_match_overrides": [
+    {
+      "osm_canonical_id": "buju-poi-1sdpvuc",
+      "overture_canonical_id": "buju-poi-am0ftj",
+      "coordinate_source": "overture_baseline",
+      "reason": "desktop-qa-confirmed-same-store-jingmei-girls-high-school-2026-08-28"
+    }
+  ],
+  "reviewed_cluster_overrides": [
+    {
+      "osm_canonical_id": "buju-poi-1pm6w09",
+      "surviving_overture_canonical_id": "buju-poi-g3vqp6",
+      "retired_overture_canonical_ids": ["buju-poi-13kwzln"],
+      "coordinate_source": "osm_secondary",
+      "reason": "desktop-qa-confirmed-three-points-one-store-zhishan-familymart-2026-08-28"
+    }
+  ]
+}

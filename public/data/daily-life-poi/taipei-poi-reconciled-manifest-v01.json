@@ -1,0 +1,57 @@
+{
+  "dataset_version": "taipei-daily-life-poi-reconciled-v01",
+  "build_timestamp": "2026-08-19T23:59:59.000Z",
+  "overture_release": "2026-08-19.0",
+  "overture_baseline_dataset_version": "taipei-daily-life-poi-v01",
+  "overture_baseline_logical_sha256": "d24f3bd9e598acfb6cbc8ce07e73c295a299be0743691a9eda87c6e9e2784d5e",
+  "overture_baseline_count": 1781,
+  "osm_snapshot": "2026-08-19T23:59:59Z",
+  "osm_query": "[out:json][timeout:180][date:\"2026-08-19T23:59:59Z\"];\n(\n  nwr[\"shop\"=\"convenience\"](24.9605,121.45714,25.21018,121.66593);\n  nwr[\"shop\"=\"supermarket\"](24.9605,121.45714,25.21018,121.66593);\n);\nout meta center;",
+  "overpass_endpoint_last_fetch": "historical-overpass",
+  "osm_raw_element_count": 3676,
+  "osm_target_count": 1781,
+  "osm_canonical_count": 1751,
+  "matched_count": 1164,
+  "safe_hole_count": 505,
+  "cross_source_unresolved_count": 82,
+  "reviewed_match_override_count": 1,
+  "reviewed_cluster_override_count": 1,
+  "retired_overture_canonical_count": 1,
+  "coordinate_override_count": 2,
+  "final_canonical_count": 2285,
+  "final_counts_by_brand": {
+    "7-ELEVEN": 991,
+    "全家": 699,
+    "全聯": 179,
+    "美廉社": 62,
+    "家樂福": 65,
+    "萊爾富": 209,
+    "OK Mart": 80
+  },
+  "final_counts_by_category": {
+    "convenience_store": 1979,
+    "supermarket": 306
+  },
+  "osm_hole_counts_by_brand": {
+    "7-ELEVEN": 172,
+    "全家": 78,
+    "全聯": 15,
+    "美廉社": 34,
+    "家樂福": 41,
+    "萊爾富": 123,
+    "OK Mart": 42
+  },
+  "boundary_source": "https://raw.githubusercontent.com/xashiex/taiwan-district-boundary-to-geojson/43b3b1a858043d94f780f1f13e6efd682e57e505/docs/data/63.json",
+  "boundary_version": "taipei-district-boundary-v01",
+  "boundary_sha256": "c8a44cf484331338677d9cea2d6c623d84a41861e89a53e1e313d4dce79282ce",
+  "boundary_bbox": [
+    121.45714,
+    24.9605,
+    121.66593,
+    25.21018
+  ],
+  "canonical_engine_version": "buju-poi-canonical-v0.2",
+  "reconciliation_engine_version": "buju-poi-reconcile-v0.1",
+  "logical_dataset_sha256": "b1cfab778129d32ed3126114867b316e9a6c4a69b024d3daa7cff6ce59328e14",
+  "osm_overpass_raw_sha256": "40fadd71f1bd8bfea05cc061062eed24dacd94d3a90a9f4df85e40271e19cc02"
+}

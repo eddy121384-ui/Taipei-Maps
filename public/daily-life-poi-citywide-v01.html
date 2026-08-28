@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>卜居 · Taipei Citywide Canonical POI v0.1</title>
+  <link href="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+  <script src="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.js"></script>
+  <style>
+    html,body,#map{height:100%;margin:0}body{font-family:Inter,system-ui,"Noto Sans TC",sans-serif}.panel{position:absolute;z-index:2;left:12px;top:12px;max-width:360px;background:rgba(255,255,255,.94);padding:12px 14px;border-radius:12px;box-shadow:0 4px 18px #0002;font-size:13px}.panel h1{font-size:15px;margin:0 0 7px}.muted{color:#61707a}.err{color:#b42318;white-space:pre-wrap}.maplibregl-popup-content{font:13px/1.45 Inter,system-ui,"Noto Sans TC",sans-serif;max-width:340px}
+  </style>
+</head>
+<body>
+<div id="map"></div>
+<div class="panel"><h1>Citywide Canonical POI v0.1</h1><div id="status">Loading fixed dataset…</div><div class="muted">Viewport 只影響渲染，不再影響 canonical count。</div></div>
+<script>
+(async()=>{
+  const status=document.getElementById('status');
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  try{
+    const [dataRes,manifestRes]=await Promise.all([
+      fetch('/data/daily-life-poi/taipei-canonical-v01.geojson',{cache:'no-store'}),
+      fetch('/data/daily-life-poi/taipei-poi-manifest-v01.json',{cache:'no-store'})
+    ]);
+    if(!dataRes.ok||!manifestRes.ok)throw new Error(`dataset missing: canonical HTTP ${dataRes.status}, manifest HTTP ${manifestRes.status}`);
+    const data=await dataRes.json(),manifest=await manifestRes.json();
+    if(data?.type!=='FeatureCollection'||!Array.isArray(data.features))throw new Error('canonical GeoJSON malformed');
+    status.textContent=`READY · ${manifest.overture_release} · canonical ${manifest.canonical_count} · unresolved ${manifest.unresolved_count}`;
+
+    const map=new maplibregl.Map({container:'map',center:[121.545,25.055],zoom:11.2,pitch:0,bearing:0,style:{version:8,sources:{osm:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,attribution:'© OpenStreetMap contributors'}},layers:[{id:'osm',type:'raster',source:'osm'}]}});
+    map.addControl(new maplibregl.NavigationControl(),'top-right');
+    map.on('load',()=>{
+      map.addSource('canonical',{type:'geojson',data});
+      map.addLayer({id:'canonical',type:'circle',source:'canonical',minzoom:10.5,paint:{'circle-radius':['interpolate',['linear'],['zoom'],10.5,2.5,14,5.5],'circle-color':['match',['get','category'],'convenience_store','#2474c6','supermarket','#e67e22','#777'],'circle-stroke-color':'#fff','circle-stroke-width':1,'circle-opacity':.88}});
+      map.on('mouseenter','canonical',()=>map.getCanvas().style.cursor='pointer');
+      map.on('mouseleave','canonical',()=>map.getCanvas().style.cursor='');
+      map.on('click','canonical',e=>{
+        const f=e.features?.[0];if(!f)return;const p=f.properties||{};
+        const ids=(()=>{try{return JSON.parse(p.source_ids||'[]')}catch{return p.source_ids}})();
+        new maplibregl.Popup().setLngLat(f.geometry.coordinates).setHTML(`<strong>${esc(p.name||p.brand)}</strong><br>${esc(p.category)} · ${esc(p.brand)}<br>branch: ${esc(p.branch)}<br>source rows: ${esc(p.source_rows)}<br>source ids: ${esc(Array.isArray(ids)?ids.join(', '):ids)}<br>merge evidence: ${esc(p.merge_reasons)}<br>address: ${esc(p.address)}`).addTo(map);
+      });
+    });
+  }catch(err){status.className='err';status.textContent=err?.stack||String(err);}
+})();
+</script>
+</body>
+</html>

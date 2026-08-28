@@ -1,0 +1,19 @@
+{
+  "dataset_version": "taipei-daily-life-poi-v01",
+  "overture_release": "2026-08-19.0",
+  "overture_theme": "places",
+  "overture_type": "place",
+  "overture_s3_path": "s3://overturemaps-us-west-2/release/2026-08-19.0/theme=places/type=place/*",
+  "canonical_engine_version": "buju-poi-canonical-v0.2",
+  "canonical_engine_path": "public/buju-poi-canonical-v02.mjs",
+  "boundary": {
+    "version": "taipei-district-boundary-v01",
+    "source_repo": "xashiex/taiwan-district-boundary-to-geojson",
+    "source_commit": "43b3b1a858043d94f780f1f13e6efd682e57e505",
+    "source_path": "docs/data/63.json",
+    "url": "https://raw.githubusercontent.com/xashiex/taiwan-district-boundary-to-geojson/43b3b1a858043d94f780f1f13e6efd682e57e505/docs/data/63.json",
+    "expected_feature_count": 12
+  },
+  "brands": ["7-ELEVEN", "全家", "萊爾富", "OK Mart", "全聯", "家樂福", "美廉社"],
+  "categories": ["convenience_store", "supermarket"]
+}

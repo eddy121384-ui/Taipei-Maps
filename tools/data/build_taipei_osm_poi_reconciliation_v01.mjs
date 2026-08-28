@@ -192,6 +192,8 @@ function entityFeature(entity) {
       representative_key: entity.representative_key || entity.canonical_id, representative_strength: entity.representative_strength ?? 0, address: entity.address || '',
       merge_reasons: [...(entity.merge_reasons || [])], branch_conflict: Boolean(entity.branch_conflict), address_conflict: Boolean(entity.address_conflict), source_kind: entity.source_kind || '',
       osm_objects: entity.osm_objects || [], nearest_same_brand_distance_m: entity.nearest_same_brand_distance_m ?? null,
+      coordinate_source_kind: entity.coordinate_source_kind || '', coordinate_override_reason: entity.coordinate_override_reason || '',
+      coordinate_osm_canonical_id: entity.coordinate_osm_canonical_id || '', coordinate_osm_source_ids: entity.coordinate_osm_source_ids || [],
     },
   };
 }
@@ -216,10 +218,10 @@ function buildTimestamp() {
 }
 function reconcileSignature(result) {
   return {
-    matched: result.matched.map(x => [x.osm_canonical_id, x.overture_canonical_id]),
+    matched: result.matched.map(x => [x.osm_canonical_id, x.overture_canonical_id, x.match_reason || '', x.coordinate_source || '']),
     holes: result.safeHoles.map(x => [x.canonical_id, ...(x.source_ids || [])]),
     unresolved: result.unresolved.map(x => [x.osm_canonical_id, x.reason, ...(x.candidates || []).map(c => c.overture_canonical_id)]),
-    final: result.finalEntities.map(x => [x.canonical_id, x.source_kind]),
+    final: result.finalEntities.map(x => [x.canonical_id, x.source_kind, x.coordinates]),
   };
 }
 
@@ -250,13 +252,15 @@ async function main() {
   const baselineEntities = baselineCollection.features.map(baselineFeatureToEntity);
   if (baselineEntities.length !== baselineManifest.canonical_count) throw new Error('baseline manifest canonical count does not match baseline GeoJSON');
 
-  const reconciliation = reconcileCanonicalPOI(baselineEntities, osmEntities);
+  const reconcileOptions = { reviewedMatchOverrides: config.reviewed_match_overrides || [] };
+  const reconciliation = reconcileCanonicalPOI(baselineEntities, osmEntities, reconcileOptions);
   const reversedOsm = stableCanonicalize([...classified].reverse()).entities.map(entity => osmCanonicalEntity(entity, rawById));
-  const reversedReconciliation = reconcileCanonicalPOI(baselineEntities, reversedOsm);
+  const reversedReconciliation = reconcileCanonicalPOI(baselineEntities, reversedOsm, reconcileOptions);
   if (JSON.stringify(reconcileSignature(reconciliation)) !== JSON.stringify(reconcileSignature(reversedReconciliation))) throw new Error('determinism regression: reversing OSM input changed reconciliation');
 
   if (reconciliation.stats.final_canonical !== baselineEntities.length + reconciliation.stats.safe_holes) throw new Error('final count does not equal baseline + safe holes');
   if (reconciliation.stats.matched + reconciliation.stats.safe_holes + reconciliation.stats.cross_source_unresolved !== osmEntities.length) throw new Error('OSM reconciliation decisions do not partition OSM canonical entities');
+  if (reconciliation.stats.reviewed_match_overrides !== (config.reviewed_match_overrides || []).length) throw new Error('reviewed match override count mismatch');
   const baselineIds = new Set(baselineEntities.map(entity => entity.canonical_id)), finalIds = new Set(reconciliation.finalEntities.map(entity => entity.canonical_id));
   for (const id of baselineIds) if (!finalIds.has(id)) throw new Error(`baseline id missing from final: ${id}`);
   for (const feature of targetCollection.features) {
@@ -278,6 +282,7 @@ async function main() {
     osm_snapshot: config.osm_snapshot, osm_query: overpassQuery(bbox), overpass_endpoint_last_fetch: overpassEndpoint,
     osm_raw_element_count: raw.elements.length, osm_target_count: classified.length, osm_canonical_count: osmEntities.length,
     matched_count: reconciliation.stats.matched, safe_hole_count: reconciliation.stats.safe_holes, cross_source_unresolved_count: reconciliation.stats.cross_source_unresolved,
+    reviewed_match_override_count: reconciliation.stats.reviewed_match_overrides, coordinate_override_count: reconciliation.stats.coordinate_overrides,
     final_canonical_count: reconciliation.stats.final_canonical, final_counts_by_brand: sortedCounts(reconciliation.finalEntities.map(entity => entity.brand)), final_counts_by_category: sortedCounts(reconciliation.finalEntities.map(entity => entity.category)),
     osm_hole_counts_by_brand: sortedCounts(reconciliation.safeHoles.map(entity => entity.brand)), boundary_source: boundarySource, boundary_version: boundaryConfig.boundary.version, boundary_sha256: sha256(boundaryText), boundary_bbox: bbox,
     canonical_engine_version: baselineManifest.canonical_engine_version, reconciliation_engine_version: 'buju-poi-reconcile-v0.1', logical_dataset_sha256: sha256(JSON.stringify(logicalHashInput)),
@@ -288,8 +293,9 @@ async function main() {
 
   console.log(`PASS · ${config.dataset_version}`); console.log(`OSM snapshot: ${config.osm_snapshot}`); console.log(`OSM raw elements: ${raw.elements.length}`);
   console.log(`OSM target records: ${classified.length}`); console.log(`OSM canonical: ${osmEntities.length}`); console.log(`matched: ${reconciliation.stats.matched}`);
-  console.log(`safe holes: ${reconciliation.stats.safe_holes}`); console.log(`cross-source unresolved: ${reconciliation.stats.cross_source_unresolved}`); console.log(`final canonical: ${reconciliation.stats.final_canonical}`);
-  console.log(`logical sha256: ${manifest.logical_dataset_sha256}`);
+  console.log(`safe holes: ${reconciliation.stats.safe_holes}`); console.log(`cross-source unresolved: ${reconciliation.stats.cross_source_unresolved}`);
+  console.log(`reviewed match overrides: ${reconciliation.stats.reviewed_match_overrides}`); console.log(`coordinate overrides: ${reconciliation.stats.coordinate_overrides}`);
+  console.log(`final canonical: ${reconciliation.stats.final_canonical}`); console.log(`logical sha256: ${manifest.logical_dataset_sha256}`);
 }
 
 main().catch(error => { console.error(error.stack || error.message || error); process.exit(1); });

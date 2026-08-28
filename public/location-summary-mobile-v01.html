@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#eef3f5">
+<title>卜居 · Location Summary Mobile</title>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
+<script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+<style>
+:root{color-scheme:light;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif}
+*{box-sizing:border-box}html,body,#map{width:100%;height:100%;margin:0}body{overflow:hidden;background:#dce7ec;color:#17212b}#map{position:absolute;inset:0}.topbar{position:absolute;z-index:5;top:calc(10px + env(safe-area-inset-top));left:10px;right:58px;display:flex;gap:8px;align-items:center}.brand{padding:9px 11px;border-radius:13px;background:rgba(255,255,255,.94);box-shadow:0 4px 18px #0002;backdrop-filter:blur(12px);font-size:13px;font-weight:850}.status{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.90);box-shadow:0 4px 18px #0002;font-size:10.5px;color:#65737d}.sheet{position:absolute;z-index:6;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));max-height:55vh;overflow:auto;border-radius:20px;background:rgba(255,255,255,.96);box-shadow:0 12px 34px rgba(0,0,0,.22);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);padding:10px 13px 14px;transform:translateY(calc(100% + 20px));transition:transform .22s ease}.sheet.open{transform:translateY(0)}.handle{width:42px;height:4px;border-radius:999px;background:#c8d1d6;margin:0 auto 8px}.sheetHead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px}.sheetTitle{font-size:15px;font-weight:850}.coords{font-size:10.5px;color:#7a8790;margin-top:2px}.close{border:0;background:#edf1f3;border-radius:999px;width:30px;height:30px;font-size:18px}.section{border-top:1px solid #e6ebee;padding-top:9px;margin-top:9px}.section:first-of-type{border-top:0;padding-top:0}.sectionTitle{font-size:11px;letter-spacing:.08em;color:#73818b;font-weight:800;margin-bottom:5px}.row{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;padding:4px 0;font-size:13px}.label{color:#65737d;flex:0 0 auto}.value{font-weight:750;text-align:right;min-width:0}.sub{font-size:10.5px;color:#7a8790;font-weight:500;margin-top:1px}.pending{color:#7a8790}.bad{color:#b42318}.good{color:#137333}.hint{position:absolute;z-index:4;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);padding:8px 12px;border-radius:999px;background:rgba(23,33,43,.84);color:#fff;font-size:11px;white-space:nowrap;transition:opacity .2s}.sheet.open~.hint{opacity:0;pointer-events:none}.quick{position:absolute;z-index:5;right:10px;top:calc(76px + env(safe-area-inset-top));display:flex;flex-direction:column;gap:6px}.quick button{border:0;border-radius:11px;background:rgba(255,255,255,.92);box-shadow:0 3px 12px #0002;padding:8px 9px;font-size:11px;font-weight:800}.maplibregl-ctrl-top-right{top:calc(8px + env(safe-area-inset-top))}.maplibregl-ctrl-group{border-radius:12px;overflow:hidden}.maplibregl-ctrl button{width:36px;height:36px}@media(min-width:720px){.sheet{left:14px;right:auto;width:410px;max-height:70vh}.hint{bottom:22px}}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div class="topbar"><div class="brand">卜居 · Location Summary</div><div id="status" class="status">初始化資料…</div></div>
+<div class="quick"><button data-place="daan">大安</button><button data-place="xinyi">信義</button><button data-place="jingmei">景美</button></div>
+<section id="sheet" class="sheet" aria-live="polite">
+  <div class="handle"></div>
+  <div class="sheetHead"><div><div class="sheetTitle">這裡住起來怎麼樣？</div><div id="coords" class="coords">—</div></div><button id="close" class="close" aria-label="關閉">×</button></div>
+  <div class="section"><div class="sectionTitle">生活</div><div class="row"><span class="label">便利商店</span><span id="conv" class="value pending">—</span></div><div class="row"><span class="label">超市</span><span id="super" class="value pending">—</span></div></div>
+  <div class="section"><div class="sectionTitle">交通</div><div class="row"><span class="label">最近捷運</span><span id="mrt" class="value pending">—</span></div></div>
+  <div class="section"><div class="sectionTitle">醫療</div><div class="row"><span class="label">最近醫院</span><span id="hospital" class="value pending">—</span></div><div class="row"><span class="label">最近診所</span><span id="clinic" class="value pending">—</span></div></div>
+  <div class="section"><div class="sectionTitle">學區 · 115學年度</div><div class="row"><span class="label">國小</span><span id="elementary" class="value pending">—</span></div><div class="row"><span class="label">國中</span><span id="junior" class="value pending">—</span></div><div id="schoolMeta" class="sub"></div></div>
+  <div class="section"><div class="sub">距離皆為地理直線距離，不是步行路網距離。學區依官方里鄰界查詢，不以最近學校推測。</div></div>
+</section>
+<div class="hint">點地圖任意位置查看生活摘要</div>
+<script type="module">
+const COMMIT='6d7a02c49472cb499f727eda615927303e0a0fb7';
+const BASE=`https://cdn.jsdelivr.net/gh/eddy121384-ui/Taipei-Maps@${COMMIT}/public/`;
+const DATA_TAIPEI='https://data.taipei/api/frontstage/tpeod/dataset/resource.download?rid=';
+const MRT_RID='a63e3278-9d10-4916-9f24-e5a4d78afb31';
+const CLINIC_RID='3a02af7d-8c33-46c1-8226-c12a11610f6b';
+const HOSPITAL_RID='04a3d195-ee97-467a-b066-e471ff99d15d';
+const TAIPEI_BOUNDS={west:121.40,south:24.90,east:121.75,north:25.25};
+const DISTRICTS=['松山','信義','大安','中山','中正','大同','萬華','文山','南港','內湖','士林','北投'];
+const PLACES={daan:{center:[121.5434,25.0330],zoom:14.4},xinyi:{center:[121.5654,25.0330],zoom:14.4},jingmei:{center:[121.5415,24.9922],zoom:14.4}};
+
+const statusEl=document.getElementById('status'),sheet=document.getElementById('sheet'),coordsEl=document.getElementById('coords');
+const fields=Object.fromEntries(['conv','super','mrt','hospital','clinic','elementary','junior','schoolMeta'].map(id=>[id,document.getElementById(id)]));
+document.getElementById('close').onclick=()=>sheet.classList.remove('open');
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function m(v){return Number.isFinite(Number(v))?`${Math.round(Number(v))}m`:'—';}
+function loadScript(src){return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>reject(new Error(`script load failed: ${src}`));document.head.appendChild(s);});}
+
+const [{computeLocationSummary},{resolveTaipeiSchoolDistricts}]=await Promise.all([
+  import(`${BASE}buju-location-summary-v01.mjs`),
+  import(`${BASE}buju-school-district-resolver-v01.mjs`),
+]);
+
+function twd97ToWgs84(x,y){const a=6378137,b=6356752.314245,k0=.9999,dx=250000,lon0=121*Math.PI/180,e2=1-(b*b)/(a*a),sqrt1=Math.sqrt(1-e2),e1=(1-sqrt1)/(1+sqrt1),M=y/k0,mu=M/(a*(1-e2/4-3*e2*e2/64-5*e2*e2*e2/256)),J1=3*e1/2-27*e1**3/32,J2=21*e1**2/16-55*e1**4/32,J3=151*e1**3/96,J4=1097*e1**4/512,fp=mu+J1*Math.sin(2*mu)+J2*Math.sin(4*mu)+J3*Math.sin(6*mu)+J4*Math.sin(8*mu),ep2=e2/(1-e2),sinFp=Math.sin(fp),cosFp=Math.cos(fp),tanFp=Math.tan(fp),C1=ep2*cosFp*cosFp,T1=tanFp*tanFp,N1=a/Math.sqrt(1-e2*sinFp*sinFp),R1=a*(1-e2)/Math.pow(1-e2*sinFp*sinFp,1.5),D=(x-dx)/(N1*k0),D2=D*D,D3=D2*D,D4=D2*D2,D5=D4*D,D6=D3*D3,lat=fp-(N1*tanFp/R1)*(D2/2-(5+3*T1+10*C1-4*C1*C1-9*ep2)*D4/24+(61+90*T1+298*C1+45*T1*T1-252*ep2-3*C1*C1)*D6/720),lon=lon0+(D-(1+2*T1+C1)*D3/6+(5-2*C1+28*T1-3*C1*C1+8*ep2+24*T1*T1)*D5/120)/cosFp;return [lon*180/Math.PI,lat*180/Math.PI];}
+async function loadMrt(){const r=await fetch(`${DATA_TAIPEI}${MRT_RID}`,{cache:'no-store'});if(!r.ok)throw new Error(`MRT HTTP ${r.status}`);const raw=await r.json(),groups=new Map();for(const f of raw.features||[]){if(f.geometry?.type!=='Point')continue;const name=String(f.properties?.NAME||'').trim();if(!name)continue;const [lng,lat]=twd97ToWgs84(Number(f.geometry.coordinates[0]),Number(f.geometry.coordinates[1]));const g=groups.get(name)||{coords:[],locations:new Set()};g.coords.push([lng,lat]);if(f.properties?.LOC)g.locations.add(String(f.properties.LOC).trim());groups.set(name,g);}return [...groups.entries()].map(([name,g])=>({type:'Feature',geometry:{type:'Point',coordinates:[g.coords.reduce((s,c)=>s+c[0],0)/g.coords.length,g.coords.reduce((s,c)=>s+c[1],0)/g.coords.length]},properties:{station_name:name,location:[...g.locations].join(' / '),source:'臺北市政府捷運站點官方資料'}}));}
+
+function decodeCsv(bytes){for(const enc of ['utf-8','big5']){try{return new TextDecoder(enc,{fatal:true}).decode(bytes).replace(/^\uFEFF/,'');}catch{}}throw new Error('醫療 CSV 編碼無法解析');}
+function parseCsv(text){const rows=[];let row=[],cell='',quoted=false;for(let i=0;i<text.length;i++){const ch=text[i];if(quoted){if(ch==='"'&&text[i+1]==='"'){cell+='"';i++;}else if(ch==='"')quoted=false;else cell+=ch;continue;}if(ch==='"'){quoted=true;continue;}if(ch===','){row.push(cell);cell='';continue;}if(ch==='\n'){row.push(cell.replace(/\r$/,''));rows.push(row);row=[];cell='';continue;}cell+=ch;}if(cell.length||row.length){row.push(cell.replace(/\r$/,''));rows.push(row);}return rows.filter(r=>r.some(v=>String(v||'').trim()));}
+const ALIASES={name:['機構名稱','醫療機構名稱','名稱'],district:['行政區','行政區域','區別'],address:['地址','機構地址'],lng:['經度','longitude','lng','x'],lat:['緯度','latitude','lat','y'],category:['分類','類別','機構類別'],code:['機構代碼','醫事機構代碼','代碼']};
+const norm=s=>String(s??'').replace(/^\uFEFF/,'').trim(),normH=s=>norm(s).replace(/[\s＿_()（）/／-]/g,'').toLowerCase();
+function idx(headers,aliases){const h=headers.map(normH);for(const a of aliases){const i=h.indexOf(normH(a));if(i>=0)return i;}return -1;}
+function rowsToFeatures(rows,type){const h=rows[0].map(norm),ix=Object.fromEntries(Object.entries(ALIASES).map(([k,a])=>[k,idx(h,a)])),out=[];for(const r of rows.slice(1)){const name=norm(r[ix.name]);if(!name)continue;let lng=Number(norm(r[ix.lng]).replace(/[^0-9+\-.eE]/g,'')),lat=Number(norm(r[ix.lat]).replace(/[^0-9+\-.eE]/g,''));if(!Number.isFinite(lng)||!Number.isFinite(lat))continue;if(Math.abs(lng)<=90&&Math.abs(lat)>90)[lng,lat]=[lat,lng];if(lng<TAIPEI_BOUNDS.west||lng>TAIPEI_BOUNDS.east||lat<TAIPEI_BOUNDS.south||lat>TAIPEI_BOUNDS.north)continue;out.push({type:'Feature',geometry:{type:'Point',coordinates:[lng,lat]},properties:{facility_type:type,facility_name:name,district:ix.district>=0?norm(r[ix.district]):'',address:ix.address>=0?norm(r[ix.address]):'',facility_code:ix.code>=0?norm(r[ix.code]):'',source:'臺北市政府衛生局開放資料'}});}return out;}
+const CAMPUS_GROUPS=[
+ {code:'0101090517',tokens:['臺北市立聯合醫院'],campuses:[['臺北市立聯合醫院中興院區','大同區','臺北市大同區鄭州路145號',121.508887,25.050692],['臺北市立聯合醫院仁愛院區','大安區','臺北市大安區仁愛路四段10號',121.5453033447,25.0375404358],['臺北市立聯合醫院忠孝院區','南港區','臺北市南港區同德路87號',121.5861587524,25.0466041565],['臺北市立聯合醫院陽明院區','士林區','臺北市士林區雨聲街105號',121.5314865112,25.1048316956],['臺北市立聯合醫院松德院區','信義區','臺北市信義區松德路309號',121.5751575379,25.0305834018],['臺北市立聯合醫院和平院區','中正區','臺北市中正區中華路二段33號',121.5066833496,25.0355300903],['臺北市立聯合醫院婦幼院區','中正區','臺北市中正區福州街12號',121.5192888224,25.0290783959],['臺北市立聯合醫院林森院區','中山區','臺北市中山區林森北路530號',121.5254745483,25.0634632111],['臺北市立聯合醫院昆明院區／中醫中心','萬華區','臺北市萬華區昆明街100號',121.50463,25.04431]]},
+ {code:'0501110514',tokens:['三軍總醫院附設民眾診療服務處'],campuses:[['三軍總醫院內湖院區','內湖區','臺北市內湖區成功路二段325號',121.592611,25.0717589],['三軍總醫院汀州院區','中正區','臺北市中正區汀州路三段40號',121.5268825,25.0177184]]}
+];
+function reconcileCampuses(features){let out=[...features];for(const g of CAMPUS_GROUPS){out=out.filter(f=>{const p=f.properties||{};return !(p.facility_type==='hospital'&&((p.facility_code&&p.facility_code===g.code)||g.tokens.some(t=>String(p.facility_name||'').includes(t))));});for(const [name,district,address,lng,lat] of g.campuses)out.push({type:'Feature',geometry:{type:'Point',coordinates:[lng,lat]},properties:{facility_type:'hospital',facility_name:name,district,address,facility_code:g.code,campus_group_id:g.code,source:'臺北市政府衛生局＋官方院區 reconciliation'}});}return out;}
+async function loadHealthcare(){const rs=await Promise.all([CLINIC_RID,HOSPITAL_RID].map(rid=>fetch(`${DATA_TAIPEI}${rid}`,{cache:'no-store'})));if(rs.some(r=>!r.ok))throw new Error(`Healthcare HTTP ${rs.map(r=>r.status).join('/')}`);const [clinicBytes,hospitalBytes]=await Promise.all(rs.map(r=>r.arrayBuffer()));return reconcileCampuses([...rowsToFeatures(parseCsv(decodeCsv(clinicBytes)),'clinic'),...rowsToFeatures(parseCsv(decodeCsv(hospitalBytes)),'hospital')]);}
+
+await loadScript(`${BASE}taipei-school-districts-115.js`);for(const d of DISTRICTS)await loadScript(`${BASE}school-districts-115/${encodeURIComponent(d)}.js`);const schoolDataset=window.TaipeiMapsSchoolDistrictData115;if(!schoolDataset)throw new Error('school dataset unavailable');
+const resolveSchoolDistricts=(point)=>resolveTaipeiSchoolDistricts(point,{dataset:schoolDataset});
+
+const map=new maplibregl.Map({container:'map',center:PLACES.daan.center,zoom:PLACES.daan.zoom,style:{version:8,sources:{osm:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,attribution:'© OpenStreetMap contributors'}},layers:[{id:'osm',type:'raster',source:'osm'}]}});map.addControl(new maplibregl.NavigationControl({showCompass:false}),'top-right');
+document.querySelectorAll('[data-place]').forEach(b=>b.onclick=()=>map.easeTo({...PLACES[b.dataset.place],duration:500}));
+
+let poiFeatures=[],mrtFeatures=[],healthFeatures=[],ready=false,marker=null,requestToken=0;
+statusEl.textContent='載入 POI / MRT / 醫療資料…';
+try{const [poi,mrt,health]=await Promise.all([fetch(`${BASE}data/daily-life-poi/taipei-canonical-reconciled-v01.geojson`,{cache:'force-cache'}).then(r=>{if(!r.ok)throw new Error(`POI HTTP ${r.status}`);return r.json();}),loadMrt(),loadHealthcare()]);poiFeatures=poi.features||[];mrtFeatures=mrt;healthFeatures=health;ready=true;statusEl.textContent=`READY · POI ${poiFeatures.length} · MRT ${mrtFeatures.length} · 醫療 ${healthFeatures.length}`;}catch(e){console.error(e);statusEl.textContent=`資料載入失敗 · ${e.message||e}`;statusEl.classList.add('bad');}
+
+function renderPending(lng,lat){coordsEl.textContent=`${lng.toFixed(6)}, ${lat.toFixed(6)}`;for(const id of ['conv','super','mrt','hospital','clinic','elementary','junior']){fields[id].textContent='計算中…';fields[id].className='value pending';}fields.schoolMeta.textContent='查詢官方鄰界…';sheet.classList.add('open');}
+function render(summary){const d=summary.daily_life,t=summary.transit.nearest_mrt_station,h=summary.healthcare,s=summary.school;fields.conv.innerHTML=`${m(d.nearest_convenience_store?.distance_m)} <div class="sub">500m 內 ${d.convenience_store_count_500m} 家</div>`;fields.super.innerHTML=`${m(d.nearest_supermarket?.distance_m)} <div class="sub">800m 內 ${d.supermarket_count_800m} 家</div>`;fields.mrt.innerHTML=t?`${esc(t.name)} · ${m(t.distance_m)}`:'—';fields.hospital.innerHTML=h.nearest_hospital?`${esc(h.nearest_hospital.name)} · ${m(h.nearest_hospital.distance_m)}`:'—';fields.clinic.innerHTML=h.nearest_clinic?`${esc(h.nearest_clinic.name)} · ${m(h.nearest_clinic.distance_m)}`:'—';if(s.status==='resolved'){fields.elementary.textContent=s.elementary_school_district;fields.junior.textContent=s.junior_school_district;fields.schoolMeta.textContent=`${s.district}區 · ${s.village}里 · 第${s.neighbors.join('、')}鄰`;fields.elementary.className='value good';fields.junior.className='value good';}else{fields.elementary.textContent=s.status==='unresolved'?'待確認':'無資料';fields.junior.textContent=s.status==='unresolved'?'待確認':'無資料';fields.schoolMeta.textContent=s.reason||'';fields.elementary.className='value bad';fields.junior.className='value bad';}for(const id of ['conv','super','mrt','hospital','clinic'])fields[id].classList.remove('pending');}
+map.on('click',async e=>{if(!ready)return;const token=++requestToken,{lng,lat}=e.lngLat;renderPending(lng,lat);if(!marker)marker=new maplibregl.Marker({color:'#17212b'}).setLngLat([lng,lat]).addTo(map);else marker.setLngLat([lng,lat]);try{const summary=await computeLocationSummary({lon:lng,lat},{poiFeatures,mrtStationFeatures:mrtFeatures,healthcareFeatures:healthFeatures,resolveSchoolDistricts});if(token!==requestToken)return;render(summary);}catch(err){console.error(err);if(token!==requestToken)return;fields.schoolMeta.textContent=`計算失敗：${err.message||err}`;}});
+</script>
+</body>
+</html>

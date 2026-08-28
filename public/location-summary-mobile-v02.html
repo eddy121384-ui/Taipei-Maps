@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#eef3f5">
+<title>卜居 · Location Summary Mobile v02</title>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
+<script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+<style>
+*{box-sizing:border-box}html,body,#map{width:100%;height:100%;margin:0}body{overflow:hidden;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;color:#17212b;background:#dce7ec}#map{position:absolute;inset:0}.top{position:absolute;z-index:5;top:calc(10px + env(safe-area-inset-top));left:10px;right:52px;display:flex;gap:7px}.brand,.status{background:rgba(255,255,255,.95);box-shadow:0 4px 18px #0002;backdrop-filter:blur(12px);border-radius:13px;padding:9px 11px}.brand{font-size:13px;font-weight:850;white-space:nowrap}.status{font-size:10.5px;color:#667681;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}.sheet{position:absolute;z-index:6;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));max-height:58vh;overflow:auto;background:rgba(255,255,255,.97);border-radius:20px;box-shadow:0 12px 34px rgba(0,0,0,.22);padding:9px 13px 14px;transform:translateY(calc(100% + 22px));transition:.22s transform}.sheet.open{transform:translateY(0)}.handle{width:42px;height:4px;background:#c8d1d6;border-radius:9px;margin:0 auto 8px}.head{display:flex;justify-content:space-between;gap:8px}.title{font-size:15px;font-weight:850}.coords,.sub{font-size:10.5px;color:#7a8790}.close{border:0;background:#edf1f3;width:30px;height:30px;border-radius:50%;font-size:18px}.section{border-top:1px solid #e6ebee;margin-top:9px;padding-top:8px}.sectionTitle{font-size:10.5px;letter-spacing:.08em;color:#73818b;font-weight:850;margin-bottom:4px}.row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:4px 0;font-size:13px}.label{color:#65737d}.value{text-align:right;font-weight:750}.bad{color:#b42318}.hint{position:absolute;z-index:4;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);padding:8px 12px;background:rgba(23,33,43,.86);color:#fff;border-radius:99px;font-size:11px;white-space:nowrap}.quick{position:absolute;z-index:5;right:10px;top:calc(72px + env(safe-area-inset-top));display:flex;flex-direction:column;gap:6px}.quick button{border:0;border-radius:11px;background:rgba(255,255,255,.94);box-shadow:0 3px 12px #0002;padding:8px 9px;font-size:11px;font-weight:800}.maplibregl-ctrl-top-right{top:calc(8px + env(safe-area-inset-top))}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div class="top"><div class="brand">卜居 · 摘要</div><div id="status" class="status">載入資料…</div></div>
+<div class="quick"><button data-place="daan">大安</button><button data-place="xinyi">信義</button><button data-place="jingmei">景美</button></div>
+<section id="sheet" class="sheet"><div class="handle"></div><div class="head"><div><div class="title">這裡住起來怎麼樣？</div><div id="coords" class="coords">—</div></div><button id="close" class="close">×</button></div>
+<div class="section"><div class="sectionTitle">生活</div><div class="row"><span class="label">便利商店</span><span id="conv" class="value">—</span></div><div class="row"><span class="label">超市</span><span id="super" class="value">—</span></div></div>
+<div class="section"><div class="sectionTitle">交通</div><div class="row"><span class="label">最近捷運</span><span id="mrt" class="value">—</span></div></div>
+<div class="section"><div class="sectionTitle">醫療</div><div class="row"><span class="label">最近醫院</span><span id="hospital" class="value">—</span></div><div class="row"><span class="label">最近診所</span><span id="clinic" class="value">—</span></div></div>
+<div class="section"><div class="sectionTitle">學區 · 115學年度</div><div class="row"><span class="label">國小</span><span id="elementary" class="value">—</span></div><div class="row"><span class="label">國中</span><span id="junior" class="value">—</span></div><div id="schoolMeta" class="sub"></div></div>
+<div class="section"><div class="sub">距離＝地理直線距離，不是步行距離。學區依官方里鄰界查詢。</div></div></section>
+<div class="hint">點地圖任意位置查看摘要</div>
+<script type="module">
+const SNAPSHOT='172fbb1d78d788df4f626cca28debf648a9c240d';
+const BASE=`https://cdn.jsdelivr.net/gh/eddy121384-ui/Taipei-Maps@${SNAPSHOT}/public/`;
+const DISTRICTS=['松山','信義','大安','中山','中正','大同','萬華','文山','南港','內湖','士林','北投'];
+const PLACES={daan:{center:[121.5434,25.0330],zoom:14.3},xinyi:{center:[121.5654,25.0330],zoom:14.3},jingmei:{center:[121.5415,24.9922],zoom:14.3}};
+const $=id=>document.getElementById(id),status=$('status'),sheet=$('sheet');
+$('close').onclick=()=>sheet.classList.remove('open');
+const m=v=>Number.isFinite(Number(v))?`${Math.round(Number(v))}m`:'—';
+function loadScript(src){return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>reject(new Error(`script load failed: ${src}`));document.head.appendChild(s);});}
+async function loadSchoolDataset(){await loadScript(`${BASE}taipei-school-districts-115.js`);for(const d of DISTRICTS)await loadScript(`${BASE}school-districts-115/${encodeURIComponent(d)}.js`);if(!window.TaipeiMapsSchoolDistrictData115)throw new Error('school dataset missing');return window.TaipeiMapsSchoolDistrictData115;}
+try{
+ const [{computeLocationSummary},{resolveTaipeiSchoolDistricts},poiRes,mrtRes,healthRes,schoolDataset]=await Promise.all([
+   import(`${BASE}buju-location-summary-v01.mjs`),
+   import(`${BASE}buju-school-district-resolver-v01.mjs`),
+   fetch(`${BASE}data/daily-life-poi/taipei-canonical-reconciled-v01.geojson`),
+   fetch(`${BASE}data/location-summary-v01/taipei-mrt-stations.geojson`),
+   fetch(`${BASE}data/location-summary-v01/taipei-healthcare-facilities.geojson`),
+   loadSchoolDataset(),
+ ]);
+ if(!poiRes.ok||!mrtRes.ok||!healthRes.ok)throw new Error(`static data HTTP ${poiRes.status}/${mrtRes.status}/${healthRes.status}`);
+ const [poi,mrt,health]=await Promise.all([poiRes.json(),mrtRes.json(),healthRes.json()]);
+ const sources={poiFeatures:poi.features,mrtStationFeatures:mrt.features,healthcareFeatures:health.features,resolveSchoolDistricts:p=>resolveTaipeiSchoolDistricts(p,{dataset:schoolDataset})};
+ status.textContent=`READY · POI ${poi.features.length} · MRT ${mrt.features.length} · 醫療 ${health.features.length}`;
+ const map=new maplibregl.Map({container:'map',center:PLACES.daan.center,zoom:PLACES.daan.zoom,style:{version:8,sources:{osm:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,attribution:'© OpenStreetMap contributors'}},layers:[{id:'osm',type:'raster',source:'osm'}]}});map.addControl(new maplibregl.NavigationControl(),'top-right');let marker;
+ async function inspect(lng,lat){sheet.classList.add('open');$('coords').textContent=`${lng.toFixed(6)}, ${lat.toFixed(6)}`;for(const id of ['conv','super','mrt','hospital','clinic','elementary','junior'])$(id).textContent='計算中…';$('schoolMeta').textContent='';if(!marker)marker=new maplibregl.Marker({color:'#17212b'}).setLngLat([lng,lat]).addTo(map);else marker.setLngLat([lng,lat]);const r=await computeLocationSummary({lon:lng,lat},sources),d=r.daily_life,t=r.transit.nearest_mrt_station,h=r.healthcare,s=r.school;$('conv').textContent=`${m(d.nearest_convenience_store?.distance_m)} · 500m內 ${d.convenience_store_count_500m}家`;$('super').textContent=`${m(d.nearest_supermarket?.distance_m)} · 800m內 ${d.supermarket_count_800m}家`;$('mrt').textContent=t?`${t.name} · ${m(t.distance_m)}`:'—';$('hospital').textContent=h.nearest_hospital?`${h.nearest_hospital.name} · ${m(h.nearest_hospital.distance_m)}`:'—';$('clinic').textContent=h.nearest_clinic?`${h.nearest_clinic.name} · ${m(h.nearest_clinic.distance_m)}`:'—';$('elementary').textContent=s.elementary_school_district||'查無';$('junior').textContent=s.junior_school_district||'查無';$('schoolMeta').textContent=s.status==='resolved'?`${s.district}區 · ${s.village}里 · 第${s.neighbors.join('、')}鄰`:`學區 ${s.status} · ${s.reason||''}`;}
+ map.on('click',e=>inspect(e.lngLat.lng,e.lngLat.lat).catch(err=>{status.textContent=`查詢失敗：${err.message}`;status.classList.add('bad')}));document.querySelectorAll('[data-place]').forEach(b=>b.onclick=()=>map.easeTo({...PLACES[b.dataset.place],duration:500}));
+}catch(err){status.textContent=`資料載入失敗：${err.message}`;status.classList.add('bad');console.error(err);}
+</script>
+</body></html>

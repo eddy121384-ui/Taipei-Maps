@@ -4,7 +4,7 @@ cd /d "%~dp0"
 
 echo ==========================================================
 echo   Taipei-Maps - Desktop full-stack smoke test
-echo   Flat 2D default + optional 3D/terrain + full overlays
+echo   Flat 2D + full overlays + Location Summary v0.1
 echo ==========================================================
 echo.
 
@@ -35,69 +35,86 @@ if not exist public\generated\taipei_building_height_citywide.pmtiles (
   exit /b 1
 )
 
-echo [1/10] Preparing Taipei healthcare cache...
+echo [1/14] Preparing Taipei healthcare cache...
 "%NODE_CMD%" tools\data\build_taipei_healthcare.mjs --if-missing
 if errorlevel 1 goto :fail
 
 echo.
-echo [2/10] Preparing Taipei official MRT line cache...
+echo [2/14] Preparing Taipei official MRT line cache...
 "%NODE_CMD%" tools\data\build_taipei_mrt_official.mjs --if-missing
 if errorlevel 1 goto :fail
 
 echo.
-echo [3/10] Preparing Taipei official MRT station cache...
+echo [3/14] Preparing Taipei official MRT station cache...
 "%NODE_CMD%" tools\data\build_taipei_mrt_stations_official.mjs --if-missing
 if errorlevel 1 goto :fail
 
 echo.
-echo [4/10] Preparing North Taiwan urban rail cache...
+echo [4/14] Preparing North Taiwan urban rail cache...
 "%NODE_CMD%" tools\data\build_north_taiwan_urban_rail.mjs --if-missing
 if errorlevel 1 goto :fail
 
 echo.
-echo [5/10] Preparing Taiwan intercity rail cache...
+echo [5/14] Preparing Taiwan intercity rail cache...
 "%NODE_CMD%" tools\data\build_taiwan_intercity_rail.mjs --if-missing
 if errorlevel 1 goto :fail
 
 echo.
-echo [6/10] Validating healthcare + shared-core integration...
+echo [6/14] Validating healthcare + shared-core integration...
 "%NODE_CMD%" tools\data\validate_healthcare_layer.mjs
 if errorlevel 1 goto :fail
 
 echo.
-echo [7/10] Validating transit data + rendering contract...
+echo [7/14] Validating transit data + rendering contract...
 "%NODE_CMD%" tools\data\validate_transit_layer.mjs
 if errorlevel 1 goto :fail
 
 echo.
-echo [8/10] Validating committed Taipei 115 school-district runtime...
+echo [8/14] Validating committed Taipei 115 school-district runtime...
 "%NODE_CMD%" tools\data\validate_taipei_school_districts.mjs
 if errorlevel 1 goto :fail
 
 echo.
-echo [9/10] Validating school-layer pagination and viewport caches...
+echo [9/14] Validating school-layer pagination and viewport caches...
 "%NODE_CMD%" tools\data\validate_school_layer_performance.mjs
 if errorlevel 1 goto :fail
 
 echo.
-echo [10/10] Opening desktop full-stack validation page...
+echo [10/14] Running Location Summary synthetic regression...
+"%NODE_CMD%" tools\dev\test_buju_location_summary_v01.mjs
+if errorlevel 1 goto :fail
+
+echo.
+echo [11/14] Running school point-resolver regression...
+"%NODE_CMD%" tools\dev\test_buju_school_district_resolver_v01.mjs
+if errorlevel 1 goto :fail
+
+echo.
+echo [12/14] Validating accepted POI baseline + Location Summary sources...
+"%NODE_CMD%" tools\data\validate_place_metrics_v01.mjs
+if errorlevel 1 goto :fail
+"%NODE_CMD%" tools\data\validate_location_summary_sources_v01.mjs
+if errorlevel 1 goto :fail
+
+echo.
+echo [13/14] Validating desktop Location Summary integration contract...
+"%NODE_CMD%" tools\dev\test_location_summary_desktop_integration_v01.mjs
+if errorlevel 1 goto :fail
+
+echo.
+echo [14/14] Opening desktop full-stack validation page...
 echo.
 echo Smoke checklist:
 echo   - initial view: OSM map, top-down north-up, 3D OFF, Terrain OFF
-echo   - initial Terrain status reads flat map
 echo   - Local PMTiles remains ON and renders flat building footprints
-echo   - turn 3D ON: building extrusion layers still work
-echo   - turn Terrain ON/OFF: Mapterhorn terrain still toggles correctly
+echo   - turn 3D ON and Terrain ON/OFF: existing map controls still work
 echo   - school: switch Elementary / Junior and click catchment popup
-echo   - school: pan around same district; status should show cache hits
-echo   - healthcare: red hospital-campus points + teal clinic points appear in Taipei
-echo   - healthcare: red + control toggles all hospital/clinic points and labels
-echo   - healthcare: Heping/Fuyou and Tri-Service physical-campus splits remain present
-echo   - transit: Taipei MRT official colors + station names remain correct
-echo   - transit: V/K/LB/A route colors + station names remain correct
-echo   - transit: TRA blue short dashes / THSR orange longer dashes remain distinct
+echo   - healthcare + transit overlays remain visible and usable
 echo   - map / aerial toggle and north-up N control remain normal
-echo   - Neihu / Beitou / Yangmingshan / Wenshan remain normal
+echo   - Location Summary: initial button reads OFF and right panel is hidden
+echo   - Location Summary: turn ON, click a Taipei point, right panel shows daily-life / MRT / healthcare / school
+echo   - Location Summary: closing the card keeps query mode ON; toggling OFF removes card + marker
+echo   - Location Summary: click outside Taipei and verify explicit unsupported message, never fake Taipei nearest results
 echo   - Banqiao: Taipei healthcare disappears while base map / transit remain normal
 echo   - Shanghai / Tokyo: NEVER black-screen; no Taipei-only healthcare leaks overseas
 echo.

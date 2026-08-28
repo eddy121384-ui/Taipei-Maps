@@ -58,7 +58,7 @@ try{
   ]);
   if(!datasetResponse.ok||!manifestResponse.ok)throw new Error(`dataset missing: ${datasetResponse.status}/${manifestResponse.status}`);
   const data=await datasetResponse.json(),manifest=await manifestResponse.json();
-  statusEl.textContent=`READY · ${manifest.final_canonical_count} canonical POIs · convenience ${manifest.final_category_counts?.convenience_store??'—'} · supermarket ${manifest.final_category_counts?.supermarket??'—'}`;
+  statusEl.textContent=`READY · ${manifest.final_canonical_count} canonical POIs · convenience ${manifest.final_counts_by_category?.convenience_store??'—'} · supermarket ${manifest.final_counts_by_category?.supermarket??'—'}`;
 
   const map=new maplibregl.Map({container:'map',center:[121.545,25.055],zoom:11.7,style:{version:8,sources:{osm:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,attribution:'© OpenStreetMap contributors'}},layers:[{id:'osm',type:'raster',source:'osm'}]}});
   map.addControl(new maplibregl.NavigationControl(),'top-right');

@@ -1,0 +1,53 @@
+{
+  "dataset_version": "taipei-daily-life-poi-reconciled-v01",
+  "build_timestamp": "2026-08-19T23:59:59.000Z",
+  "overture_release": "2026-08-19.0",
+  "overture_baseline_dataset_version": "taipei-daily-life-poi-v01",
+  "overture_baseline_logical_sha256": "d24f3bd9e598acfb6cbc8ce07e73c295a299be0743691a9eda87c6e9e2784d5e",
+  "overture_baseline_count": 1781,
+  "osm_snapshot": "2026-08-19T23:59:59Z",
+  "osm_query": "[out:json][timeout:180][date:\"2026-08-19T23:59:59Z\"];\n(\n  nwr[\"shop\"=\"convenience\"](24.9605,121.45714,25.21018,121.66593);\n  nwr[\"shop\"=\"supermarket\"](24.9605,121.45714,25.21018,121.66593);\n);\nout meta center;",
+  "overpass_endpoint_last_fetch": "historical-overpass",
+  "osm_raw_element_count": 3676,
+  "osm_target_count": 1781,
+  "osm_canonical_count": 1751,
+  "matched_count": 1161,
+  "safe_hole_count": 508,
+  "cross_source_unresolved_count": 82,
+  "final_canonical_count": 2289,
+  "final_counts_by_brand": {
+    "7-ELEVEN": 993,
+    "全家": 701,
+    "全聯": 179,
+    "美廉社": 62,
+    "家樂福": 65,
+    "萊爾富": 209,
+    "OK Mart": 80
+  },
+  "final_counts_by_category": {
+    "convenience_store": 1983,
+    "supermarket": 306
+  },
+  "osm_hole_counts_by_brand": {
+    "7-ELEVEN": 174,
+    "全家": 79,
+    "全聯": 15,
+    "美廉社": 34,
+    "家樂福": 41,
+    "萊爾富": 123,
+    "OK Mart": 42
+  },
+  "boundary_source": "https://raw.githubusercontent.com/xashiex/taiwan-district-boundary-to-geojson/43b3b1a858043d94f780f1f13e6efd682e57e505/docs/data/63.json",
+  "boundary_version": "taipei-district-boundary-v01",
+  "boundary_sha256": "c8a44cf484331338677d9cea2d6c623d84a41861e89a53e1e313d4dce79282ce",
+  "boundary_bbox": [
+    121.45714,
+    24.9605,
+    121.66593,
+    25.21018
+  ],
+  "canonical_engine_version": "buju-poi-canonical-v0.2",
+  "reconciliation_engine_version": "buju-poi-reconcile-v0.1",
+  "logical_dataset_sha256": "58efd127ca16f41a3a05acb2ac1775950f9b982ed3a8720b13993a519b4c9ca4",
+  "osm_overpass_raw_sha256": "7d01a7419fc4f7681ce5a65efa103b83beef850d25b140e42d86984d2b744cfb"
+}

@@ -9,6 +9,7 @@ const dataDir = path.join(repoRoot, 'public', 'data', 'daily-life-poi');
 
 const reconciliationPath = path.join(dataDir, 'taipei-osm-reconciliation-v01.json');
 const osmCanonicalPath = path.join(dataDir, 'taipei-osm-canonical-v01.geojson');
+const overtureCanonicalPath = path.join(dataDir, 'taipei-canonical-v01.geojson');
 const outputPath = path.join(dataDir, 'taipei-osm-hole-audit-v01.json');
 
 function stableStringify(value) {
@@ -57,17 +58,47 @@ function priorityFor({ ratio, thinEvidence }) {
   return 'low';
 }
 
-const [reconciliation, osmCanonical] = await Promise.all([
+function haversine(a, b) {
+  const R = 6371000;
+  const toRad = deg => deg * Math.PI / 180;
+  const [lon1, lat1] = a, [lon2, lat2] = b;
+  const dLat = toRad(lat2 - lat1), dLon = toRad(lon2 - lon1);
+  const sLat = Math.sin(dLat / 2), sLon = Math.sin(dLon / 2);
+  const h = sLat * sLat + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * sLon * sLon;
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+
+const [reconciliation, osmCanonical, overtureCanonical] = await Promise.all([
   fs.readFile(reconciliationPath, 'utf8').then(JSON.parse),
   fs.readFile(osmCanonicalPath, 'utf8').then(JSON.parse),
+  fs.readFile(overtureCanonicalPath, 'utf8').then(JSON.parse),
 ]);
 
 if (!Array.isArray(reconciliation.safe_holes)) throw new Error('reconciliation.safe_holes is missing');
 if (osmCanonical?.type !== 'FeatureCollection' || !Array.isArray(osmCanonical.features)) throw new Error('OSM canonical GeoJSON is invalid');
+if (overtureCanonical?.type !== 'FeatureCollection' || !Array.isArray(overtureCanonical.features)) throw new Error('Overture canonical GeoJSON is invalid');
 
 const osmByCanonicalId = new Map(
   osmCanonical.features.map(feature => [String(feature.properties?.canonical_id || ''), feature]),
 );
+
+function nearestOvertureEvidence(hole) {
+  const candidates = overtureCanonical.features
+    .filter(feature => feature.properties?.brand === hole.brand && feature.properties?.category === hole.category)
+    .map(feature => ({ feature, distance_m: haversine(hole.coordinates, feature.geometry.coordinates) }))
+    .sort((a, b) => a.distance_m - b.distance_m || String(a.feature.properties?.canonical_id || '').localeCompare(String(b.feature.properties?.canonical_id || '')));
+  const nearest = candidates[0];
+  if (!nearest) return null;
+  const p = nearest.feature.properties || {};
+  return {
+    canonical_id: p.canonical_id || '',
+    name: p.name || p.brand || '',
+    branch: p.branch || '',
+    address: p.address || '',
+    coordinates: nearest.feature.geometry.coordinates,
+    distance_m: Math.round(nearest.distance_m * 10) / 10,
+  };
+}
 
 const audited = reconciliation.safe_holes.map(hole => {
   const originalCanonicalId = String(hole.canonical_id || '').replace(/^buju-poi-osm-/, 'buju-poi-');
@@ -83,6 +114,7 @@ const audited = reconciliation.safe_holes.map(hole => {
   const sourceRows = Number(p.source_rows || 1);
   const thinEvidence = !branch && !address && sourceRows <= 1;
   const priority = priorityFor({ ratio, thinEvidence });
+  const nearestOverture = nearestOvertureEvidence(hole);
 
   return {
     canonical_id: hole.canonical_id,
@@ -104,6 +136,7 @@ const audited = reconciliation.safe_holes.map(hole => {
     thin_evidence: thinEvidence,
     latest_osm_timestamp: latestTimestamp(p.osm_objects),
     osm_source_ids: Array.isArray(hole.osm_source_ids) ? [...hole.osm_source_ids].sort() : [],
+    nearest_overture: nearestOverture,
   };
 });
 

@@ -6,9 +6,12 @@ on:
       - 'public/buju-location-summary-v01.mjs'
       - 'public/buju-school-district-resolver-v01.mjs'
       - 'public/location-summary-v01.html'
+      - 'public/maplibre-pmtiles-provider-spike.html'
       - 'tools/dev/test_buju_location_summary_v01.mjs'
       - 'tools/dev/test_buju_school_district_resolver_v01.mjs'
+      - 'tools/dev/test_location_summary_desktop_integration_v01.mjs'
       - 'tools/data/validate_location_summary_sources_v01.mjs'
+      - 'start-desktop-full-stack-smoke.bat'
       - 'docs/data/location_summary_v01.md'
       - '.github/workflows/location-summary-v01.yml'
   push:
@@ -18,9 +21,12 @@ on:
       - 'public/buju-location-summary-v01.mjs'
       - 'public/buju-school-district-resolver-v01.mjs'
       - 'public/location-summary-v01.html'
+      - 'public/maplibre-pmtiles-provider-spike.html'
       - 'tools/dev/test_buju_location_summary_v01.mjs'
       - 'tools/dev/test_buju_school_district_resolver_v01.mjs'
+      - 'tools/dev/test_location_summary_desktop_integration_v01.mjs'
       - 'tools/data/validate_location_summary_sources_v01.mjs'
+      - 'start-desktop-full-stack-smoke.bat'
       - 'docs/data/location_summary_v01.md'
       - '.github/workflows/location-summary-v01.yml'
 
@@ -36,6 +42,8 @@ jobs:
         run: node tools/dev/test_buju_location_summary_v01.mjs
       - name: School point-resolver regression
         run: node tools/dev/test_buju_school_district_resolver_v01.mjs
+      - name: Desktop integration contract
+        run: node tools/dev/test_location_summary_desktop_integration_v01.mjs
       - name: Accepted Place Metrics baseline regression
         run: node tools/data/validate_place_metrics_v01.mjs
       - name: Taipei school assignment dataset regression

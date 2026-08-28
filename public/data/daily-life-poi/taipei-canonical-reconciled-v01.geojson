@@ -32255,53 +32255,6 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          121.5368309,
-          25.0080499
-        ]
-      },
-      "properties": {
-        "canonical_id": "buju-poi-osm-lr3j48",
-        "category": "convenience_store",
-        "brand": "7-ELEVEN",
-        "branch": "",
-        "name": "7-ELEVEN",
-        "source_rows": 1,
-        "source_ids": [
-          "osm:node/3780775615"
-        ],
-        "source_names": [
-          "7-Eleven"
-        ],
-        "sources": [
-          "OpenStreetMap"
-        ],
-        "representative_key": "osm:node/3780775615",
-        "representative_strength": 35,
-        "address": "11677臺北市文山區汀州路四段88號",
-        "merge_reasons": [],
-        "branch_conflict": false,
-        "address_conflict": false,
-        "source_kind": "osm_hole_fill",
-        "osm_objects": [
-          {
-            "osm_type": "node",
-            "osm_id": 3780775615,
-            "osm_version": 10,
-            "osm_timestamp": "2023-10-03T10:26:53Z",
-            "osm_shop": "convenience",
-            "osm_name": "7-Eleven",
-            "osm_brand": "7-Eleven",
-            "osm_operator": "統一超商股份有限公司"
-          }
-        ],
-        "nearest_same_brand_distance_m": 51.6
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
           121.5348446,
           25.0130006
         ]
@@ -36328,8 +36281,8 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          121.536319,
-          25.008059
+          121.5368309,
+          25.0080499
         ]
       },
       "properties": {

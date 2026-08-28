@@ -11,17 +11,17 @@
     "note": "Priority is for visual QA only. It does not alter reconciliation decisions or widen merge thresholds."
   },
   "stats": {
-    "total_safe_holes": 508,
-    "high_priority": 47,
+    "total_safe_holes": 507,
+    "high_priority": 46,
     "medium_priority": 104,
     "low_priority": 357,
     "thin_evidence": 256,
     "with_branch": 2,
-    "with_address": 248,
+    "with_address": 247,
     "multi_source_rows": 7
   },
   "counts_by_brand": {
-    "7-ELEVEN": 174,
+    "7-ELEVEN": 173,
     "全家": 79,
     "全聯": 15,
     "美廉社": 34,
@@ -30,23 +30,23 @@
     "OK Mart": 42
   },
   "counts_by_category": {
-    "convenience_store": 418,
+    "convenience_store": 417,
     "supermarket": 90
   },
   "counts_by_distance_band": {
     ">3.00x": 323,
-    "1.00x-1.25x": 18,
+    "1.00x-1.25x": 17,
     "1.25x-1.50x": 29,
     "1.50x-2.00x": 55,
     "2.00x-3.00x": 83
   },
   "counts_by_priority": {
-    "high": 47,
+    "high": 46,
     "low": 357,
     "medium": 104
   },
   "high_priority_by_brand": {
-    "7-ELEVEN": 31,
+    "7-ELEVEN": 30,
     "全家": 13,
     "全聯": 1,
     "萊爾富": 2
@@ -171,43 +171,6 @@
           25.083356
         ],
         "distance_m": 51.2
-      }
-    },
-    {
-      "canonical_id": "buju-poi-osm-lr3j48",
-      "osm_canonical_id": "buju-poi-lr3j48",
-      "brand": "7-ELEVEN",
-      "category": "convenience_store",
-      "name": "7-ELEVEN",
-      "coordinates": [
-        121.5368309,
-        25.0080499
-      ],
-      "nearest_same_brand_distance_m": 51.6,
-      "review_radius_m": 50,
-      "distance_ratio_to_review_radius": 1.032,
-      "distance_band": "1.00x-1.25x",
-      "review_priority": "high",
-      "branch": "",
-      "address": "11677臺北市文山區汀州路四段88號",
-      "source_rows": 1,
-      "has_branch": false,
-      "has_address": true,
-      "thin_evidence": false,
-      "latest_osm_timestamp": "2023-10-03T10:26:53Z",
-      "osm_source_ids": [
-        "osm:node/3780775615"
-      ],
-      "nearest_overture": {
-        "canonical_id": "buju-poi-v25cv0",
-        "name": "7-ELEVEN",
-        "branch": "",
-        "address": "台北市文山區汀州路四段88號行政大樓1樓 台北市 TW",
-        "coordinates": [
-          121.536319,
-          25.008059
-        ],
-        "distance_m": 51.6
       }
     },
     {

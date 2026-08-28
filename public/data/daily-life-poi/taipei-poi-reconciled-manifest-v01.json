@@ -11,12 +11,12 @@
   "osm_raw_element_count": 3676,
   "osm_target_count": 1781,
   "osm_canonical_count": 1751,
-  "matched_count": 1161,
-  "safe_hole_count": 508,
+  "matched_count": 1162,
+  "safe_hole_count": 507,
   "cross_source_unresolved_count": 82,
-  "final_canonical_count": 2289,
+  "final_canonical_count": 2288,
   "final_counts_by_brand": {
-    "7-ELEVEN": 993,
+    "7-ELEVEN": 992,
     "全家": 701,
     "全聯": 179,
     "美廉社": 62,
@@ -25,11 +25,11 @@
     "OK Mart": 80
   },
   "final_counts_by_category": {
-    "convenience_store": 1983,
+    "convenience_store": 1982,
     "supermarket": 306
   },
   "osm_hole_counts_by_brand": {
-    "7-ELEVEN": 174,
+    "7-ELEVEN": 173,
     "全家": 79,
     "全聯": 15,
     "美廉社": 34,
@@ -48,6 +48,6 @@
   ],
   "canonical_engine_version": "buju-poi-canonical-v0.2",
   "reconciliation_engine_version": "buju-poi-reconcile-v0.1",
-  "logical_dataset_sha256": "58efd127ca16f41a3a05acb2ac1775950f9b982ed3a8720b13993a519b4c9ca4",
-  "osm_overpass_raw_sha256": "c0e9f7dd153013238605357141e453ad1a7c0c9f36592b76e11dccf26bcdb36f"
+  "logical_dataset_sha256": "26a4e1c47a83738e7ee2c979edcf02842d0a21d72a9c3b4dd129b993ac1ebbb7",
+  "osm_overpass_raw_sha256": "30d1bc87e95e88979773b0b9eedc014958a17968dc5d5d6cff572f68bff8841c"
 }

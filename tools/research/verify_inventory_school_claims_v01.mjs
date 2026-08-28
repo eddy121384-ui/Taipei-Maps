@@ -68,9 +68,20 @@ const samples = [
   },
 ];
 
-function assignmentIncludes(assignment, school) {
-  if (!assignment || !school) return false;
-  return String(assignment).split(/[、,]/).map((s) => s.trim()).includes(String(school).trim());
+function assignmentSchools(assignment) {
+  if (!assignment) return [];
+  return String(assignment)
+    .replace(/共同學區/g, '')
+    .split(/[、,]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+function claimVerdict(resolved, claimedSchool) {
+  if (resolved.status !== 'resolved') return 'unresolved';
+  const schools = assignmentSchools(resolved.junior_school_district);
+  if (!schools.includes(String(claimedSchool || '').trim())) return 'mismatch';
+  return schools.length === 1 ? 'verified_exact' : 'verified_shared';
 }
 
 const results = [];
@@ -85,12 +96,7 @@ for (const sample of samples) {
       official_neighbors: resolved.neighbors,
       official_elementary: resolved.elementary_school_district,
       official_junior: resolved.junior_school_district,
-      claim_verdict:
-        resolved.status !== 'resolved'
-          ? 'unresolved'
-          : assignmentIncludes(resolved.junior_school_district, sample.claimed_junior)
-            ? 'verified'
-            : 'mismatch',
+      claim_verdict: claimVerdict(resolved, sample.claimed_junior),
       resolver_reason: resolved.reason,
     });
   } catch (error) {
@@ -112,7 +118,8 @@ const summary = {
   academic_year: dataset.academicYear,
   generated_at: new Date().toISOString(),
   sample_count: results.length,
-  verified: results.filter((r) => r.claim_verdict === 'verified').length,
+  verified_exact: results.filter((r) => r.claim_verdict === 'verified_exact').length,
+  verified_shared: results.filter((r) => r.claim_verdict === 'verified_shared').length,
   mismatch: results.filter((r) => r.claim_verdict === 'mismatch').length,
   unresolved: results.filter((r) => r.claim_verdict === 'unresolved').length,
   errors: results.filter((r) => r.claim_verdict === 'error').length,

@@ -82,22 +82,25 @@ const osmByCanonicalId = new Map(
   osmCanonical.features.map(feature => [String(feature.properties?.canonical_id || ''), feature]),
 );
 
-function nearestOvertureEvidence(hole) {
-  const candidates = overtureCanonical.features
+function nearbyOvertureEvidence(hole) {
+  const maxDistance = reviewRadius(hole.category) * 3;
+  return overtureCanonical.features
     .filter(feature => feature.properties?.brand === hole.brand && feature.properties?.category === hole.category)
     .map(feature => ({ feature, distance_m: haversine(hole.coordinates, feature.geometry.coordinates) }))
-    .sort((a, b) => a.distance_m - b.distance_m || String(a.feature.properties?.canonical_id || '').localeCompare(String(b.feature.properties?.canonical_id || '')));
-  const nearest = candidates[0];
-  if (!nearest) return null;
-  const p = nearest.feature.properties || {};
-  return {
-    canonical_id: p.canonical_id || '',
-    name: p.name || p.brand || '',
-    branch: p.branch || '',
-    address: p.address || '',
-    coordinates: nearest.feature.geometry.coordinates,
-    distance_m: Math.round(nearest.distance_m * 10) / 10,
-  };
+    .filter(candidate => candidate.distance_m <= maxDistance)
+    .sort((a, b) => a.distance_m - b.distance_m || String(a.feature.properties?.canonical_id || '').localeCompare(String(b.feature.properties?.canonical_id || '')))
+    .slice(0, 5)
+    .map(candidate => {
+      const p = candidate.feature.properties || {};
+      return {
+        canonical_id: p.canonical_id || '',
+        name: p.name || p.brand || '',
+        branch: p.branch || '',
+        address: p.address || '',
+        coordinates: candidate.feature.geometry.coordinates,
+        distance_m: Math.round(candidate.distance_m * 10) / 10,
+      };
+    });
 }
 
 const audited = reconciliation.safe_holes.map(hole => {
@@ -114,7 +117,7 @@ const audited = reconciliation.safe_holes.map(hole => {
   const sourceRows = Number(p.source_rows || 1);
   const thinEvidence = !branch && !address && sourceRows <= 1;
   const priority = priorityFor({ ratio, thinEvidence });
-  const nearestOverture = nearestOvertureEvidence(hole);
+  const nearbyOverture = nearbyOvertureEvidence(hole);
 
   return {
     canonical_id: hole.canonical_id,
@@ -136,7 +139,8 @@ const audited = reconciliation.safe_holes.map(hole => {
     thin_evidence: thinEvidence,
     latest_osm_timestamp: latestTimestamp(p.osm_objects),
     osm_source_ids: Array.isArray(hole.osm_source_ids) ? [...hole.osm_source_ids].sort() : [],
-    nearest_overture: nearestOverture,
+    nearest_overture: nearbyOverture[0] || null,
+    nearby_overture: nearbyOverture,
   };
 });
 
@@ -163,7 +167,8 @@ const output = {
     high_priority: 'nearest same-brand Overture entity is <=1.5x the category review radius',
     medium_priority: 'nearest is <=2x, or thin-evidence record is <=3x',
     low_priority: 'farther from same-brand baseline evidence; still not proof that the store is current',
-    note: 'Priority is for visual QA only. It does not alter reconciliation decisions or widen merge thresholds.',
+    nearby_overture: 'up to five same-brand/category Overture candidates within 3x the category review radius, for deterministic QA only',
+    note: 'Priority and nearby candidates are visual-QA metadata only. They do not alter reconciliation decisions or widen merge thresholds.',
   },
   stats: {
     total_safe_holes: audited.length,

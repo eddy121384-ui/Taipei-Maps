@@ -8,6 +8,7 @@ on:
       - 'public/buju-poi-canonical-v02.mjs'
       - 'public/buju-poi-reconcile-v01.mjs'
       - 'tools/data/build_taipei_osm_poi_reconciliation_v01.mjs'
+      - 'tools/data/audit_taipei_osm_holes_v01.mjs'
       - 'tools/data/taipei_osm_poi_reconciliation_v01_config.json'
       - 'tools/data/taipei_daily_life_poi_v01_config.json'
       - 'tools/dev/test_buju_poi_canonical_v02.mjs'
@@ -55,12 +56,16 @@ jobs:
           fs.writeFileSync(p,JSON.stringify(j,null,2)+'\n');
           NODE
 
+      - name: Audit OSM safe holes first pass
+        run: node tools/data/audit_taipei_osm_holes_v01.mjs
+
       - name: Record first-pass checksums
         run: |
           sha256sum \
             public/data/daily-life-poi/taipei-osm-target-v01.geojson \
             public/data/daily-life-poi/taipei-osm-canonical-v01.geojson \
             public/data/daily-life-poi/taipei-osm-reconciliation-v01.json \
+            public/data/daily-life-poi/taipei-osm-hole-audit-v01.json \
             public/data/daily-life-poi/taipei-canonical-reconciled-v01.geojson \
             public/data/daily-life-poi/taipei-poi-reconciled-manifest-v01.json \
             > /tmp/osm-poi-first.sha256
@@ -80,12 +85,15 @@ jobs:
           fs.writeFileSync(p,JSON.stringify(j,null,2)+'\n');
           NODE
 
+      - name: Audit OSM safe holes second pass
+        run: node tools/data/audit_taipei_osm_holes_v01.mjs
+
       - name: Verify byte determinism
         run: sha256sum -c /tmp/osm-poi-first.sha256
 
       - name: Validate generated JSON
         run: |
-          node -e "for (const f of ['public/data/daily-life-poi/taipei-osm-target-v01.geojson','public/data/daily-life-poi/taipei-osm-canonical-v01.geojson','public/data/daily-life-poi/taipei-osm-reconciliation-v01.json','public/data/daily-life-poi/taipei-canonical-reconciled-v01.geojson','public/data/daily-life-poi/taipei-poi-reconciled-manifest-v01.json']) JSON.parse(require('fs').readFileSync(f,'utf8')); console.log('PASS generated reconciliation JSON')"
+          node -e "for (const f of ['public/data/daily-life-poi/taipei-osm-target-v01.geojson','public/data/daily-life-poi/taipei-osm-canonical-v01.geojson','public/data/daily-life-poi/taipei-osm-reconciliation-v01.json','public/data/daily-life-poi/taipei-osm-hole-audit-v01.json','public/data/daily-life-poi/taipei-canonical-reconciled-v01.geojson','public/data/daily-life-poi/taipei-poi-reconciled-manifest-v01.json']) JSON.parse(require('fs').readFileSync(f,'utf8')); console.log('PASS generated reconciliation JSON')"
 
       - name: Commit generated reconciled data
         run: |
@@ -95,6 +103,7 @@ jobs:
             public/data/daily-life-poi/taipei-osm-target-v01.geojson \
             public/data/daily-life-poi/taipei-osm-canonical-v01.geojson \
             public/data/daily-life-poi/taipei-osm-reconciliation-v01.json \
+            public/data/daily-life-poi/taipei-osm-hole-audit-v01.json \
             public/data/daily-life-poi/taipei-canonical-reconciled-v01.geojson \
             public/data/daily-life-poi/taipei-poi-reconciled-manifest-v01.json
           if git diff --cached --quiet; then

@@ -62,20 +62,75 @@ function osmHasPreciseAddressNode(osm) {
   return Boolean(String(osm?.address || '').trim()) && Array.isArray(osm?.osm_objects) && osm.osm_objects.some(object => object?.osm_type === 'node');
 }
 
-export function reconcileCanonicalPOI(overtureEntities, osmEntities) {
+function reviewedOverrideMap(overrides = []) {
+  const map = new Map();
+  for (const override of overrides || []) {
+    const osmId = String(override?.osm_canonical_id || '');
+    const overtureId = String(override?.overture_canonical_id || '');
+    if (!osmId || !overtureId) throw new Error('reviewed match override must include osm_canonical_id and overture_canonical_id');
+    if (map.has(osmId)) throw new Error(`duplicate reviewed match override for OSM canonical id: ${osmId}`);
+    const coordinateSource = override.coordinate_source || 'overture_baseline';
+    if (!['overture_baseline', 'osm_secondary'].includes(coordinateSource)) throw new Error(`unsupported reviewed coordinate source: ${coordinateSource}`);
+    map.set(osmId, { ...override, coordinate_source: coordinateSource });
+  }
+  return map;
+}
+
+export function reconcileCanonicalPOI(overtureEntities, osmEntities, options = {}) {
   const baseline = [...(overtureEntities || [])].sort(stableEntityOrder);
   const secondary = [...(osmEntities || [])].sort(stableEntityOrder);
   const baselineIds = new Set(baseline.map(entity => entity.canonical_id));
+  const baselineById = new Map(baseline.map(entity => [entity.canonical_id, entity]));
+  const secondaryIds = new Set(secondary.map(entity => entity.canonical_id));
+  const reviewedOverrides = reviewedOverrideMap(options.reviewedMatchOverrides || []);
   const matched = [];
   const safeHoles = [];
   const unresolved = [];
   const coordinateOverrides = new Map();
+  let reviewedMatchCount = 0;
+
+  for (const osmId of reviewedOverrides.keys()) {
+    if (!secondaryIds.has(osmId)) throw new Error(`reviewed match override OSM canonical id not found: ${osmId}`);
+  }
 
   for (const osm of secondary) {
     const sameBrand = baseline
       .filter(entity => entity.brand === osm.brand && entity.category === osm.category)
       .map(entity => ({ entity, distance_m: roundedDistance(entity, osm) }))
       .sort((a, b) => a.distance_m - b.distance_m || a.entity.canonical_id.localeCompare(b.entity.canonical_id));
+
+    const reviewed = reviewedOverrides.get(osm.canonical_id);
+    if (reviewed) {
+      const candidate = baselineById.get(reviewed.overture_canonical_id);
+      if (!candidate) throw new Error(`reviewed match override Overture canonical id not found: ${reviewed.overture_canonical_id}`);
+      if (candidate.brand !== osm.brand || candidate.category !== osm.category) {
+        throw new Error(`reviewed match override brand/category mismatch: ${osm.canonical_id} -> ${candidate.canonical_id}`);
+      }
+      const distance = roundedDistance(candidate, osm);
+      if (reviewed.coordinate_source === 'osm_secondary') {
+        coordinateOverrides.set(candidate.canonical_id, {
+          coordinates: [...osm.coordinates],
+          osm_canonical_id: osm.canonical_id,
+          osm_source_ids: [...(osm.source_ids || [])],
+          reason: `reviewed-pair-override:${reviewed.reason || 'manual-qa'}`,
+        });
+      }
+      matched.push({
+        osm_canonical_id: osm.canonical_id,
+        overture_canonical_id: candidate.canonical_id,
+        brand: osm.brand,
+        category: osm.category,
+        distance_m: distance,
+        osm_name: osm.name,
+        overture_name: candidate.name,
+        decision: 'matched',
+        match_reason: 'reviewed-pair-override',
+        reviewed_reason: reviewed.reason || 'manual-qa',
+        coordinate_source: reviewed.coordinate_source,
+      });
+      reviewedMatchCount += 1;
+      continue;
+    }
 
     const radius = reviewMax(osm.category);
     const withinReview = sameBrand.filter(candidate => candidate.distance_m <= radius);
@@ -229,6 +284,7 @@ export function reconcileCanonicalPOI(overtureEntities, osmEntities) {
       matched: matched.length,
       safe_holes: safeHoles.length,
       cross_source_unresolved: unresolved.length,
+      reviewed_match_overrides: reviewedMatchCount,
       coordinate_overrides: coordinateOverrides.size,
       final_canonical: finalEntities.length,
     },

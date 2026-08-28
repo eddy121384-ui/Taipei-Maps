@@ -19,7 +19,8 @@
     "thin_evidence": 255,
     "with_branch": 2,
     "with_address": 247,
-    "multi_source_rows": 7
+    "multi_source_rows": 7,
+    "multi_candidate_clusters": 46
   },
   "counts_by_brand": {
     "7-ELEVEN": 172,
@@ -61,6 +62,3004 @@
     "萊爾富": 5,
     "OK Mart": 1
   },
+  "multi_candidate_review_queue": [
+    {
+      "canonical_id": "buju-poi-osm-445ect",
+      "osm_canonical_id": "buju-poi-445ect",
+      "brand": "全家",
+      "category": "convenience_store",
+      "name": "全家",
+      "coordinates": [
+        121.5636267,
+        25.0517993
+      ],
+      "nearest_same_brand_distance_m": 50.2,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 1.004,
+      "distance_band": "1.00x-1.25x",
+      "review_priority": "high",
+      "branch": "",
+      "address": "",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": false,
+      "thin_evidence": true,
+      "latest_osm_timestamp": "2024-12-09T17:47:02Z",
+      "osm_source_ids": [
+        "osm:node/4782139821"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-1sy347x",
+        "name": "全家 京民店",
+        "branch": "京民店",
+        "address": "台北市松山區三民路６號＋Ｂ１ 松山區 105 台北市 TW",
+        "coordinates": [
+          121.563917,
+          25.052166
+        ],
+        "distance_m": 50.2
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-1sy347x",
+          "name": "全家 京民店",
+          "branch": "京民店",
+          "address": "台北市松山區三民路６號＋Ｂ１ 松山區 105 台北市 TW",
+          "coordinates": [
+            121.563917,
+            25.052166
+          ],
+          "distance_m": 50.2
+        },
+        {
+          "canonical_id": "buju-poi-1ov4pzo",
+          "name": "全家 新京吉店",
+          "branch": "新京吉店",
+          "address": "台北市松山區南京東路五段１９４號 松山區 105 台北市 TW",
+          "coordinates": [
+            121.563848,
+            25.05119
+          ],
+          "distance_m": 71.3
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-e8a0m6",
+      "osm_canonical_id": "buju-poi-e8a0m6",
+      "brand": "全家",
+      "category": "convenience_store",
+      "name": "全家",
+      "coordinates": [
+        121.5936561,
+        25.0829006
+      ],
+      "nearest_same_brand_distance_m": 51.2,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 1.024,
+      "distance_band": "1.00x-1.25x",
+      "review_priority": "high",
+      "branch": "",
+      "address": "",
+      "source_rows": 2,
+      "has_branch": false,
+      "has_address": false,
+      "thin_evidence": false,
+      "latest_osm_timestamp": "2023-07-16T08:21:18Z",
+      "osm_source_ids": [
+        "osm:node/2313992201",
+        "osm:node/9742934536"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-1parpb1",
+        "name": "全家 湖捷店",
+        "branch": "湖捷店",
+        "address": "台北市內湖區成功路四段１７８號１樓 內湖區 114 台北市 TW",
+        "coordinates": [
+          121.593582,
+          25.083356
+        ],
+        "distance_m": 51.2
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-1parpb1",
+          "name": "全家 湖捷店",
+          "branch": "湖捷店",
+          "address": "台北市內湖區成功路四段１７８號１樓 內湖區 114 台北市 TW",
+          "coordinates": [
+            121.593582,
+            25.083356
+          ],
+          "distance_m": 51.2
+        },
+        {
+          "canonical_id": "buju-poi-jmxrx0",
+          "name": "全家 德湖店",
+          "branch": "德湖店",
+          "address": "台北市內湖區成功路四段６２號１樓及Ｂ１ 內湖區 114 台北市 TW",
+          "coordinates": [
+            121.592489,
+            25.08276
+          ],
+          "distance_m": 118.6
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-1f9kqyb",
+      "osm_canonical_id": "buju-poi-1f9kqyb",
+      "brand": "7-ELEVEN",
+      "category": "convenience_store",
+      "name": "7-ELEVEN",
+      "coordinates": [
+        121.5058734,
+        25.0443848
+      ],
+      "nearest_same_brand_distance_m": 54.3,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 1.086,
+      "distance_band": "1.00x-1.25x",
+      "review_priority": "high",
+      "branch": "",
+      "address": "108臺北市萬華區西寧南路50巷3;5號",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": true,
+      "thin_evidence": false,
+      "latest_osm_timestamp": "2026-03-19T09:23:53Z",
+      "osm_source_ids": [
+        "osm:node/4838087635"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-lhkl7d",
+        "name": "7-ELEVEN",
+        "branch": "",
+        "address": "西寧南路141號 Wanhua District 108 Taipei City TW",
+        "coordinates": [
+          121.50629,
+          25.044075
+        ],
+        "distance_m": 54.3
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-lhkl7d",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "西寧南路141號 Wanhua District 108 Taipei City TW",
+          "coordinates": [
+            121.50629,
+            25.044075
+          ],
+          "distance_m": 54.3
+        },
+        {
+          "canonical_id": "buju-poi-zas1zm",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "No. 114-3號, Section 2, Wuchang St 台北市 108 TW",
+          "coordinates": [
+            121.50488706,
+            25.04512806
+          ],
+          "distance_m": 129.2
+        },
+        {
+          "canonical_id": "buju-poi-jmrbrp",
+          "name": "7-ELEVEN 鑫武昌",
+          "branch": "鑫武昌",
+          "address": "1樓, No. 57號, Section 2, Wuchang St 台北市 108 TW",
+          "coordinates": [
+            121.50717811,
+            25.04472667
+          ],
+          "distance_m": 136.8
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-jrrbes",
+      "osm_canonical_id": "buju-poi-jrrbes",
+      "brand": "全家",
+      "category": "convenience_store",
+      "name": "全家",
+      "coordinates": [
+        121.5167238,
+        25.0475969
+      ],
+      "nearest_same_brand_distance_m": 54.4,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 1.088,
+      "distance_band": "1.00x-1.25x",
+      "review_priority": "high",
+      "branch": "",
+      "address": "",
+      "source_rows": 2,
+      "has_branch": false,
+      "has_address": false,
+      "thin_evidence": false,
+      "latest_osm_timestamp": "2023-12-18T11:28:31Z",
+      "osm_source_ids": [
+        "osm:node/3541338394",
+        "osm:node/7839827874"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-1oojyqf",
+        "name": "全家 台鐵南店",
+        "branch": "台鐵南店",
+        "address": "臺北市中正區北平西路３號（東南站） 中正區 100 台北市 TW",
+        "coordinates": [
+          121.517044,
+          25.047203
+        ],
+        "distance_m": 54.4
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-1oojyqf",
+          "name": "全家 台鐵南店",
+          "branch": "台鐵南店",
+          "address": "臺北市中正區北平西路３號（東南站） 中正區 100 台北市 TW",
+          "coordinates": [
+            121.517044,
+            25.047203
+          ],
+          "distance_m": 54.4
+        },
+        {
+          "canonical_id": "buju-poi-s9chtz",
+          "name": "全家 台北地下街店",
+          "branch": "台北地下街店",
+          "address": "台北市中正區忠孝西路一段４７號Ｂ１（ＫＢ１１２） 中正區 100 台北市 TW",
+          "coordinates": [
+            121.516746,
+            25.04691
+          ],
+          "distance_m": 76.4
+        },
+        {
+          "canonical_id": "buju-poi-qsh9o",
+          "name": "全家 台鐵北店",
+          "branch": "台鐵北店",
+          "address": "北平西路3號 Zhongzheng District 10041 TW",
+          "coordinates": [
+            121.517053,
+            25.048371
+          ],
+          "distance_m": 92.2
+        },
+        {
+          "canonical_id": "buju-poi-1e797mw",
+          "name": "全家 台北地下街店",
+          "branch": "台北地下街店",
+          "address": "忠孝西路一段47號 號B1F 台北市 100 TW",
+          "coordinates": [
+            121.51554929,
+            25.04694988
+          ],
+          "distance_m": 138.5
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-1c66fvz",
+      "osm_canonical_id": "buju-poi-1c66fvz",
+      "brand": "7-ELEVEN",
+      "category": "convenience_store",
+      "name": "7-ELEVEN",
+      "coordinates": [
+        121.5083584,
+        25.0421924
+      ],
+      "nearest_same_brand_distance_m": 60.5,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 1.21,
+      "distance_band": "1.00x-1.25x",
+      "review_priority": "high",
+      "branch": "",
+      "address": "台北市中正區100台北市中正區寶慶路32之1號B1",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": true,
+      "thin_evidence": false,
+      "latest_osm_timestamp": "2024-10-18T15:49:43Z",
+      "osm_source_ids": [
+        "osm:node/3591717067"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-19oyzp",
+        "name": "7-ELEVEN 7-11",
+        "branch": "7-11",
+        "address": "Baoqing Rd, 32-1號近6號出口號B1 台北市 100 TW",
+        "coordinates": [
+          121.50785713,
+          25.04249185
+        ],
+        "distance_m": 60.5
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-19oyzp",
+          "name": "7-ELEVEN 7-11",
+          "branch": "7-11",
+          "address": "Baoqing Rd, 32-1號近6號出口號B1 台北市 100 TW",
+          "coordinates": [
+            121.50785713,
+            25.04249185
+          ],
+          "distance_m": 60.5
+        },
+        {
+          "canonical_id": "buju-poi-10pf2e1",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "台北市中正區中華路一段59之16號 台北市 TW",
+          "coordinates": [
+            121.508334,
+            25.04138
+          ],
+          "distance_m": 90.4
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-1xrhpi3",
+      "osm_canonical_id": "buju-poi-1xrhpi3",
+      "brand": "7-ELEVEN",
+      "category": "convenience_store",
+      "name": "7-ELEVEN",
+      "coordinates": [
+        121.5477847,
+        25.0524725
+      ],
+      "nearest_same_brand_distance_m": 61.7,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 1.234,
+      "distance_band": "1.00x-1.25x",
+      "review_priority": "high",
+      "branch": "",
+      "address": "",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": false,
+      "thin_evidence": true,
+      "latest_osm_timestamp": "2023-10-03T10:26:53Z",
+      "osm_source_ids": [
+        "osm:node/2713719714"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-13erugs",
+        "name": "7-ELEVEN",
+        "branch": "",
+        "address": "台北市松山區敦化北路100號1樓 台北市 TW",
+        "coordinates": [
+          121.548322390798,
+          25.0527389557778
+        ],
+        "distance_m": 61.7
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-13erugs",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "台北市松山區敦化北路100號1樓 台北市 TW",
+          "coordinates": [
+            121.548322390798,
+            25.0527389557778
+          ],
+          "distance_m": 61.7
+        },
+        {
+          "canonical_id": "buju-poi-1wwvn88",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "No. 5號, Lane 303, Section 3, Nanjing E Rd 台北市 105 TW",
+          "coordinates": [
+            121.54667548,
+            25.0524999
+          ],
+          "distance_m": 111.8
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-b2m0xf",
+      "osm_canonical_id": "buju-poi-b2m0xf",
+      "brand": "7-ELEVEN",
+      "category": "convenience_store",
+      "name": "7-ELEVEN",
+      "coordinates": [
+        121.5920672,
+        25.0540037
+      ],
+      "nearest_same_brand_distance_m": 64.8,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 1.296,
+      "distance_band": "1.25x-1.50x",
+      "review_priority": "high",
+      "branch": "",
+      "address": "",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": false,
+      "thin_evidence": true,
+      "latest_osm_timestamp": "2023-10-03T10:26:53Z",
+      "osm_source_ids": [
+        "osm:node/2524273894"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-1sbrdkr",
+        "name": "7-ELEVEN",
+        "branch": "",
+        "address": "台北市南港區昆陽街16號1樓 台北市 TW",
+        "coordinates": [
+          121.592285,
+          25.053455
+        ],
+        "distance_m": 64.8
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-1sbrdkr",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "台北市南港區昆陽街16號1樓 台北市 TW",
+          "coordinates": [
+            121.592285,
+            25.053455
+          ],
+          "distance_m": 64.8
+        },
+        {
+          "canonical_id": "buju-poi-4dz9cb",
+          "name": "7-ELEVEN 7-11玉港門市",
+          "branch": "7-11玉港門市",
+          "address": "No. 8-10號, Section 3, Nangang Rd 台北市 115 TW",
+          "coordinates": [
+            121.59291338,
+            25.05448759
+          ],
+          "distance_m": 100.8
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-12zoler",
+      "osm_canonical_id": "buju-poi-12zoler",
+      "brand": "7-ELEVEN",
+      "category": "convenience_store",
+      "name": "7-ELEVEN",
+      "coordinates": [
+        121.5213825,
+        25.0961816
+      ],
+      "nearest_same_brand_distance_m": 65.1,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 1.302,
+      "distance_band": "1.25x-1.50x",
+      "review_priority": "high",
+      "branch": "",
+      "address": "",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": false,
+      "thin_evidence": true,
+      "latest_osm_timestamp": "2023-10-03T10:26:53Z",
+      "osm_source_ids": [
+        "osm:node/5949987490"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-1g1i3en",
+        "name": "7-ELEVEN",
+        "branch": "",
+        "address": "台北市士林區文昌路89號 台北市 TW",
+        "coordinates": [
+          121.520817,
+          25.095897
+        ],
+        "distance_m": 65.1
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-1g1i3en",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "台北市士林區文昌路89號 台北市 TW",
+          "coordinates": [
+            121.520817,
+            25.095897
+          ],
+          "distance_m": 65.1
+        },
+        {
+          "canonical_id": "buju-poi-1kcoxny",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "台北市士林區美崙街51號 台北市 TW",
+          "coordinates": [
+            121.522442,
+            25.097033
+          ],
+          "distance_m": 142.6
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-bo5pkn",
+      "osm_canonical_id": "buju-poi-bo5pkn",
+      "brand": "7-ELEVEN",
+      "category": "convenience_store",
+      "name": "7-ELEVEN",
+      "coordinates": [
+        121.5051241,
+        25.0461821
+      ],
+      "nearest_same_brand_distance_m": 65.4,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 1.308,
+      "distance_band": "1.25x-1.50x",
+      "review_priority": "high",
+      "branch": "",
+      "address": "10842臺北市萬華區漢口街二段73號1樓",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": true,
+      "thin_evidence": false,
+      "latest_osm_timestamp": "2023-10-03T10:26:53Z",
+      "osm_source_ids": [
+        "osm:node/2850324307"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-wy7f1y",
+        "name": "7-ELEVEN",
+        "branch": "",
+        "address": "Kunming St, 76之1號1樓 台北市 108 TW",
+        "coordinates": [
+          121.5055605,
+          25.04574616
+        ],
+        "distance_m": 65.4
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-wy7f1y",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "Kunming St, 76之1號1樓 台北市 108 TW",
+          "coordinates": [
+            121.5055605,
+            25.04574616
+          ],
+          "distance_m": 65.4
+        },
+        {
+          "canonical_id": "buju-poi-zas1zm",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "No. 114-3號, Section 2, Wuchang St 台北市 108 TW",
+          "coordinates": [
+            121.50488706,
+            25.04512806
+          ],
+          "distance_m": 119.6
+        },
+        {
+          "canonical_id": "buju-poi-ukvnvv",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "台北市萬華區昆明街30-1號30-2號1樓 台北市 TW",
+          "coordinates": [
+            121.505913359865,
+            25.0473009374451
+          ],
+          "distance_m": 147.6
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-1mav1ae",
+      "osm_canonical_id": "buju-poi-1mav1ae",
+      "brand": "7-ELEVEN",
+      "category": "convenience_store",
+      "name": "7-ELEVEN",
+      "coordinates": [
+        121.5525672,
+        25.0305604
+      ],
+      "nearest_same_brand_distance_m": 66.4,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 1.328,
+      "distance_band": "1.25x-1.50x",
+      "review_priority": "high",
+      "branch": "",
+      "address": "",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": false,
+      "thin_evidence": true,
+      "latest_osm_timestamp": "2023-10-03T10:26:53Z",
+      "osm_source_ids": [
+        "osm:node/2415942444"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-103kwsu",
+        "name": "7-ELEVEN",
+        "branch": "",
+        "address": "台北市大安區通安街64號1樓 台北市 TW",
+        "coordinates": [
+          121.553189,
+          25.030757
+        ],
+        "distance_m": 66.4
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-103kwsu",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "台北市大安區通安街64號1樓 台北市 TW",
+          "coordinates": [
+            121.553189,
+            25.030757
+          ],
+          "distance_m": 66.4
+        },
+        {
+          "canonical_id": "buju-poi-17y7ruw",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "台北市大安區安和路二段74巷1號 台北市 TW",
+          "coordinates": [
+            121.551574,
+            25.030018
+          ],
+          "distance_m": 116.8
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-1h2fus4",
+      "osm_canonical_id": "buju-poi-1h2fus4",
+      "brand": "7-ELEVEN",
+      "category": "convenience_store",
+      "name": "7-ELEVEN",
+      "coordinates": [
+        121.5049052,
+        25.0427984
+      ],
+      "nearest_same_brand_distance_m": 68.6,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 1.372,
+      "distance_band": "1.25x-1.50x",
+      "review_priority": "high",
+      "branch": "",
+      "address": "10845臺北市萬華區昆明街81、83號",
+      "source_rows": 2,
+      "has_branch": false,
+      "has_address": true,
+      "thin_evidence": false,
+      "latest_osm_timestamp": "2026-03-19T09:23:53Z",
+      "osm_source_ids": [
+        "osm:node/2440535367",
+        "osm:node/6939523045"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-1gsk2zy",
+        "name": "7-ELEVEN",
+        "branch": "",
+        "address": "Chengdu Rd, 96號1樓 台北市 108 TW",
+        "coordinates": [
+          121.50429475,
+          25.0430723
+        ],
+        "distance_m": 68.6
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-1gsk2zy",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "Chengdu Rd, 96號1樓 台北市 108 TW",
+          "coordinates": [
+            121.50429475,
+            25.0430723
+          ],
+          "distance_m": 68.6
+        },
+        {
+          "canonical_id": "buju-poi-dyx6r4",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "西寧南路78號 Taipei 108 台灣 TW",
+          "coordinates": [
+            121.50572685619379,
+            25.042691486032794
+          ],
+          "distance_m": 83.6
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-1wgk358",
+      "osm_canonical_id": "buju-poi-1wgk358",
+      "brand": "7-ELEVEN",
+      "category": "convenience_store",
+      "name": "7-ELEVEN",
+      "coordinates": [
+        121.5253324,
+        25.0447577
+      ],
+      "nearest_same_brand_distance_m": 69,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 1.38,
+      "distance_band": "1.25x-1.50x",
+      "review_priority": "high",
+      "branch": "",
+      "address": "台北市中正區紹興北街3號",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": true,
+      "thin_evidence": false,
+      "latest_osm_timestamp": "2023-10-03T10:26:53Z",
+      "osm_source_ids": [
+        "osm:node/2034846819"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-416dyw",
+        "name": "7-ELEVEN",
+        "branch": "",
+        "address": "No. 138號, Section 1, Zhongxiao E Rd 台北市 100 TW",
+        "coordinates": [
+          121.52549611,
+          25.04415535
+        ],
+        "distance_m": 69
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-416dyw",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "No. 138號, Section 1, Zhongxiao E Rd 台北市 100 TW",
+          "coordinates": [
+            121.52549611,
+            25.04415535
+          ],
+          "distance_m": 69
+        },
+        {
+          "canonical_id": "buju-poi-1ws2yqq",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "台北市中正區紹興北街37號1樓 台北市 TW",
+          "coordinates": [
+            121.525559374038,
+            25.0455529310439
+          ],
+          "distance_m": 91.3
+        },
+        {
+          "canonical_id": "buju-poi-idmi1w",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "台北市中正區忠孝東路一段72號76號1樓 台北市 TW",
+          "coordinates": [
+            121.523923,
+            25.044468
+          ],
+          "distance_m": 145.6
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-1pm6w09",
+      "osm_canonical_id": "buju-poi-1pm6w09",
+      "brand": "全家",
+      "category": "convenience_store",
+      "name": "全家",
+      "coordinates": [
+        121.5440172,
+        25.0968505
+      ],
+      "nearest_same_brand_distance_m": 70.8,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 1.416,
+      "distance_band": "1.25x-1.50x",
+      "review_priority": "high",
+      "branch": "",
+      "address": "11143臺北市士林區至善路二段34號",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": true,
+      "thin_evidence": false,
+      "latest_osm_timestamp": "2026-03-19T09:23:53Z",
+      "osm_source_ids": [
+        "osm:node/2179272081"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-13kwzln",
+        "name": "全家",
+        "branch": "",
+        "address": "至善路二段34號 台北市 111 TW",
+        "coordinates": [
+          121.54471662,
+          25.09691363
+        ],
+        "distance_m": 70.8
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-13kwzln",
+          "name": "全家",
+          "branch": "",
+          "address": "至善路二段34號 台北市 111 TW",
+          "coordinates": [
+            121.54471662,
+            25.09691363
+          ],
+          "distance_m": 70.8
+        },
+        {
+          "canonical_id": "buju-poi-g3vqp6",
+          "name": "全家 中影店",
+          "branch": "中影店",
+          "address": "台北市士林區至善路二段３４號 士林區 111 台北市 TW",
+          "coordinates": [
+            121.544754,
+            25.097101
+          ],
+          "distance_m": 79.2
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-lrt5mk",
+      "osm_canonical_id": "buju-poi-lrt5mk",
+      "brand": "全家",
+      "category": "convenience_store",
+      "name": "全家",
+      "coordinates": [
+        121.5564437,
+        25.041179
+      ],
+      "nearest_same_brand_distance_m": 71.4,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 1.428,
+      "distance_band": "1.25x-1.50x",
+      "review_priority": "high",
+      "branch": "",
+      "address": "",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": false,
+      "thin_evidence": true,
+      "latest_osm_timestamp": "2022-11-03T16:58:42Z",
+      "osm_source_ids": [
+        "osm:node/9513103129"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-yt542k",
+        "name": "全家 忠孝延吉店",
+        "branch": "忠孝延吉店",
+        "address": "台北市大安區忠孝東路４段３１５號１樓 大安區 106 台北市 TW",
+        "coordinates": [
+          121.555907,
+          25.041598
+        ],
+        "distance_m": 71.4
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-yt542k",
+          "name": "全家 忠孝延吉店",
+          "branch": "忠孝延吉店",
+          "address": "台北市大安區忠孝東路４段３１５號１樓 大安區 106 台北市 TW",
+          "coordinates": [
+            121.555907,
+            25.041598
+          ],
+          "distance_m": 71.4
+        },
+        {
+          "canonical_id": "buju-poi-vrrh95",
+          "name": "全家 國館捷運站店",
+          "branch": "國館捷運站店",
+          "address": "臺北市信義區忠孝東路４段４００號Ｂ１ 信義區 110 台北市 TW",
+          "coordinates": [
+            121.557901,
+            25.041134
+          ],
+          "distance_m": 146.9
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-15nly1e",
+      "osm_canonical_id": "buju-poi-15nly1e",
+      "brand": "7-ELEVEN",
+      "category": "convenience_store",
+      "name": "7-ELEVEN",
+      "coordinates": [
+        121.5624786,
+        25.0408362
+      ],
+      "nearest_same_brand_distance_m": 72.7,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 1.454,
+      "distance_band": "1.25x-1.50x",
+      "review_priority": "high",
+      "branch": "",
+      "address": "臺北市",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": true,
+      "thin_evidence": false,
+      "latest_osm_timestamp": "2023-10-03T10:26:53Z",
+      "osm_source_ids": [
+        "osm:node/2377138833"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-1lq0qia",
+        "name": "7-ELEVEN",
+        "branch": "",
+        "address": "台北市信義區逸仙路42巷25號1樓 台北市 TW",
+        "coordinates": [
+          121.563129401155,
+          25.0405529129775
+        ],
+        "distance_m": 72.7
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-1lq0qia",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "台北市信義區逸仙路42巷25號1樓 台北市 TW",
+          "coordinates": [
+            121.563129401155,
+            25.0405529129775
+          ],
+          "distance_m": 72.7
+        },
+        {
+          "canonical_id": "buju-poi-1rha6uo",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "台北市信義區忠孝東路四段500之2號 台北市 TW",
+          "coordinates": [
+            121.561699,
+            25.040901
+          ],
+          "distance_m": 78.9
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-r8r1w1",
+      "osm_canonical_id": "buju-poi-r8r1w1",
+      "brand": "7-ELEVEN",
+      "category": "convenience_store",
+      "name": "7-ELEVEN",
+      "coordinates": [
+        121.5167692,
+        25.04627
+      ],
+      "nearest_same_brand_distance_m": 73.3,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 1.466,
+      "distance_band": "1.25x-1.50x",
+      "review_priority": "high",
+      "branch": "",
+      "address": "",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": false,
+      "thin_evidence": true,
+      "latest_osm_timestamp": "2026-08-07T14:24:49Z",
+      "osm_source_ids": [
+        "osm:node/6135336685"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-11itvac",
+        "name": "7-ELEVEN",
+        "branch": "",
+        "address": "台北市中正區忠孝西路一段47號B1(櫃號KB111) 台北市 TW",
+        "coordinates": [
+          121.516911,
+          25.046917
+        ],
+        "distance_m": 73.3
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-11itvac",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "台北市中正區忠孝西路一段47號B1(櫃號KB111) 台北市 TW",
+          "coordinates": [
+            121.516911,
+            25.046917
+          ],
+          "distance_m": 73.3
+        },
+        {
+          "canonical_id": "buju-poi-hu9sgh",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "許昌街17號 Taipei 10047 臺灣 TW",
+          "coordinates": [
+            121.51700735092163,
+            25.045636720193418
+          ],
+          "distance_m": 74.4
+        },
+        {
+          "canonical_id": "buju-poi-1f1zgs3",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "台北市中正區忠孝西路一段50之1號地下街(8-2.8-3.8-4) 台北市 TW",
+          "coordinates": [
+            121.515545,
+            25.04648
+          ],
+          "distance_m": 125.5
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-q7xy25",
+      "osm_canonical_id": "buju-poi-q7xy25",
+      "brand": "全家",
+      "category": "convenience_store",
+      "name": "全家",
+      "coordinates": [
+        121.5351912,
+        25.0128651
+      ],
+      "nearest_same_brand_distance_m": 74.7,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 1.494,
+      "distance_band": "1.25x-1.50x",
+      "review_priority": "high",
+      "branch": "",
+      "address": "10091臺北市中正區汀州路三段261號",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": true,
+      "thin_evidence": false,
+      "latest_osm_timestamp": "2024-10-04T17:28:06Z",
+      "osm_source_ids": [
+        "osm:node/3825998764"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-4nohvb",
+        "name": "全家 新水源店",
+        "branch": "新水源店",
+        "address": "台北市中正區汀州路三段１８４之１７號１樓 中正區 100 台北市 TW",
+        "coordinates": [
+          121.53454,
+          25.013186
+        ],
+        "distance_m": 74.7
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-4nohvb",
+          "name": "全家 新水源店",
+          "branch": "新水源店",
+          "address": "台北市中正區汀州路三段１８４之１７號１樓 中正區 100 台北市 TW",
+          "coordinates": [
+            121.53454,
+            25.013186
+          ],
+          "distance_m": 74.7
+        },
+        {
+          "canonical_id": "buju-poi-a5qt93",
+          "name": "全家 公館店",
+          "branch": "公館店",
+          "address": "台北市中正區汀州路三段２５１號 中正區 100 台北市 TW",
+          "coordinates": [
+            121.534399,
+            25.013659
+          ],
+          "distance_m": 119
+        },
+        {
+          "canonical_id": "buju-poi-1iv0w52",
+          "name": "全家 台大二活店",
+          "branch": "台大二活店",
+          "address": "台北市大安區羅斯福路四段８５號（第二學生活動中心） 大安區 106 台北市 TW",
+          "coordinates": [
+            121.536463,
+            25.012905
+          ],
+          "distance_m": 128.2
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-fezbi",
+      "osm_canonical_id": "buju-poi-fezbi",
+      "brand": "7-ELEVEN",
+      "category": "convenience_store",
+      "name": "7-ELEVEN",
+      "coordinates": [
+        121.5176558,
+        25.046899
+      ],
+      "nearest_same_brand_distance_m": 75.1,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 1.502,
+      "distance_band": "1.50x-2.00x",
+      "review_priority": "medium",
+      "branch": "",
+      "address": "",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": false,
+      "thin_evidence": true,
+      "latest_osm_timestamp": "2023-10-03T10:26:53Z",
+      "osm_source_ids": [
+        "osm:node/3541337494"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-11itvac",
+        "name": "7-ELEVEN",
+        "branch": "",
+        "address": "台北市中正區忠孝西路一段47號B1(櫃號KB111) 台北市 TW",
+        "coordinates": [
+          121.516911,
+          25.046917
+        ],
+        "distance_m": 75.1
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-11itvac",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "台北市中正區忠孝西路一段47號B1(櫃號KB111) 台北市 TW",
+          "coordinates": [
+            121.516911,
+            25.046917
+          ],
+          "distance_m": 75.1
+        },
+        {
+          "canonical_id": "buju-poi-rcx76c",
+          "name": "7-ELEVEN 鑫台北",
+          "branch": "鑫台北",
+          "address": "忠孝西路一段35號 台北市 100 TW",
+          "coordinates": [
+            121.51873029,
+            25.04613915
+          ],
+          "distance_m": 137.3
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-lgjiec",
+      "osm_canonical_id": "buju-poi-lgjiec",
+      "brand": "7-ELEVEN",
+      "category": "convenience_store",
+      "name": "7-ELEVEN",
+      "coordinates": [
+        121.5476149,
+        25.0529619
+      ],
+      "nearest_same_brand_distance_m": 75.5,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 1.51,
+      "distance_band": "1.50x-2.00x",
+      "review_priority": "medium",
+      "branch": "",
+      "address": "",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": false,
+      "thin_evidence": true,
+      "latest_osm_timestamp": "2023-10-03T10:26:53Z",
+      "osm_source_ids": [
+        "osm:node/6027175472"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-13erugs",
+        "name": "7-ELEVEN",
+        "branch": "",
+        "address": "台北市松山區敦化北路100號1樓 台北市 TW",
+        "coordinates": [
+          121.548322390798,
+          25.0527389557778
+        ],
+        "distance_m": 75.5
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-13erugs",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "台北市松山區敦化北路100號1樓 台北市 TW",
+          "coordinates": [
+            121.548322390798,
+            25.0527389557778
+          ],
+          "distance_m": 75.5
+        },
+        {
+          "canonical_id": "buju-poi-1wwvn88",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "No. 5號, Lane 303, Section 3, Nanjing E Rd 台北市 105 TW",
+          "coordinates": [
+            121.54667548,
+            25.0524999
+          ],
+          "distance_m": 107.7
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-1gzqfmn",
+      "osm_canonical_id": "buju-poi-1gzqfmn",
+      "brand": "全家",
+      "category": "convenience_store",
+      "name": "全家",
+      "coordinates": [
+        121.5179769,
+        25.046264
+      ],
+      "nearest_same_brand_distance_m": 77.4,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 1.548,
+      "distance_band": "1.50x-2.00x",
+      "review_priority": "medium",
+      "branch": "",
+      "address": "1",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": true,
+      "thin_evidence": false,
+      "latest_osm_timestamp": "2026-08-07T14:24:49Z",
+      "osm_source_ids": [
+        "osm:node/14078695890"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-n9k885",
+        "name": "全家 崇聖店",
+        "branch": "崇聖店",
+        "address": "台北市中正區忠孝西路一段４號 中正區 100 台北市 TW",
+        "coordinates": [
+          121.518491,
+          25.045747
+        ],
+        "distance_m": 77.4
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-n9k885",
+          "name": "全家 崇聖店",
+          "branch": "崇聖店",
+          "address": "台北市中正區忠孝西路一段４號 中正區 100 台北市 TW",
+          "coordinates": [
+            121.518491,
+            25.045747
+          ],
+          "distance_m": 77.4
+        },
+        {
+          "canonical_id": "buju-poi-1nxn84b",
+          "name": "全家",
+          "branch": "",
+          "address": "忠孝西路一段38號 捷運出口旁邊 台北市 100 TW",
+          "coordinates": [
+            121.51662474,
+            25.0462202
+          ],
+          "distance_m": 136.3
+        },
+        {
+          "canonical_id": "buju-poi-1oojyqf",
+          "name": "全家 台鐵南店",
+          "branch": "台鐵南店",
+          "address": "臺北市中正區北平西路３號（東南站） 中正區 100 台北市 TW",
+          "coordinates": [
+            121.517044,
+            25.047203
+          ],
+          "distance_m": 140.5
+        },
+        {
+          "canonical_id": "buju-poi-s9chtz",
+          "name": "全家 台北地下街店",
+          "branch": "台北地下街店",
+          "address": "台北市中正區忠孝西路一段４７號Ｂ１（ＫＢ１１２） 中正區 100 台北市 TW",
+          "coordinates": [
+            121.516746,
+            25.04691
+          ],
+          "distance_m": 143.3
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-o0beqc",
+      "osm_canonical_id": "buju-poi-o0beqc",
+      "brand": "7-ELEVEN",
+      "category": "convenience_store",
+      "name": "7-ELEVEN",
+      "coordinates": [
+        121.5339378,
+        25.0517921
+      ],
+      "nearest_same_brand_distance_m": 78.6,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 1.572,
+      "distance_band": "1.50x-2.00x",
+      "review_priority": "medium",
+      "branch": "",
+      "address": "104臺北市中山區南京東路二段144號",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": true,
+      "thin_evidence": false,
+      "latest_osm_timestamp": "2026-03-19T09:23:53Z",
+      "osm_source_ids": [
+        "osm:node/2222730041"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-1x5azt0",
+        "name": "7-ELEVEN 松盛門市",
+        "branch": "松盛門市",
+        "address": "No. 1號, Section 2 Nanjing East Rd Lane 115 台北市 104 TW",
+        "coordinates": [
+          121.53372715,
+          25.05247252
+        ],
+        "distance_m": 78.6
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-1x5azt0",
+          "name": "7-ELEVEN 松盛門市",
+          "branch": "松盛門市",
+          "address": "No. 1號, Section 2 Nanjing East Rd Lane 115 台北市 104 TW",
+          "coordinates": [
+            121.53372715,
+            25.05247252
+          ],
+          "distance_m": 78.6
+        },
+        {
+          "canonical_id": "buju-poi-g8pa04",
+          "name": "7-ELEVEN 松運門市",
+          "branch": "松運門市",
+          "address": "SongJiang Rd, 101號1樓 台北市 10491 TW",
+          "coordinates": [
+            121.53321509,
+            25.05114668
+          ],
+          "distance_m": 102.2
+        },
+        {
+          "canonical_id": "buju-poi-b4zzsk",
+          "name": "7-ELEVEN 伊東門市",
+          "branch": "伊東門市",
+          "address": "Yitong St, 30號1樓 台北市 104 TW",
+          "coordinates": [
+            121.53467119,
+            25.05089328
+          ],
+          "distance_m": 124.3
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-phhqu0",
+      "osm_canonical_id": "buju-poi-phhqu0",
+      "brand": "全家",
+      "category": "convenience_store",
+      "name": "全家",
+      "coordinates": [
+        121.5176673,
+        25.0479283
+      ],
+      "nearest_same_brand_distance_m": 79.1,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 1.582,
+      "distance_band": "1.50x-2.00x",
+      "review_priority": "medium",
+      "branch": "",
+      "address": "",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": false,
+      "thin_evidence": true,
+      "latest_osm_timestamp": "2023-10-14T13:29:10Z",
+      "osm_source_ids": [
+        "osm:node/3541338395"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-qsh9o",
+        "name": "全家 台鐵北店",
+        "branch": "台鐵北店",
+        "address": "北平西路3號 Zhongzheng District 10041 TW",
+        "coordinates": [
+          121.517053,
+          25.048371
+        ],
+        "distance_m": 79.1
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-qsh9o",
+          "name": "全家 台鐵北店",
+          "branch": "台鐵北店",
+          "address": "北平西路3號 Zhongzheng District 10041 TW",
+          "coordinates": [
+            121.517053,
+            25.048371
+          ],
+          "distance_m": 79.1
+        },
+        {
+          "canonical_id": "buju-poi-1oojyqf",
+          "name": "全家 台鐵南店",
+          "branch": "台鐵南店",
+          "address": "臺北市中正區北平西路３號（東南站） 中正區 100 台北市 TW",
+          "coordinates": [
+            121.517044,
+            25.047203
+          ],
+          "distance_m": 102.2
+        },
+        {
+          "canonical_id": "buju-poi-s9chtz",
+          "name": "全家 台北地下街店",
+          "branch": "台北地下街店",
+          "address": "台北市中正區忠孝西路一段４７號Ｂ１（ＫＢ１１２） 中正區 100 台北市 TW",
+          "coordinates": [
+            121.516746,
+            25.04691
+          ],
+          "distance_m": 146.4
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-k0sl43",
+      "osm_canonical_id": "buju-poi-k0sl43",
+      "brand": "7-ELEVEN",
+      "category": "convenience_store",
+      "name": "7-ELEVEN",
+      "coordinates": [
+        121.5788567,
+        25.0784634
+      ],
+      "nearest_same_brand_distance_m": 80.7,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 1.614,
+      "distance_band": "1.50x-2.00x",
+      "review_priority": "medium",
+      "branch": "",
+      "address": "114臺北市內湖區文德路6號",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": true,
+      "thin_evidence": false,
+      "latest_osm_timestamp": "2026-03-19T09:23:53Z",
+      "osm_source_ids": [
+        "osm:node/3742377373"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-bid1ag",
+        "name": "7-ELEVEN",
+        "branch": "",
+        "address": "台北市內湖區江南街10號1樓 台北市 TW",
+        "coordinates": [
+          121.578164,
+          25.078099
+        ],
+        "distance_m": 80.7
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-bid1ag",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "台北市內湖區江南街10號1樓 台北市 TW",
+          "coordinates": [
+            121.578164,
+            25.078099
+          ],
+          "distance_m": 80.7
+        },
+        {
+          "canonical_id": "buju-poi-8c31bx",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "No. 35號, Lane 737, Section 1, Neihu Rd 台北市 114 TW",
+          "coordinates": [
+            121.57873257,
+            25.07976978
+          ],
+          "distance_m": 145.8
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-1nz2889",
+      "osm_canonical_id": "buju-poi-1nz2889",
+      "brand": "7-ELEVEN",
+      "category": "convenience_store",
+      "name": "7-ELEVEN",
+      "coordinates": [
+        121.5183973,
+        25.0496149
+      ],
+      "nearest_same_brand_distance_m": 86.4,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 1.728,
+      "distance_band": "1.50x-2.00x",
+      "review_priority": "medium",
+      "branch": "",
+      "address": "",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": false,
+      "thin_evidence": true,
+      "latest_osm_timestamp": "2023-10-03T10:26:53Z",
+      "osm_source_ids": [
+        "osm:node/10976173677"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-nikr58",
+        "name": "7-ELEVEN 京站門市",
+        "branch": "京站門市",
+        "address": "No. 91, Huayin St 台北市 103 TW",
+        "coordinates": [
+          121.51756177,
+          25.04979121
+        ],
+        "distance_m": 86.4
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-nikr58",
+          "name": "7-ELEVEN 京站門市",
+          "branch": "京站門市",
+          "address": "No. 91, Huayin St 台北市 103 TW",
+          "coordinates": [
+            121.51756177,
+            25.04979121
+          ],
+          "distance_m": 86.4
+        },
+        {
+          "canonical_id": "buju-poi-19f4pb8",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "台北市大同區長安西路45之2號47號1樓 台北市 TW",
+          "coordinates": [
+            121.517966368703,
+            25.0508749497457
+          ],
+          "distance_m": 146.7
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-1rhtaxu",
+      "osm_canonical_id": "buju-poi-1rhtaxu",
+      "brand": "全家",
+      "category": "convenience_store",
+      "name": "全家",
+      "coordinates": [
+        121.5602661,
+        25.0309352
+      ],
+      "nearest_same_brand_distance_m": 88.4,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 1.768,
+      "distance_band": "1.50x-2.00x",
+      "review_priority": "medium",
+      "branch": "",
+      "address": "",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": false,
+      "thin_evidence": true,
+      "latest_osm_timestamp": "2024-03-11T13:39:25Z",
+      "osm_source_ids": [
+        "osm:node/2406793658"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-kih7c0",
+        "name": "全家 景聯店",
+        "branch": "景聯店",
+        "address": "台北市信義區莊敬路１９０號１樓及地下室 信義區 110 台北市 TW",
+        "coordinates": [
+          121.56113,
+          25.030796
+        ],
+        "distance_m": 88.4
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-kih7c0",
+          "name": "全家 景聯店",
+          "branch": "景聯店",
+          "address": "台北市信義區莊敬路１９０號１樓及地下室 信義區 110 台北市 TW",
+          "coordinates": [
+            121.56113,
+            25.030796
+          ],
+          "distance_m": 88.4
+        },
+        {
+          "canonical_id": "buju-poi-1bj034o",
+          "name": "全家 三興店",
+          "branch": "三興店",
+          "address": "台北市信義區吳興街７號 信義區 110 台北市 TW",
+          "coordinates": [
+            121.559466,
+            25.031759
+          ],
+          "distance_m": 122
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-o55fko",
+      "osm_canonical_id": "buju-poi-o55fko",
+      "brand": "7-ELEVEN",
+      "category": "convenience_store",
+      "name": "7-ELEVEN",
+      "coordinates": [
+        121.529122,
+        25.063199
+      ],
+      "nearest_same_brand_distance_m": 88.5,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 1.77,
+      "distance_band": "1.50x-2.00x",
+      "review_priority": "medium",
+      "branch": "",
+      "address": "",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": false,
+      "thin_evidence": true,
+      "latest_osm_timestamp": "2023-10-03T10:26:53Z",
+      "osm_source_ids": [
+        "osm:node/4451837689"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-x489tu",
+        "name": "7-ELEVEN",
+        "branch": "",
+        "address": "No. 26號, Section 2, Minquan E Rd 台北市 104 TW",
+        "coordinates": [
+          121.5287816,
+          25.06246549
+        ],
+        "distance_m": 88.5
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-x489tu",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "No. 26號, Section 2, Minquan E Rd 台北市 104 TW",
+          "coordinates": [
+            121.5287816,
+            25.06246549
+          ],
+          "distance_m": 88.5
+        },
+        {
+          "canonical_id": "buju-poi-1hfui4l",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "台北市中山區吉林路277號279號1樓 台北市 TW",
+          "coordinates": [
+            121.530439,
+            25.063023
+          ],
+          "distance_m": 134.1
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-1l6o5hy",
+      "osm_canonical_id": "buju-poi-1l6o5hy",
+      "brand": "全家",
+      "category": "convenience_store",
+      "name": "全家",
+      "coordinates": [
+        121.5436001,
+        25.0443913
+      ],
+      "nearest_same_brand_distance_m": 91.3,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 1.826,
+      "distance_band": "1.50x-2.00x",
+      "review_priority": "medium",
+      "branch": "",
+      "address": "",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": false,
+      "thin_evidence": true,
+      "latest_osm_timestamp": "2024-12-22T06:50:40Z",
+      "osm_source_ids": [
+        "osm:node/6354698715"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-9mdf0t",
+        "name": "全家 新懷生店",
+        "branch": "新懷生店",
+        "address": "台北市大安區復興南路一段８８號 大安區 106 台北市 TW",
+        "coordinates": [
+          121.543538,
+          25.043572
+        ],
+        "distance_m": 91.3
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-9mdf0t",
+          "name": "全家 新懷生店",
+          "branch": "新懷生店",
+          "address": "台北市大安區復興南路一段８８號 大安區 106 台北市 TW",
+          "coordinates": [
+            121.543538,
+            25.043572
+          ],
+          "distance_m": 91.3
+        },
+        {
+          "canonical_id": "buju-poi-1761vsl",
+          "name": "全家 復德店",
+          "branch": "復德店",
+          "address": "台北市中山區復興南路一段４２號１樓 中山區 104 台北市 TW",
+          "coordinates": [
+            121.543662,
+            25.045308
+          ],
+          "distance_m": 102.1
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-ysbgag",
+      "osm_canonical_id": "buju-poi-ysbgag",
+      "brand": "全聯",
+      "category": "supermarket",
+      "name": "全聯",
+      "coordinates": [
+        121.5498601,
+        25.0829232
+      ],
+      "nearest_same_brand_distance_m": 184.1,
+      "review_radius_m": 100,
+      "distance_ratio_to_review_radius": 1.841,
+      "distance_band": "1.50x-2.00x",
+      "review_priority": "medium",
+      "branch": "",
+      "address": "",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": false,
+      "thin_evidence": true,
+      "latest_osm_timestamp": "2024-10-09T17:52:08Z",
+      "osm_source_ids": [
+        "osm:node/1720016596"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-2su5ze",
+        "name": "全聯 大直實踐",
+        "branch": "大直實踐",
+        "address": "(10464)臺北市中山區北安路655號B1 臺北市 TW",
+        "coordinates": [
+          121.54915,
+          25.084449
+        ],
+        "distance_m": 184.1
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-2su5ze",
+          "name": "全聯 大直實踐",
+          "branch": "大直實踐",
+          "address": "(10464)臺北市中山區北安路655號B1 臺北市 TW",
+          "coordinates": [
+            121.54915,
+            25.084449
+          ],
+          "distance_m": 184.1
+        },
+        {
+          "canonical_id": "buju-poi-n4rkj6",
+          "name": "全聯 實踐店",
+          "branch": "實踐店",
+          "address": "台北市 TW",
+          "coordinates": [
+            121.5489688,
+            25.0844028
+          ],
+          "distance_m": 187.4
+        },
+        {
+          "canonical_id": "buju-poi-1uivs98",
+          "name": "全聯 大直北安",
+          "branch": "大直北安",
+          "address": "(10404)臺北市中山區北安路588巷8號 臺北市 TW",
+          "coordinates": [
+            121.549244,
+            25.080939
+          ],
+          "distance_m": 229.2
+        },
+        {
+          "canonical_id": "buju-poi-116b6db",
+          "name": "全聯 大直明水",
+          "branch": "大直明水",
+          "address": "(104047)臺北市中山區明水路589號B1 臺北市 TW",
+          "coordinates": [
+            121.551514,
+            25.080737
+          ],
+          "distance_m": 294.7
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-i234uy",
+      "osm_canonical_id": "buju-poi-i234uy",
+      "brand": "7-ELEVEN",
+      "category": "convenience_store",
+      "name": "7-ELEVEN",
+      "coordinates": [
+        121.5039864,
+        25.0453176
+      ],
+      "nearest_same_brand_distance_m": 93.1,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 1.862,
+      "distance_band": "1.50x-2.00x",
+      "review_priority": "medium",
+      "branch": "",
+      "address": "10843臺北市萬華區武昌街二段122-1號",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": true,
+      "thin_evidence": false,
+      "latest_osm_timestamp": "2026-03-19T09:23:53Z",
+      "osm_source_ids": [
+        "osm:node/2440534335"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-zas1zm",
+        "name": "7-ELEVEN",
+        "branch": "",
+        "address": "No. 114-3號, Section 2, Wuchang St 台北市 108 TW",
+        "coordinates": [
+          121.50488706,
+          25.04512806
+        ],
+        "distance_m": 93.1
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-zas1zm",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "No. 114-3號, Section 2, Wuchang St 台北市 108 TW",
+          "coordinates": [
+            121.50488706,
+            25.04512806
+          ],
+          "distance_m": 93.1
+        },
+        {
+          "canonical_id": "buju-poi-13v7ctv",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "台北市萬華區環河南路一段35號1樓 台北市 TW",
+          "coordinates": [
+            121.503519,
+            25.046241
+          ],
+          "distance_m": 113
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-1qlstj5",
+      "osm_canonical_id": "buju-poi-1qlstj5",
+      "brand": "全家",
+      "category": "convenience_store",
+      "name": "全家",
+      "coordinates": [
+        121.5332699,
+        25.0535321
+      ],
+      "nearest_same_brand_distance_m": 95.3,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 1.906,
+      "distance_band": "1.50x-2.00x",
+      "review_priority": "medium",
+      "branch": "",
+      "address": "台北市中山區松江路127之1號",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": true,
+      "thin_evidence": false,
+      "latest_osm_timestamp": "2026-03-19T09:23:53Z",
+      "osm_source_ids": [
+        "osm:node/4198193215"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-taufh9",
+        "name": "全家",
+        "branch": "",
+        "address": "No. 47號, Siping St 台北市 104 TW",
+        "coordinates": [
+          121.53236034,
+          25.05376763
+        ],
+        "distance_m": 95.3
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-taufh9",
+          "name": "全家",
+          "branch": "",
+          "address": "No. 47號, Siping St 台北市 104 TW",
+          "coordinates": [
+            121.53236034,
+            25.05376763
+          ],
+          "distance_m": 95.3
+        },
+        {
+          "canonical_id": "buju-poi-19ays5s",
+          "name": "全家 松京店",
+          "branch": "松京店",
+          "address": "No. 122號, SongJiang Rd 台北市 10491 TW",
+          "coordinates": [
+            121.5327401,
+            25.05254935
+          ],
+          "distance_m": 121.6
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-poktc8",
+      "osm_canonical_id": "buju-poi-poktc8",
+      "brand": "7-ELEVEN",
+      "category": "convenience_store",
+      "name": "7-ELEVEN",
+      "coordinates": [
+        121.5068402,
+        25.0464593
+      ],
+      "nearest_same_brand_distance_m": 98.4,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 1.968,
+      "distance_band": "1.50x-2.00x",
+      "review_priority": "medium",
+      "branch": "",
+      "address": "10842臺北市萬華區西寧南路16號",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": true,
+      "thin_evidence": false,
+      "latest_osm_timestamp": "2023-10-03T10:26:53Z",
+      "osm_source_ids": [
+        "osm:node/2699632217"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-a4ku7c",
+        "name": "7-ELEVEN Hannin Store",
+        "branch": "Hannin Store",
+        "address": "No. 85號, Xining Rd 台北市 108 TW",
+        "coordinates": [
+          121.50684961,
+          25.04557404
+        ],
+        "distance_m": 98.4
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-a4ku7c",
+          "name": "7-ELEVEN Hannin Store",
+          "branch": "Hannin Store",
+          "address": "No. 85號, Xining Rd 台北市 108 TW",
+          "coordinates": [
+            121.50684961,
+            25.04557404
+          ],
+          "distance_m": 98.4
+        },
+        {
+          "canonical_id": "buju-poi-ukvnvv",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "台北市萬華區昆明街30-1號30-2號1樓 台北市 TW",
+          "coordinates": [
+            121.505913359865,
+            25.0473009374451
+          ],
+          "distance_m": 132.2
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-6h3um9",
+      "osm_canonical_id": "buju-poi-6h3um9",
+      "brand": "7-ELEVEN",
+      "category": "convenience_store",
+      "name": "7-ELEVEN",
+      "coordinates": [
+        121.5137812,
+        25.0460806
+      ],
+      "nearest_same_brand_distance_m": 98.9,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 1.978,
+      "distance_band": "1.50x-2.00x",
+      "review_priority": "medium",
+      "branch": "",
+      "address": "",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": false,
+      "thin_evidence": true,
+      "latest_osm_timestamp": "2023-10-03T10:26:53Z",
+      "osm_source_ids": [
+        "osm:node/10161164611"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-1pha25c",
+        "name": "7-ELEVEN",
+        "branch": "",
+        "address": "重慶南路一段1之1號 Taipei 台北市 TW",
+        "coordinates": [
+          121.51328214801593,
+          25.046846926147435
+        ],
+        "distance_m": 98.9
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-1pha25c",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "重慶南路一段1之1號 Taipei 台北市 TW",
+          "coordinates": [
+            121.51328214801593,
+            25.046846926147435
+          ],
+          "distance_m": 98.9
+        },
+        {
+          "canonical_id": "buju-poi-2achpk",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "No. 36號, Section 1, Hankou St 台北市 100 TW",
+          "coordinates": [
+            121.51381125,
+            25.04513858
+          ],
+          "distance_m": 104.8
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-fiunlr",
+      "osm_canonical_id": "buju-poi-fiunlr",
+      "brand": "全家",
+      "category": "convenience_store",
+      "name": "全家",
+      "coordinates": [
+        121.5507069,
+        25.0419328
+      ],
+      "nearest_same_brand_distance_m": 101.8,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 2.036,
+      "distance_band": "2.00x-3.00x",
+      "review_priority": "medium",
+      "branch": "",
+      "address": "",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": false,
+      "thin_evidence": true,
+      "latest_osm_timestamp": "2024-05-08T22:42:39Z",
+      "osm_source_ids": [
+        "osm:node/11889917744"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-cjlvv7",
+        "name": "全家 統領店",
+        "branch": "統領店",
+        "address": "號部份, No. 21, Alley 7, Lane 181, Section 4, Zhongxiao E Rd 台北市 106 TW",
+        "coordinates": [
+          121.55168967,
+          25.0421471
+        ],
+        "distance_m": 101.8
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-cjlvv7",
+          "name": "全家 統領店",
+          "branch": "統領店",
+          "address": "號部份, No. 21, Alley 7, Lane 181, Section 4, Zhongxiao E Rd 台北市 106 TW",
+          "coordinates": [
+            121.55168967,
+            25.0421471
+          ],
+          "distance_m": 101.8
+        },
+        {
+          "canonical_id": "buju-poi-x1idjy",
+          "name": "全家 龍普店",
+          "branch": "龍普店",
+          "address": "台北市大安區忠孝東路４段１７０巷６弄２號 大安區 106 台北市 TW",
+          "coordinates": [
+            121.550574,
+            25.040777
+          ],
+          "distance_m": 129.2
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-1p76fs5",
+      "osm_canonical_id": "buju-poi-1p76fs5",
+      "brand": "7-ELEVEN",
+      "category": "convenience_store",
+      "name": "7-ELEVEN",
+      "coordinates": [
+        121.541565,
+        25.0421172
+      ],
+      "nearest_same_brand_distance_m": 119.8,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 2.396,
+      "distance_band": "2.00x-3.00x",
+      "review_priority": "medium",
+      "branch": "",
+      "address": "",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": false,
+      "thin_evidence": true,
+      "latest_osm_timestamp": "2025-06-18T07:52:50Z",
+      "osm_source_ids": [
+        "osm:node/2128931499"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-1bmbpud",
+        "name": "7-ELEVEN",
+        "branch": "",
+        "address": "No. 9號, Lane 248, Section 3, Zhongxiao E Rd 台北市 106 TW",
+        "coordinates": [
+          121.54140402,
+          25.04104983
+        ],
+        "distance_m": 119.8
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-1bmbpud",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "No. 9號, Lane 248, Section 3, Zhongxiao E Rd 台北市 106 TW",
+          "coordinates": [
+            121.54140402,
+            25.04104983
+          ],
+          "distance_m": 119.8
+        },
+        {
+          "canonical_id": "buju-poi-1qgzos7",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "Andong St, 50之2號50之4號50之3 台北市 106 TW",
+          "coordinates": [
+            121.54248034,
+            25.04293597
+          ],
+          "distance_m": 129.6
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-1g8gqmi",
+      "osm_canonical_id": "buju-poi-1g8gqmi",
+      "brand": "7-ELEVEN",
+      "category": "convenience_store",
+      "name": "7-ELEVEN",
+      "coordinates": [
+        121.5648934,
+        25.0511426
+      ],
+      "nearest_same_brand_distance_m": 121.1,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 2.422,
+      "distance_band": "2.00x-3.00x",
+      "review_priority": "medium",
+      "branch": "",
+      "address": "",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": false,
+      "thin_evidence": true,
+      "latest_osm_timestamp": "2026-03-06T05:41:18Z",
+      "osm_source_ids": [
+        "osm:node/13622033021"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-1fdxzay",
+        "name": "7-ELEVEN",
+        "branch": "",
+        "address": "Dongxing Rd, 13之1號13-1號1樓15巷3號1樓 台北市 105 TW",
+        "coordinates": [
+          121.56545051,
+          25.05017794
+        ],
+        "distance_m": 121.1
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-1fdxzay",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "Dongxing Rd, 13之1號13-1號1樓15巷3號1樓 台北市 105 TW",
+          "coordinates": [
+            121.56545051,
+            25.05017794
+          ],
+          "distance_m": 121.1
+        },
+        {
+          "canonical_id": "buju-poi-1af19eb",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "台北市松山區南京東路五段254號1樓 台北市 TW",
+          "coordinates": [
+            121.5663,
+            25.051154
+          ],
+          "distance_m": 141.7
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-18v1kkr",
+      "osm_canonical_id": "buju-poi-18v1kkr",
+      "brand": "全家",
+      "category": "convenience_store",
+      "name": "全家",
+      "coordinates": [
+        121.5175881,
+        25.0450238
+      ],
+      "nearest_same_brand_distance_m": 121.4,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 2.428,
+      "distance_band": "2.00x-3.00x",
+      "review_priority": "medium",
+      "branch": "",
+      "address": "",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": false,
+      "thin_evidence": true,
+      "latest_osm_timestamp": "2024-10-14T19:15:40Z",
+      "osm_source_ids": [
+        "osm:node/7749782410"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-n9k885",
+        "name": "全家 崇聖店",
+        "branch": "崇聖店",
+        "address": "台北市中正區忠孝西路一段４號 中正區 100 台北市 TW",
+        "coordinates": [
+          121.518491,
+          25.045747
+        ],
+        "distance_m": 121.4
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-n9k885",
+          "name": "全家 崇聖店",
+          "branch": "崇聖店",
+          "address": "台北市中正區忠孝西路一段４號 中正區 100 台北市 TW",
+          "coordinates": [
+            121.518491,
+            25.045747
+          ],
+          "distance_m": 121.4
+        },
+        {
+          "canonical_id": "buju-poi-wo793r",
+          "name": "全家 南陽店",
+          "branch": "南陽店",
+          "address": "台北市中正區信陽街１５號 中正區 100 台北市 TW",
+          "coordinates": [
+            121.516203,
+            25.044774
+          ],
+          "distance_m": 142.3
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-19d12ba",
+      "osm_canonical_id": "buju-poi-19d12ba",
+      "brand": "7-ELEVEN",
+      "category": "convenience_store",
+      "name": "7-ELEVEN",
+      "coordinates": [
+        121.5768678,
+        25.0406758
+      ],
+      "nearest_same_brand_distance_m": 132.1,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 2.642,
+      "distance_band": "2.00x-3.00x",
+      "review_priority": "medium",
+      "branch": "",
+      "address": "",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": false,
+      "thin_evidence": true,
+      "latest_osm_timestamp": "2023-10-03T10:26:53Z",
+      "osm_source_ids": [
+        "osm:node/3699813185"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-7qoje7",
+        "name": "7-ELEVEN",
+        "branch": "",
+        "address": "台北市信義區虎林街151號153號1樓 台北市 TW",
+        "coordinates": [
+          121.57669,
+          25.039499
+        ],
+        "distance_m": 132.1
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-7qoje7",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "台北市信義區虎林街151號153號1樓 台北市 TW",
+          "coordinates": [
+            121.57669,
+            25.039499
+          ],
+          "distance_m": 132.1
+        },
+        {
+          "canonical_id": "buju-poi-la1hmn",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "台北市信義區松山路455號 台北市 TW",
+          "coordinates": [
+            121.578039,
+            25.039884
+          ],
+          "distance_m": 147.2
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-1bo2yoa",
+      "osm_canonical_id": "buju-poi-1bo2yoa",
+      "brand": "7-ELEVEN",
+      "category": "convenience_store",
+      "name": "7-ELEVEN",
+      "coordinates": [
+        121.569497,
+        25.0793906
+      ],
+      "nearest_same_brand_distance_m": 133.5,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 2.67,
+      "distance_band": "2.00x-3.00x",
+      "review_priority": "medium",
+      "branch": "",
+      "address": "",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": false,
+      "thin_evidence": true,
+      "latest_osm_timestamp": "2023-10-03T10:26:53Z",
+      "osm_source_ids": [
+        "osm:node/4408961591"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-27d5u0",
+        "name": "7-ELEVEN 瑞東門市",
+        "branch": "瑞東門市",
+        "address": "Zhouzi St, 102號1樓 台北市 114 TW",
+        "coordinates": [
+          121.5706262,
+          25.08001911
+        ],
+        "distance_m": 133.5
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-27d5u0",
+          "name": "7-ELEVEN 瑞東門市",
+          "branch": "瑞東門市",
+          "address": "Zhouzi St, 102號1樓 台北市 114 TW",
+          "coordinates": [
+            121.5706262,
+            25.08001911
+          ],
+          "distance_m": 133.5
+        },
+        {
+          "canonical_id": "buju-poi-1u6vzf",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "台北市內湖區瑞光路478巷24號1樓 台北市 TW",
+          "coordinates": [
+            121.568673,
+            25.078288
+          ],
+          "distance_m": 148
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-1hvkdzu",
+      "osm_canonical_id": "buju-poi-1hvkdzu",
+      "brand": "7-ELEVEN",
+      "category": "convenience_store",
+      "name": "7-ELEVEN",
+      "coordinates": [
+        121.5906402,
+        25.0823377
+      ],
+      "nearest_same_brand_distance_m": 102.5,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 2.05,
+      "distance_band": "2.00x-3.00x",
+      "review_priority": "low",
+      "branch": "",
+      "address": "114臺北市內湖區內湖里內湖路二段281號283號",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": true,
+      "thin_evidence": false,
+      "latest_osm_timestamp": "2026-06-22T08:03:18Z",
+      "osm_source_ids": [
+        "osm:node/2577955030"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-1qc9a43",
+        "name": "7-ELEVEN",
+        "branch": "",
+        "address": "Section 2, Neihu Rd, 249號251號 台北市 114 TW",
+        "coordinates": [
+          121.5897012,
+          25.0819813
+        ],
+        "distance_m": 102.5
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-1qc9a43",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "Section 2, Neihu Rd, 249號251號 台北市 114 TW",
+          "coordinates": [
+            121.5897012,
+            25.0819813
+          ],
+          "distance_m": 102.5
+        },
+        {
+          "canonical_id": "buju-poi-aym5t2",
+          "name": "7-ELEVEN Defu Store",
+          "branch": "Defu Store",
+          "address": "2931號, No. 27號, Lane 30, Section 4, Chenggong Rd 台北市 114 TW",
+          "coordinates": [
+            121.59181007,
+            25.08229745
+          ],
+          "distance_m": 117.9
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-wk1st3",
+      "osm_canonical_id": "buju-poi-wk1st3",
+      "brand": "7-ELEVEN",
+      "category": "convenience_store",
+      "name": "7-ELEVEN",
+      "coordinates": [
+        121.5295796,
+        25.0304386
+      ],
+      "nearest_same_brand_distance_m": 112.3,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 2.246,
+      "distance_band": "2.00x-3.00x",
+      "review_priority": "low",
+      "branch": "",
+      "address": "106臺北市大安區永康街43號",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": true,
+      "thin_evidence": false,
+      "latest_osm_timestamp": "2026-03-19T09:23:53Z",
+      "osm_source_ids": [
+        "osm:node/5717534183"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-12ic978",
+        "name": "7-ELEVEN",
+        "branch": "",
+        "address": "台北市大安區金華街241之1號 台北市 TW",
+        "coordinates": [
+          121.530477,
+          25.02984
+        ],
+        "distance_m": 112.3
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-12ic978",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "台北市大安區金華街241之1號 台北市 TW",
+          "coordinates": [
+            121.530477,
+            25.02984
+          ],
+          "distance_m": 112.3
+        },
+        {
+          "canonical_id": "buju-poi-11wtscf",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "台北市大安區永康街12之2號1樓 台北市 TW",
+          "coordinates": [
+            121.529472,
+            25.031553
+          ],
+          "distance_m": 124.4
+        },
+        {
+          "canonical_id": "buju-poi-594gww",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "台北市大安區金華街140號1樓 台北市 TW",
+          "coordinates": [
+            121.528325,
+            25.029811
+          ],
+          "distance_m": 144.4
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-1b0g1",
+      "osm_canonical_id": "buju-poi-1b0g1",
+      "brand": "全聯",
+      "category": "supermarket",
+      "name": "全聯 大全聯",
+      "coordinates": [
+        121.5428437,
+        25.0459186
+      ],
+      "nearest_same_brand_distance_m": 244.4,
+      "review_radius_m": 100,
+      "distance_ratio_to_review_radius": 2.444,
+      "distance_band": "2.00x-3.00x",
+      "review_priority": "low",
+      "branch": "大全聯",
+      "address": "台北市 中山區",
+      "source_rows": 1,
+      "has_branch": true,
+      "has_address": true,
+      "thin_evidence": false,
+      "latest_osm_timestamp": "2025-11-21T05:29:38Z",
+      "osm_source_ids": [
+        "osm:node/2527538923"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-1iyhbh9",
+        "name": "全聯 中崙店",
+        "branch": "中崙店",
+        "address": "台北市 TW",
+        "coordinates": [
+          121.54064276667,
+          25.046843033333
+        ],
+        "distance_m": 244.4
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-1iyhbh9",
+          "name": "全聯 中崙店",
+          "branch": "中崙店",
+          "address": "台北市 TW",
+          "coordinates": [
+            121.54064276667,
+            25.046843033333
+          ],
+          "distance_m": 244.4
+        },
+        {
+          "canonical_id": "buju-poi-1j82624",
+          "name": "全聯",
+          "branch": "",
+          "address": "龍江路15號 Taipei 104 臺北市 TW",
+          "coordinates": [
+            121.54028134281967,
+            25.04724490854062
+          ],
+          "distance_m": 297.3
+        },
+        {
+          "canonical_id": "buju-poi-1c64m2l",
+          "name": "全聯 中山朱崙",
+          "branch": "中山朱崙",
+          "address": "(10492)臺北市中山區龍江路15號1.2樓 臺北市 TW",
+          "coordinates": [
+            121.540475,
+            25.047552
+          ],
+          "distance_m": 299.9
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-77n55w",
+      "osm_canonical_id": "buju-poi-77n55w",
+      "brand": "7-ELEVEN",
+      "category": "convenience_store",
+      "name": "7-ELEVEN",
+      "coordinates": [
+        121.5762701,
+        25.0727557
+      ],
+      "nearest_same_brand_distance_m": 124.1,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 2.482,
+      "distance_band": "2.00x-3.00x",
+      "review_priority": "low",
+      "branch": "",
+      "address": "114台北市內湖區陽光街383號",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": true,
+      "thin_evidence": false,
+      "latest_osm_timestamp": "2026-03-19T09:23:53Z",
+      "osm_source_ids": [
+        "osm:node/1846451523"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-9j2igm",
+        "name": "7-ELEVEN",
+        "branch": "",
+        "address": "1樓, No. 41號, Lane 221, Gangqian Rd 台北市 114 TW",
+        "coordinates": [
+          121.57513175,
+          25.07318281
+        ],
+        "distance_m": 124.1
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-9j2igm",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "1樓, No. 41號, Lane 221, Gangqian Rd 台北市 114 TW",
+          "coordinates": [
+            121.57513175,
+            25.07318281
+          ],
+          "distance_m": 124.1
+        },
+        {
+          "canonical_id": "buju-poi-1pcb45l",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "台北市內湖區瑞光路188巷51號1樓 台北市 TW",
+          "coordinates": [
+            121.576059411745,
+            25.0740750298223
+          ],
+          "distance_m": 148.2
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-1ji5v22",
+      "osm_canonical_id": "buju-poi-1ji5v22",
+      "brand": "7-ELEVEN",
+      "category": "convenience_store",
+      "name": "7-ELEVEN",
+      "coordinates": [
+        121.5181756,
+        25.0449209
+      ],
+      "nearest_same_brand_distance_m": 125.5,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 2.51,
+      "distance_band": "2.00x-3.00x",
+      "review_priority": "low",
+      "branch": "",
+      "address": "臺北市",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": true,
+      "thin_evidence": false,
+      "latest_osm_timestamp": "2024-07-28T06:34:37Z",
+      "osm_source_ids": [
+        "osm:node/7213870333"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-11h0rs0",
+        "name": "7-ELEVEN",
+        "branch": "",
+        "address": "台北市中正區中山南路12號 台北市 TW",
+        "coordinates": [
+          121.518697,
+          25.043896
+        ],
+        "distance_m": 125.5
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-11h0rs0",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "台北市中正區中山南路12號 台北市 TW",
+          "coordinates": [
+            121.518697,
+            25.043896
+          ],
+          "distance_m": 125.5
+        },
+        {
+          "canonical_id": "buju-poi-hu9sgh",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "許昌街17號 Taipei 10047 臺灣 TW",
+          "coordinates": [
+            121.51700735092163,
+            25.045636720193418
+          ],
+          "distance_m": 142.1
+        },
+        {
+          "canonical_id": "buju-poi-rcx76c",
+          "name": "7-ELEVEN 鑫台北",
+          "branch": "鑫台北",
+          "address": "忠孝西路一段35號 台北市 100 TW",
+          "coordinates": [
+            121.51873029,
+            25.04613915
+          ],
+          "distance_m": 146.5
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-8w9omx",
+      "osm_canonical_id": "buju-poi-8w9omx",
+      "brand": "7-ELEVEN",
+      "category": "convenience_store",
+      "name": "7-ELEVEN",
+      "coordinates": [
+        121.5039349,
+        25.044291
+      ],
+      "nearest_same_brand_distance_m": 133.7,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 2.674,
+      "distance_band": "2.00x-3.00x",
+      "review_priority": "low",
+      "branch": "",
+      "address": "10844臺北市萬華區峨嵋街111-2、111-3號",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": true,
+      "thin_evidence": false,
+      "latest_osm_timestamp": "2023-10-03T10:26:53Z",
+      "osm_source_ids": [
+        "osm:node/2850324309"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-zas1zm",
+        "name": "7-ELEVEN",
+        "branch": "",
+        "address": "No. 114-3號, Section 2, Wuchang St 台北市 108 TW",
+        "coordinates": [
+          121.50488706,
+          25.04512806
+        ],
+        "distance_m": 133.7
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-zas1zm",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "No. 114-3號, Section 2, Wuchang St 台北市 108 TW",
+          "coordinates": [
+            121.50488706,
+            25.04512806
+          ],
+          "distance_m": 133.7
+        },
+        {
+          "canonical_id": "buju-poi-1gsk2zy",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "Chengdu Rd, 96號1樓 台北市 108 TW",
+          "coordinates": [
+            121.50429475,
+            25.0430723
+          ],
+          "distance_m": 140.3
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-1pcrfpi",
+      "osm_canonical_id": "buju-poi-1pcrfpi",
+      "brand": "7-ELEVEN",
+      "category": "convenience_store",
+      "name": "7-ELEVEN",
+      "coordinates": [
+        121.5228607,
+        25.0437372
+      ],
+      "nearest_same_brand_distance_m": 134.4,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 2.688,
+      "distance_band": "2.00x-3.00x",
+      "review_priority": "low",
+      "branch": "",
+      "address": "10050臺北市中正區林森南路4-3號",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": true,
+      "thin_evidence": false,
+      "latest_osm_timestamp": "2023-10-03T10:26:53Z",
+      "osm_source_ids": [
+        "osm:node/2730537703"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-idmi1w",
+        "name": "7-ELEVEN",
+        "branch": "",
+        "address": "台北市中正區忠孝東路一段72號76號1樓 台北市 TW",
+        "coordinates": [
+          121.523923,
+          25.044468
+        ],
+        "distance_m": 134.4
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-idmi1w",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "台北市中正區忠孝東路一段72號76號1樓 台北市 TW",
+          "coordinates": [
+            121.523923,
+            25.044468
+          ],
+          "distance_m": 134.4
+        },
+        {
+          "canonical_id": "buju-poi-17m0ayz",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "台北市中正區林森南路12號 台北市 TW",
+          "coordinates": [
+            121.522538,
+            25.042552
+          ],
+          "distance_m": 135.7
+        },
+        {
+          "canonical_id": "buju-poi-1va4i8o",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "台北市中正區青島東路4號 台北市 TW",
+          "coordinates": [
+            121.521392,
+            25.043946
+          ],
+          "distance_m": 149.8
+        }
+      ]
+    },
+    {
+      "canonical_id": "buju-poi-osm-9avhm0",
+      "osm_canonical_id": "buju-poi-9avhm0",
+      "brand": "7-ELEVEN",
+      "category": "convenience_store",
+      "name": "7-ELEVEN",
+      "coordinates": [
+        121.5672478,
+        25.0417179
+      ],
+      "nearest_same_brand_distance_m": 143.3,
+      "review_radius_m": 50,
+      "distance_ratio_to_review_radius": 2.866,
+      "distance_band": "2.00x-3.00x",
+      "review_priority": "low",
+      "branch": "",
+      "address": "110臺北市信義區忠孝東路五段71巷6號一樓",
+      "source_rows": 1,
+      "has_branch": false,
+      "has_address": true,
+      "thin_evidence": false,
+      "latest_osm_timestamp": "2026-03-19T09:23:53Z",
+      "osm_source_ids": [
+        "osm:node/3769904737"
+      ],
+      "nearest_overture": {
+        "canonical_id": "buju-poi-6iag6u",
+        "name": "7-ELEVEN",
+        "branch": "",
+        "address": "No. 1號, Alley 168, Lane 30, Yongji Rd 台北市 110 TW",
+        "coordinates": [
+          121.56863353,
+          25.0420094
+        ],
+        "distance_m": 143.3
+      },
+      "nearby_overture": [
+        {
+          "canonical_id": "buju-poi-6iag6u",
+          "name": "7-ELEVEN",
+          "branch": "",
+          "address": "No. 1號, Alley 168, Lane 30, Yongji Rd 台北市 110 TW",
+          "coordinates": [
+            121.56863353,
+            25.0420094
+          ],
+          "distance_m": 143.3
+        },
+        {
+          "canonical_id": "buju-poi-p6kbxx",
+          "name": "7-ELEVEN 鑫國泰門市",
+          "branch": "鑫國泰門市",
+          "address": "信義區忠孝東路五段68號24樓 台北市 110 台北 TW",
+          "coordinates": [
+            121.5670593343628,
+            25.040383848012873
+          ],
+          "distance_m": 149.5
+        }
+      ]
+    }
+  ],
   "review_queue": [
     {
       "canonical_id": "buju-poi-osm-445ect",

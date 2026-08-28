@@ -59,7 +59,7 @@ function statusText(status){return status==='verified_exact'?'官方精確學區
 
     const listEl=panel.querySelector('#inventoryList'),statEl=panel.querySelector('#inventoryStat'),detailEl=panel.querySelector('#inventoryDetail'),debugEl=panel.querySelector('#inventoryShowMismatch');
     const markers=new Map();
-    let mode=false,school='金華',selectedId=null;
+    let mode=false,school='金華',selectedId=null,requestedAssignment=null;
 
     function enableJuniorContext(){
       const districtBtn=document.querySelector('#districtBtn'),juniorBtn=document.querySelector('#juniorBtn');
@@ -98,8 +98,17 @@ function statusText(status){return status==='verified_exact'?'官方精確學區
       const bounds=pts.reduce((b,p)=>b.extend(p),new maplibregl.LngLatBounds(pts[0],pts[0]));map.fitBounds(bounds,{padding:{top:90,bottom:90,left:590,right:440},maxZoom:15.8,duration:650});
     }
     function render(){
-      panel.querySelectorAll('[data-school]').forEach(b=>b.classList.toggle('active',b.dataset.school===school));
-      selectedId=null;detailEl.hidden=true;renderList();renderMarkers();if(mode)fitSchool();
+      panel.querySelectorAll('[data-school]').forEach(b=>b.classList.toggle('active',!!school&&b.dataset.school===school));
+      selectedId=null;detailEl.hidden=true;
+      if(!school){
+        clearMarkers();
+        const label=requestedAssignment||'這個國中學區';
+        statEl.innerHTML=`<strong>0</strong> 戶 prototype 房源<br><span style="color:#7a8790">${esc(label)}目前 prototype 尚無此學區的房源 fixture。</span>`;
+        listEl.innerHTML='<div class="inventory-sub">這不代表市場上沒有房子；只代表目前 #71 研究 fixture 尚未覆蓋。正式產品應由授權 live inventory provider 回答。</div>';
+        inventoryStatus.textContent=`房源 prototype · ${label} · 尚無 fixture`;inventoryStatus.className='status muted';
+        return;
+      }
+      renderList();renderMarkers();if(mode)fitSchool();
       inventoryStatus.textContent=`房源 prototype · ${SCHOOL_LABEL[school]} · 已驗證 ${verifiedHomes().length} 戶 · research fixture`;inventoryStatus.className='status good';
     }
     function setMode(on){
@@ -107,11 +116,35 @@ function statusText(status){return status==='verified_exact'?'官方精確學區
       if(on){if(summaryBtn?.classList.contains('active'))summaryBtn.click();enableJuniorContext();render();}
       else{clearMarkers();detailEl.hidden=true;inventoryStatus.textContent='房源 prototype READY · research fixture，不代表完整市場。';inventoryStatus.className='status muted';}
     }
+    function selectFromOfficialAssignment(assignment){
+      const raw=String(assignment||'').trim();
+      if(!raw)return;
+      requestedAssignment=raw;
+      school=Object.keys(SCHOOL_LABEL).find(key=>raw.includes(key))||null;
+      setMode(true);
+    }
+    async function bindSchoolCatchmentSelection(){
+      const layerId='school-catchment-fill';
+      for(let i=0;i<120;i+=1){
+        if(map.getLayer(layerId)){
+          map.on('click',layerId,e=>{
+            const p=e.features?.[0]?.properties||{};
+            if(p.level!=='junior')return;
+            selectFromOfficialAssignment(p.school);
+          });
+          return;
+        }
+        await sleep(100);
+      }
+      console.warn('Inventory prototype could not bind school catchment click: layer unavailable');
+    }
 
     inventoryBtn.onclick=()=>setMode(!mode);
     panel.querySelector('#inventoryClose').onclick=()=>setMode(false);
-    panel.querySelectorAll('[data-school]').forEach(b=>b.onclick=()=>{school=b.dataset.school;render();});
+    panel.querySelectorAll('[data-school]').forEach(b=>b.onclick=()=>{requestedAssignment=null;school=b.dataset.school;render();});
     debugEl.onchange=()=>render();
+    window.TaipeiMapsInventoryPrototypeV01={selectFromOfficialAssignment,setMode,getState:()=>({mode,school,requestedAssignment})};
+    bindSchoolCatchmentSelection();
     summaryBtn?.addEventListener('click',()=>setTimeout(()=>{if(summaryBtn.classList.contains('active')&&mode)setMode(false);},0));
 
     const eyebrow=document.querySelector('#eyebrow');if(eyebrow)eyebrow.textContent=eyebrow.textContent.replace('#65','#71').replace('LOCATION SUMMARY','LOCATION SUMMARY + INVENTORY UX');

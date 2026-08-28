@@ -24,12 +24,42 @@ export function pairMatchesCanonicalRules(overtureEntity, osmEntity) {
   return result.entities.length === 1 && result.entities[0].source_rows === 2;
 }
 
+function normalizeAddressForCrossSource(value) {
+  return String(value || '')
+    .normalize('NFKC')
+    .toLowerCase()
+    .replace(/臺/g, '台')
+    .replace(/taiwan|\btw\b/gi, '')
+    .replace(/^\s*\d{3,6}/, '')
+    .replace(/[\s,，、;；。．\.\-–—_]/g, '');
+}
+
+function hasStreetNumber(address) {
+  return /(?:路|街|大道|巷|弄)[^號号]{0,30}\d+(?:號|号)/.test(address);
+}
+
+export function pairMatchesExtendedAddressRules(overtureEntity, osmEntity) {
+  if (!overtureEntity || !osmEntity) return false;
+  if (overtureEntity.brand !== osmEntity.brand || overtureEntity.category !== osmEntity.category) return false;
+  const a = normalizeAddressForCrossSource(overtureEntity.address);
+  const b = normalizeAddressForCrossSource(osmEntity.address);
+  if (!a || !b) return false;
+  const shorter = a.length <= b.length ? a : b;
+  const longer = a.length <= b.length ? b : a;
+  if (shorter.length < 8 || !hasStreetNumber(shorter)) return false;
+  return longer.includes(shorter);
+}
+
 function roundedDistance(a, b) {
   return Math.round(haversine(a.coordinates, b.coordinates) * 10) / 10;
 }
 
 function stableEntityOrder(a, b) {
   return `${a.category}|${a.brand}|${a.canonical_id}`.localeCompare(`${b.category}|${b.brand}|${b.canonical_id}`, 'zh-Hant');
+}
+
+function osmHasPreciseAddressNode(osm) {
+  return Boolean(String(osm?.address || '').trim()) && Array.isArray(osm?.osm_objects) && osm.osm_objects.some(object => object?.osm_type === 'node');
 }
 
 export function reconcileCanonicalPOI(overtureEntities, osmEntities) {
@@ -39,6 +69,7 @@ export function reconcileCanonicalPOI(overtureEntities, osmEntities) {
   const matched = [];
   const safeHoles = [];
   const unresolved = [];
+  const coordinateOverrides = new Map();
 
   for (const osm of secondary) {
     const sameBrand = baseline
@@ -46,7 +77,8 @@ export function reconcileCanonicalPOI(overtureEntities, osmEntities) {
       .map(entity => ({ entity, distance_m: roundedDistance(entity, osm) }))
       .sort((a, b) => a.distance_m - b.distance_m || a.entity.canonical_id.localeCompare(b.entity.canonical_id));
 
-    const withinReview = sameBrand.filter(candidate => candidate.distance_m <= reviewMax(osm.category));
+    const radius = reviewMax(osm.category);
+    const withinReview = sameBrand.filter(candidate => candidate.distance_m <= radius);
     const highConfidence = withinReview.filter(candidate => pairMatchesCanonicalRules(candidate.entity, osm));
 
     if (highConfidence.length === 1) {
@@ -60,6 +92,7 @@ export function reconcileCanonicalPOI(overtureEntities, osmEntities) {
         osm_name: osm.name,
         overture_name: candidate.entity.name,
         decision: 'matched',
+        match_reason: 'canonical-v0.2',
       });
       continue;
     }
@@ -98,6 +131,55 @@ export function reconcileCanonicalPOI(overtureEntities, osmEntities) {
       continue;
     }
 
+    const extendedAddressCandidates = sameBrand.filter(candidate =>
+      candidate.distance_m > radius &&
+      candidate.distance_m <= radius * 1.5 &&
+      pairMatchesExtendedAddressRules(candidate.entity, osm),
+    );
+
+    if (extendedAddressCandidates.length === 1) {
+      const candidate = extendedAddressCandidates[0];
+      const coordinateOverride = osmHasPreciseAddressNode(osm);
+      if (coordinateOverride) {
+        coordinateOverrides.set(candidate.entity.canonical_id, {
+          coordinates: [...osm.coordinates],
+          osm_canonical_id: osm.canonical_id,
+          osm_source_ids: [...(osm.source_ids || [])],
+          reason: 'extended-address-match-osm-node',
+        });
+      }
+      matched.push({
+        osm_canonical_id: osm.canonical_id,
+        overture_canonical_id: candidate.entity.canonical_id,
+        brand: osm.brand,
+        category: osm.category,
+        distance_m: candidate.distance_m,
+        osm_name: osm.name,
+        overture_name: candidate.entity.name,
+        decision: 'matched',
+        match_reason: 'extended-address-containment',
+        coordinate_source: coordinateOverride ? 'osm_secondary' : 'overture_baseline',
+      });
+      continue;
+    }
+
+    if (extendedAddressCandidates.length > 1) {
+      unresolved.push({
+        osm_canonical_id: osm.canonical_id,
+        brand: osm.brand,
+        category: osm.category,
+        osm_name: osm.name,
+        decision: 'cross_source_unresolved',
+        reason: 'multiple-extended-address-matches',
+        candidates: extendedAddressCandidates.map(candidate => ({
+          overture_canonical_id: candidate.entity.canonical_id,
+          name: candidate.entity.name,
+          distance_m: candidate.distance_m,
+        })),
+      });
+      continue;
+    }
+
     safeHoles.push({
       ...osm,
       canonical_id: `buju-poi-osm-${String(osm.canonical_id).replace(/^buju-poi-/, '')}`,
@@ -107,7 +189,19 @@ export function reconcileCanonicalPOI(overtureEntities, osmEntities) {
   }
 
   const finalEntities = [
-    ...baseline.map(entity => ({ ...entity, source_kind: entity.source_kind || 'overture_baseline' })),
+    ...baseline.map(entity => {
+      const override = coordinateOverrides.get(entity.canonical_id);
+      if (!override) return { ...entity, source_kind: entity.source_kind || 'overture_baseline' };
+      return {
+        ...entity,
+        coordinates: [...override.coordinates],
+        source_kind: entity.source_kind || 'overture_baseline',
+        coordinate_source_kind: 'osm_secondary',
+        coordinate_override_reason: override.reason,
+        coordinate_osm_canonical_id: override.osm_canonical_id,
+        coordinate_osm_source_ids: override.osm_source_ids,
+      };
+    }),
     ...safeHoles,
   ].sort(stableEntityOrder);
 
@@ -135,6 +229,7 @@ export function reconcileCanonicalPOI(overtureEntities, osmEntities) {
       matched: matched.length,
       safe_holes: safeHoles.length,
       cross_source_unresolved: unresolved.length,
+      coordinate_overrides: coordinateOverrides.size,
       final_canonical: finalEntities.length,
     },
   };

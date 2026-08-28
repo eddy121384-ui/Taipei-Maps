@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>卜居 · OSM Reconciled POI v0.1</title>
+<link href="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.css" rel="stylesheet">
+<script src="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.js"></script>
+<style>
+html,body,#map{height:100%;margin:0}body{font-family:Inter,system-ui,"Noto Sans TC",sans-serif}.panel{position:absolute;z-index:2;left:12px;top:12px;max-width:390px;background:rgba(255,255,255,.95);padding:12px 14px;border-radius:12px;box-shadow:0 4px 18px #0002;font-size:13px}.panel h1{font-size:15px;margin:0 0 7px}.legend{display:flex;gap:12px;margin-top:7px}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}.base{background:#2474c6}.hole{background:#18a558}.muted{color:#61707a}.maplibregl-popup-content{font:13px/1.45 Inter,system-ui,"Noto Sans TC",sans-serif;max-width:360px}
+</style>
+</head>
+<body><div id="map"></div><div class="panel"><h1>Reconciled Daily-life POI v0.1</h1><div id="status">Loading…</div><div class="legend"><span><i class="dot base"></i>Overture baseline</span><span><i class="dot hole"></i>OSM safe hole</span></div><div class="muted">OSM 只補安全缺口；附近同品牌但證據不足者不直接加總。</div></div>
+<script>
+(async()=>{const status=document.getElementById('status'),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));try{
+const [d,m]=await Promise.all([fetch('/data/daily-life-poi/taipei-canonical-reconciled-v01.geojson',{cache:'no-store'}),fetch('/data/daily-life-poi/taipei-poi-reconciled-manifest-v01.json',{cache:'no-store'})]);if(!d.ok||!m.ok)throw new Error(`dataset missing: ${d.status}/${m.status}`);const data=await d.json(),manifest=await m.json();
+status.textContent=`READY · final ${manifest.final_canonical_count} · OSM holes ${manifest.safe_hole_count} · matched ${manifest.matched_count} · unresolved ${manifest.cross_source_unresolved_count}`;
+const map=new maplibregl.Map({container:'map',center:[121.545,25.055],zoom:11.1,style:{version:8,sources:{osm:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,attribution:'© OpenStreetMap contributors'}},layers:[{id:'osm',type:'raster',source:'osm'}]}});map.addControl(new maplibregl.NavigationControl(),'top-right');
+map.on('load',()=>{map.addSource('final',{type:'geojson',data});map.addLayer({id:'final',type:'circle',source:'final',minzoom:10.3,paint:{'circle-radius':['interpolate',['linear'],['zoom'],10.3,2.3,14,5.4],'circle-color':['match',['get','source_kind'],'osm_hole_fill','#18a558','#2474c6'],'circle-stroke-color':'#fff','circle-stroke-width':1,'circle-opacity':.9}});map.on('mouseenter','final',()=>map.getCanvas().style.cursor='pointer');map.on('mouseleave','final',()=>map.getCanvas().style.cursor='');map.on('click','final',e=>{const f=e.features?.[0];if(!f)return;const p=f.properties||{};new maplibregl.Popup().setLngLat(f.geometry.coordinates).setHTML(`<strong>${esc(p.name||p.brand)}</strong><br>${esc(p.category)} · ${esc(p.brand)}<br>source: ${esc(p.source_kind)}<br>branch: ${esc(p.branch)}<br>address: ${esc(p.address)}<br>source rows: ${esc(p.source_rows)}<br>id: ${esc(p.canonical_id)}`).addTo(map);});});
+}catch(err){status.textContent=`ERROR · ${err.message}`;status.style.color='#b42318';}})();
+</script></body></html>

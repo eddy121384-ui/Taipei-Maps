@@ -19,5 +19,14 @@
       "coordinate_source": "overture_baseline",
       "reason": "desktop-qa-confirmed-same-store-jingmei-girls-high-school-2026-08-28"
     }
+  ],
+  "reviewed_cluster_overrides": [
+    {
+      "osm_canonical_id": "buju-poi-1pm6w09",
+      "surviving_overture_canonical_id": "buju-poi-g3vqp6",
+      "retired_overture_canonical_ids": ["buju-poi-13kwzln"],
+      "coordinate_source": "osm_secondary",
+      "reason": "desktop-qa-confirmed-three-points-one-store-zhishan-familymart-2026-08-28"
+    }
   ]
 }

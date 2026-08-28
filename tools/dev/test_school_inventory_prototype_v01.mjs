@@ -35,4 +35,15 @@ for(const token of ['inventoryBtn','inventoryShowMismatch','verified_exact','ver
 assert.ok(plugin.includes("VERIFIED.has(h.verification_status)"),'verified result filtering contract missing');
 assert.ok(plugin.includes("if(summaryBtn?.classList.contains('active'))summaryBtn.click()"),'inventory/summary mutual exclusion missing');
 
-console.log('PASS school inventory prototype · research-only · exact/shared/mismatch semantics · desktop controls preserved');
+// Map-first product flow: clicking an official junior catchment drives the inventory selector.
+assert.ok(plugin.includes("const layerId='school-catchment-fill'"),'school catchment click bridge missing');
+assert.ok(plugin.includes("map.on('click',layerId"),'school catchment click handler missing');
+assert.ok(plugin.includes("if(p.level!=='junior')return"),'inventory must ignore elementary catchment clicks');
+assert.ok(plugin.includes('selectFromOfficialAssignment(p.school)'),'official school assignment is not wired into inventory selection');
+assert.ok(plugin.includes("Object.keys(SCHOOL_LABEL).find(key=>raw.includes(key))||null"),'shared catchment must resolve supported school names without rewriting official wording');
+assert.ok(plugin.includes("requestedAssignment=raw"),'selected official assignment must be retained for unsupported-school UX');
+assert.ok(plugin.includes('prototype 尚無此學區的房源 fixture'),'unsupported catchment must show explicit no-fixture state');
+assert.ok(plugin.includes('clearMarkers();\n        const label=requestedAssignment'),'unsupported catchment must clear prior-school markers before rendering no-fixture state');
+assert.ok(plugin.includes('TaipeiMapsInventoryPrototypeV01'),'inventory selector API must remain externally testable/reusable');
+
+console.log('PASS school inventory prototype · map school selection → inventory · exact/shared/mismatch semantics · unsupported clears stale homes · desktop controls preserved');

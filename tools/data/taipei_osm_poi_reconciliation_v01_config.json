@@ -11,5 +11,13 @@
   "reconcile_engine_path": "public/buju-poi-reconcile-v01.mjs",
   "boundary_config_path": "tools/data/taipei_daily_life_poi_v01_config.json",
   "brands": ["7-ELEVEN", "全家", "萊爾富", "OK Mart", "全聯", "家樂福", "美廉社"],
-  "categories": ["convenience_store", "supermarket"]
+  "categories": ["convenience_store", "supermarket"],
+  "reviewed_match_overrides": [
+    {
+      "osm_canonical_id": "buju-poi-1sdpvuc",
+      "overture_canonical_id": "buju-poi-am0ftj",
+      "coordinate_source": "overture_baseline",
+      "reason": "desktop-qa-confirmed-same-store-jingmei-girls-high-school-2026-08-28"
+    }
+  ]
 }

@@ -8,6 +8,8 @@
     "safe_holes": 506,
     "cross_source_unresolved": 82,
     "reviewed_match_overrides": 1,
+    "reviewed_cluster_overrides": 0,
+    "retired_overture_canonical": 0,
     "coordinate_overrides": 1,
     "final_canonical": 2287
   },

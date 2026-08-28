@@ -36,7 +36,6 @@ function parseArgs(argv) {
   }
   return out;
 }
-
 function stableStringify(value) { return `${JSON.stringify(value, null, 2)}\n`; }
 function sha256(value) { return crypto.createHash('sha256').update(value).digest('hex'); }
 
@@ -160,7 +159,6 @@ function osmElementFeature(element) {
     },
   };
 }
-
 function stableCanonicalize(features) {
   const ordered = [...features].sort((a, b) => String(featureKey(a)).localeCompare(String(featureKey(b))));
   const result = buildCanonical(ordered);
@@ -194,6 +192,9 @@ function entityFeature(entity) {
       osm_objects: entity.osm_objects || [], nearest_same_brand_distance_m: entity.nearest_same_brand_distance_m ?? null,
       coordinate_source_kind: entity.coordinate_source_kind || '', coordinate_override_reason: entity.coordinate_override_reason || '',
       coordinate_osm_canonical_id: entity.coordinate_osm_canonical_id || '', coordinate_osm_source_ids: entity.coordinate_osm_source_ids || [],
+      reviewed_cluster_osm_canonical_id: entity.reviewed_cluster_osm_canonical_id || '',
+      reviewed_cluster_retired_overture_ids: entity.reviewed_cluster_retired_overture_ids || [],
+      reviewed_cluster_reason: entity.reviewed_cluster_reason || '',
     },
   };
 }
@@ -218,10 +219,11 @@ function buildTimestamp() {
 }
 function reconcileSignature(result) {
   return {
-    matched: result.matched.map(x => [x.osm_canonical_id, x.overture_canonical_id, x.match_reason || '', x.coordinate_source || '']),
+    matched: result.matched.map(x => [x.osm_canonical_id, x.overture_canonical_id, ...(x.retired_overture_canonical_ids || []), x.match_reason || '', x.coordinate_source || '']),
     holes: result.safeHoles.map(x => [x.canonical_id, ...(x.source_ids || [])]),
     unresolved: result.unresolved.map(x => [x.osm_canonical_id, x.reason, ...(x.candidates || []).map(c => c.overture_canonical_id)]),
-    final: result.finalEntities.map(x => [x.canonical_id, x.source_kind, x.coordinates]),
+    retired: [...(result.retiredOvertureCanonicalIds || [])],
+    final: result.finalEntities.map(x => [x.canonical_id, x.source_kind, x.coordinates, ...(x.reviewed_cluster_retired_overture_ids || [])]),
   };
 }
 
@@ -229,7 +231,6 @@ async function main() {
   const args = parseArgs(process.argv);
   await fs.mkdir(outputDir, { recursive: true }); await fs.mkdir(cacheDir, { recursive: true });
   const { text: boundaryText, boundary, source: boundarySource } = await loadBoundary(args.boundary); validateBoundary(boundary); const bbox = boundaryBBox(boundary);
-
   const rawPath = path.resolve(args.overpassRaw || overpassRawPath);
   let overpassEndpoint = 'fixture-or-cache';
   if (!args.overpassRaw && !args.skipFetch) overpassEndpoint = await fetchOverpass(bbox, rawPath);
@@ -239,30 +240,37 @@ async function main() {
   const rawFeatures = raw.elements.map(osmElementFeature).filter(Boolean);
   const insideTaipei = rawFeatures.filter(feature => pointInBoundary(feature.geometry.coordinates, boundary));
   const classified = insideTaipei.filter(feature => classifyFeature(feature)); classified.sort((a, b) => String(featureKey(a)).localeCompare(String(featureKey(b))));
-
   const targetCollection = { type: 'FeatureCollection', features: classified.map(normalizedOsmTargetFeature) };
   targetCollection.features.sort((a, b) => String(a.properties.source_id).localeCompare(String(b.properties.source_id)));
 
   const osmResult = stableCanonicalize(classified), rawById = new Map(classified.map(feature => [String(feature.properties.id), feature]));
   const osmEntities = osmResult.entities.map(entity => osmCanonicalEntity(entity, rawById));
   const osmCanonicalCollection = { type: 'FeatureCollection', features: osmEntities.map(entityFeature) };
-
   const baselineCollection = JSON.parse(await fs.readFile(path.join(repoRoot, config.baseline_canonical_path), 'utf8'));
   const baselineManifest = JSON.parse(await fs.readFile(path.join(repoRoot, config.baseline_manifest_path), 'utf8'));
   const baselineEntities = baselineCollection.features.map(baselineFeatureToEntity);
   if (baselineEntities.length !== baselineManifest.canonical_count) throw new Error('baseline manifest canonical count does not match baseline GeoJSON');
 
-  const reconcileOptions = { reviewedMatchOverrides: config.reviewed_match_overrides || [] };
+  const reconcileOptions = {
+    reviewedMatchOverrides: config.reviewed_match_overrides || [],
+    reviewedClusterOverrides: config.reviewed_cluster_overrides || [],
+  };
   const reconciliation = reconcileCanonicalPOI(baselineEntities, osmEntities, reconcileOptions);
   const reversedOsm = stableCanonicalize([...classified].reverse()).entities.map(entity => osmCanonicalEntity(entity, rawById));
   const reversedReconciliation = reconcileCanonicalPOI(baselineEntities, reversedOsm, reconcileOptions);
   if (JSON.stringify(reconcileSignature(reconciliation)) !== JSON.stringify(reconcileSignature(reversedReconciliation))) throw new Error('determinism regression: reversing OSM input changed reconciliation');
 
-  if (reconciliation.stats.final_canonical !== baselineEntities.length + reconciliation.stats.safe_holes) throw new Error('final count does not equal baseline + safe holes');
+  const expectedFinal = baselineEntities.length - reconciliation.stats.retired_overture_canonical + reconciliation.stats.safe_holes;
+  if (reconciliation.stats.final_canonical !== expectedFinal) throw new Error(`final count mismatch: ${reconciliation.stats.final_canonical} vs expected ${expectedFinal}`);
   if (reconciliation.stats.matched + reconciliation.stats.safe_holes + reconciliation.stats.cross_source_unresolved !== osmEntities.length) throw new Error('OSM reconciliation decisions do not partition OSM canonical entities');
   if (reconciliation.stats.reviewed_match_overrides !== (config.reviewed_match_overrides || []).length) throw new Error('reviewed match override count mismatch');
+  if (reconciliation.stats.reviewed_cluster_overrides !== (config.reviewed_cluster_overrides || []).length) throw new Error('reviewed cluster override count mismatch');
+  const retiredIds = new Set(reconciliation.retiredOvertureCanonicalIds || []);
   const baselineIds = new Set(baselineEntities.map(entity => entity.canonical_id)), finalIds = new Set(reconciliation.finalEntities.map(entity => entity.canonical_id));
-  for (const id of baselineIds) if (!finalIds.has(id)) throw new Error(`baseline id missing from final: ${id}`);
+  for (const id of baselineIds) {
+    if (retiredIds.has(id) && finalIds.has(id)) throw new Error(`retired baseline id still present in final: ${id}`);
+    if (!retiredIds.has(id) && !finalIds.has(id)) throw new Error(`baseline id missing from final: ${id}`);
+  }
   for (const feature of targetCollection.features) {
     if (!pointInBoundary(feature.geometry.coordinates, boundary)) throw new Error(`OSM target outside Taipei: ${feature.properties.source_id}`);
     if (!config.brands.includes(feature.properties.brand)) throw new Error(`unsupported OSM brand: ${feature.properties.brand}`);
@@ -272,6 +280,7 @@ async function main() {
   const finalCollection = { type: 'FeatureCollection', features: reconciliation.finalEntities.map(entityFeature) };
   const reconciliationOutput = {
     dataset_version: config.dataset_version, osm_snapshot: config.osm_snapshot, stats: reconciliation.stats, matched: reconciliation.matched,
+    retired_overture_canonical_ids: [...(reconciliation.retiredOvertureCanonicalIds || [])],
     safe_holes: reconciliation.safeHoles.map(entity => ({ canonical_id: entity.canonical_id, osm_source_ids: [...(entity.source_ids || [])], category: entity.category, brand: entity.brand, name: entity.name, coordinates: entity.coordinates, nearest_same_brand_distance_m: entity.nearest_same_brand_distance_m })),
     cross_source_unresolved: reconciliation.unresolved,
   };
@@ -282,7 +291,10 @@ async function main() {
     osm_snapshot: config.osm_snapshot, osm_query: overpassQuery(bbox), overpass_endpoint_last_fetch: overpassEndpoint,
     osm_raw_element_count: raw.elements.length, osm_target_count: classified.length, osm_canonical_count: osmEntities.length,
     matched_count: reconciliation.stats.matched, safe_hole_count: reconciliation.stats.safe_holes, cross_source_unresolved_count: reconciliation.stats.cross_source_unresolved,
-    reviewed_match_override_count: reconciliation.stats.reviewed_match_overrides, coordinate_override_count: reconciliation.stats.coordinate_overrides,
+    reviewed_match_override_count: reconciliation.stats.reviewed_match_overrides,
+    reviewed_cluster_override_count: reconciliation.stats.reviewed_cluster_overrides,
+    retired_overture_canonical_count: reconciliation.stats.retired_overture_canonical,
+    coordinate_override_count: reconciliation.stats.coordinate_overrides,
     final_canonical_count: reconciliation.stats.final_canonical, final_counts_by_brand: sortedCounts(reconciliation.finalEntities.map(entity => entity.brand)), final_counts_by_category: sortedCounts(reconciliation.finalEntities.map(entity => entity.category)),
     osm_hole_counts_by_brand: sortedCounts(reconciliation.safeHoles.map(entity => entity.brand)), boundary_source: boundarySource, boundary_version: boundaryConfig.boundary.version, boundary_sha256: sha256(boundaryText), boundary_bbox: bbox,
     canonical_engine_version: baselineManifest.canonical_engine_version, reconciliation_engine_version: 'buju-poi-reconcile-v0.1', logical_dataset_sha256: sha256(JSON.stringify(logicalHashInput)),
@@ -294,7 +306,8 @@ async function main() {
   console.log(`PASS · ${config.dataset_version}`); console.log(`OSM snapshot: ${config.osm_snapshot}`); console.log(`OSM raw elements: ${raw.elements.length}`);
   console.log(`OSM target records: ${classified.length}`); console.log(`OSM canonical: ${osmEntities.length}`); console.log(`matched: ${reconciliation.stats.matched}`);
   console.log(`safe holes: ${reconciliation.stats.safe_holes}`); console.log(`cross-source unresolved: ${reconciliation.stats.cross_source_unresolved}`);
-  console.log(`reviewed match overrides: ${reconciliation.stats.reviewed_match_overrides}`); console.log(`coordinate overrides: ${reconciliation.stats.coordinate_overrides}`);
+  console.log(`reviewed match overrides: ${reconciliation.stats.reviewed_match_overrides}`); console.log(`reviewed cluster overrides: ${reconciliation.stats.reviewed_cluster_overrides}`);
+  console.log(`retired Overture canonical: ${reconciliation.stats.retired_overture_canonical}`); console.log(`coordinate overrides: ${reconciliation.stats.coordinate_overrides}`);
   console.log(`final canonical: ${reconciliation.stats.final_canonical}`); console.log(`logical sha256: ${manifest.logical_dataset_sha256}`);
 }
 

@@ -1,0 +1,46 @@
+name: Location Summary Mobile Cache
+
+on:
+  push:
+    branches:
+      - feat/location-summary-v01
+    paths:
+      - '.github/workflows/location-summary-mobile-cache.yml'
+      - 'tools/data/build_taipei_mrt_stations_official.mjs'
+      - 'tools/data/build_taipei_healthcare.mjs'
+      - 'tools/data/taipei_hospital_campuses.mjs'
+
+permissions:
+  contents: write
+
+jobs:
+  build-mobile-cache:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/location-summary-v01
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build official MRT station cache
+        run: node tools/data/build_taipei_mrt_stations_official.mjs
+      - name: Build official healthcare cache
+        run: node tools/data/build_taipei_healthcare.mjs
+      - name: Copy versioned mobile caches
+        run: |
+          mkdir -p public/data/location-summary-v01
+          cp public/generated/taipei_mrt_stations_official.geojson public/data/location-summary-v01/taipei-mrt-stations.geojson
+          cp public/generated/taipei_healthcare_facilities.geojson public/data/location-summary-v01/taipei-healthcare-facilities.geojson
+      - name: Commit refreshed mobile caches
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f public/data/location-summary-v01/taipei-mrt-stations.geojson public/data/location-summary-v01/taipei-healthcare-facilities.geojson
+          if git diff --cached --quiet; then
+            echo 'No mobile cache changes.'
+            exit 0
+          fi
+          git commit -m 'chore(data): refresh Location Summary mobile caches'
+          git push origin HEAD:feat/location-summary-v01

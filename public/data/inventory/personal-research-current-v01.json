@@ -1,0 +1,1726 @@
+{
+  "schema_version": "0.1",
+  "snapshot_id": "2026-08-29-v01",
+  "observed_at": "2026-08-29T14:40:00+08:00",
+  "research_only": true,
+  "complete_market_inventory": false,
+  "scope": [
+    "金華國中",
+    "中正國中"
+  ],
+  "coverage": {
+    "schema_version": "0.1",
+    "snapshot_id": "2026-08-29-v01",
+    "observed_at": "2026-08-29T14:40:00+08:00",
+    "research_only": true,
+    "complete_market_inventory": false,
+    "source_policy": "Public search/discovery snapshot. No unauthorized bulk 591 crawler. Photos, full descriptions and personal contact data are not stored.",
+    "sources": {
+      "rakuya": 29,
+      "alleyguide": 10,
+      "591-search-index": 6
+    },
+    "raw_listing_rows": 45,
+    "canonical_unique_homes": 37,
+    "duplicate_rows_collapsed": 8,
+    "cross_source_homes": 5,
+    "verification_status": {
+      "insufficient_location": 34,
+      "verified_exact": 2,
+      "verified_shared": 1
+    },
+    "school_coverage": {
+      "金華": {
+        "canonical_homes": 23,
+        "verified_exact": 1,
+        "verified_shared": 1,
+        "insufficient_location": 21,
+        "mismatch": 0
+      },
+      "中正": {
+        "canonical_homes": 14,
+        "verified_exact": 1,
+        "verified_shared": 0,
+        "insufficient_location": 13,
+        "mismatch": 0
+      }
+    },
+    "field_completeness": {
+      "asking_wan": {
+        "count": 34,
+        "total": 37,
+        "ratio": 0.9189
+      },
+      "total_ping": {
+        "count": 33,
+        "total": 37,
+        "ratio": 0.8919
+      },
+      "age_years": {
+        "count": 34,
+        "total": 37,
+        "ratio": 0.9189
+      },
+      "building_type": {
+        "count": 37,
+        "total": 37,
+        "ratio": 1
+      },
+      "bedrooms": {
+        "count": 36,
+        "total": 37,
+        "ratio": 0.973
+      },
+      "floor": {
+        "count": 35,
+        "total": 37,
+        "ratio": 0.9459
+      }
+    }
+  },
+  "homes": [
+    {
+      "canonical_home_id": "zhongzheng-heping1-19.02-2f",
+      "query_school": "中正",
+      "name": "花齊匯古亭捷運中正國中學區",
+      "community": null,
+      "street": "和平西路一段",
+      "asking_wan": 2788,
+      "asking_label": "2,788 萬",
+      "asking_range_wan": [
+        2788,
+        2788
+      ],
+      "total_ping": 19.02,
+      "age_years": 7.2,
+      "building_type": "電梯大樓",
+      "bedrooms": 1,
+      "floor": "2/14F",
+      "lon": null,
+      "lat": null,
+      "location_precision_grade": null,
+      "verification_status": "insufficient_location",
+      "official_elementary": null,
+      "official_junior": null,
+      "official_location": null,
+      "source_school_claim": "中正國中",
+      "source_count": 1,
+      "listing_count": 1,
+      "sources": [
+        "rakuya"
+      ],
+      "source_listings": [
+        {
+          "source": "rakuya",
+          "source_listing_id": null,
+          "source_url": "https://www.rakuya.com.tw/sell/result?grade=1&school=596&search=school&zipcode=100",
+          "title": "花齊匯古亭捷運中正國中學區",
+          "asking_wan": 2788
+        }
+      ],
+      "source_url": "https://www.rakuya.com.tw/sell/result?grade=1&school=596&search=school&zipcode=100",
+      "source_label": "rakuya",
+      "research_only": true
+    },
+    {
+      "canonical_home_id": "zhongzheng-chaozhou-1f-44.2",
+      "query_school": "中正",
+      "name": "中正國中設籍收租一樓",
+      "community": null,
+      "street": "潮州街",
+      "asking_wan": 3668,
+      "asking_label": "3,668 萬",
+      "asking_range_wan": [
+        3668,
+        3668
+      ],
+      "total_ping": null,
+      "age_years": 44.2,
+      "building_type": "公寓",
+      "bedrooms": 4,
+      "floor": "1/5F",
+      "lon": null,
+      "lat": null,
+      "location_precision_grade": null,
+      "verification_status": "insufficient_location",
+      "official_elementary": null,
+      "official_junior": null,
+      "official_location": null,
+      "source_school_claim": "中正國中",
+      "source_count": 1,
+      "listing_count": 1,
+      "sources": [
+        "alleyguide"
+      ],
+      "source_listings": [
+        {
+          "source": "alleyguide",
+          "source_listing_id": "2gozk1mAd",
+          "source_url": "https://www.alleyguide.com.tw/listing/2gozk1mAd",
+          "title": "中正國中設籍收租一樓",
+          "asking_wan": 3668
+        }
+      ],
+      "source_url": "https://www.alleyguide.com.tw/listing/2gozk1mAd",
+      "source_label": "alleyguide",
+      "research_only": true
+    },
+    {
+      "canonical_home_id": "zhongzheng-roosevelt2-35.86-4f",
+      "query_school": "中正",
+      "name": "中正國中金華國小五房4+5頂家",
+      "community": null,
+      "street": "羅斯福路二段",
+      "asking_wan": 3886,
+      "asking_label": "3,886 萬",
+      "asking_range_wan": [
+        3886,
+        3886
+      ],
+      "total_ping": 35.86,
+      "age_years": 60.8,
+      "building_type": "公寓",
+      "bedrooms": 5,
+      "floor": "4/4F",
+      "lon": null,
+      "lat": null,
+      "location_precision_grade": null,
+      "verification_status": "insufficient_location",
+      "official_elementary": null,
+      "official_junior": null,
+      "official_location": null,
+      "source_school_claim": "中正國中",
+      "source_count": 1,
+      "listing_count": 1,
+      "sources": [
+        "alleyguide"
+      ],
+      "source_listings": [
+        {
+          "source": "alleyguide",
+          "source_listing_id": "9kEjCL7w",
+          "source_url": "https://www.alleyguide.com.tw/listing/9kEjCL7w",
+          "title": "中正國中金華國小五房4+5頂家",
+          "asking_wan": 3886
+        }
+      ],
+      "source_url": "https://www.alleyguide.com.tw/listing/9kEjCL7w",
+      "source_label": "alleyguide",
+      "research_only": true
+    },
+    {
+      "canonical_home_id": "zhongzheng-hangzhou2-39.75-1f",
+      "query_school": "中正",
+      "name": "捷運東門中正國中國家兩廳院芳鄰",
+      "community": null,
+      "street": "杭州南路二段",
+      "asking_wan": 3990,
+      "asking_label": "3,990–4,280 萬",
+      "asking_range_wan": [
+        3990,
+        4280
+      ],
+      "total_ping": 39.75,
+      "age_years": 43,
+      "building_type": "公寓",
+      "bedrooms": 3,
+      "floor": "B1~1/5F",
+      "lon": null,
+      "lat": null,
+      "location_precision_grade": null,
+      "verification_status": "insufficient_location",
+      "official_elementary": null,
+      "official_junior": null,
+      "official_location": null,
+      "source_school_claim": "中正國中",
+      "source_count": 2,
+      "listing_count": 2,
+      "sources": [
+        "alleyguide",
+        "rakuya"
+      ],
+      "source_listings": [
+        {
+          "source": "rakuya",
+          "source_listing_id": null,
+          "source_url": "https://www.rakuya.com.tw/sell/result?grade=1&school=596&search=school&zipcode=100",
+          "title": "捷運東門中正國中國家兩廳院芳鄰",
+          "asking_wan": 4280
+        },
+        {
+          "source": "alleyguide",
+          "source_listing_id": "8Dz1gqF5",
+          "source_url": "https://www.alleyguide.com.tw/listing/8Dz1gqF5",
+          "title": "中正國中靜巷面寬低總價一樓",
+          "asking_wan": 3990
+        }
+      ],
+      "source_url": "https://www.rakuya.com.tw/sell/result?grade=1&school=596&search=school&zipcode=100",
+      "source_label": "alleyguide + rakuya",
+      "research_only": true
+    },
+    {
+      "canonical_home_id": "zhongzheng-vigorlin-25.32-10f",
+      "query_school": "中正",
+      "name": "中正國中VIGORLIN東門",
+      "community": null,
+      "street": "信義路二段",
+      "asking_wan": 4280,
+      "asking_label": "4,280–4,380 萬",
+      "asking_range_wan": [
+        4280,
+        4380
+      ],
+      "total_ping": 25.32,
+      "age_years": 1.4,
+      "building_type": "電梯大樓",
+      "bedrooms": 0,
+      "floor": "10F",
+      "lon": null,
+      "lat": null,
+      "location_precision_grade": null,
+      "verification_status": "insufficient_location",
+      "official_elementary": null,
+      "official_junior": null,
+      "official_location": null,
+      "source_school_claim": "中正國中",
+      "source_count": 2,
+      "listing_count": 2,
+      "sources": [
+        "591-search-index",
+        "alleyguide"
+      ],
+      "source_listings": [
+        {
+          "source": "alleyguide",
+          "source_listing_id": "txuaeuBFy",
+          "source_url": "https://www.alleyguide.com.tw/listing/txuaeuBFy",
+          "title": "中正國中VIGORLIN東門",
+          "asking_wan": 4380
+        },
+        {
+          "source": "591-search-index",
+          "source_listing_id": "S20492878",
+          "source_url": "https://sale.591.com.tw/home/house/detail/2/20492878.html",
+          "title": "VIGORLIN東門全新交屋",
+          "asking_wan": 4280
+        }
+      ],
+      "source_url": "https://www.alleyguide.com.tw/listing/txuaeuBFy",
+      "source_label": "591-search-index + alleyguide",
+      "research_only": true
+    },
+    {
+      "canonical_home_id": "zhongzheng-zhanyi-renai-38.13-4f",
+      "query_school": "中正",
+      "name": "展宜仁愛",
+      "community": "展宜仁愛",
+      "street": "仁愛路二段",
+      "asking_wan": 4588,
+      "asking_label": "4,588 萬",
+      "asking_range_wan": [
+        4588,
+        4588
+      ],
+      "total_ping": 38.13,
+      "age_years": 15.7,
+      "building_type": "電梯大樓",
+      "bedrooms": 3,
+      "floor": "4/7F",
+      "lon": null,
+      "lat": null,
+      "location_precision_grade": null,
+      "verification_status": "insufficient_location",
+      "official_elementary": null,
+      "official_junior": null,
+      "official_location": null,
+      "source_school_claim": "中正國中",
+      "source_count": 1,
+      "listing_count": 1,
+      "sources": [
+        "rakuya"
+      ],
+      "source_listings": [
+        {
+          "source": "rakuya",
+          "source_listing_id": null,
+          "source_url": "https://www.rakuya.com.tw/sell/result?grade=1&school=596&search=school&zipcode=100",
+          "title": "展宜仁愛3房車位東門國小中正國中",
+          "asking_wan": 4588
+        }
+      ],
+      "source_url": "https://www.rakuya.com.tw/sell/result?grade=1&school=596&search=school&zipcode=100",
+      "source_label": "rakuya",
+      "research_only": true
+    },
+    {
+      "canonical_home_id": "zhongzheng-zangxi-56.92-2f",
+      "query_school": "中正",
+      "name": "中正藏璽",
+      "community": "中正藏璽",
+      "street": "羅斯福路一段58巷",
+      "asking_wan": 4600,
+      "asking_label": "4,600 萬",
+      "asking_range_wan": [
+        4600,
+        4600
+      ],
+      "total_ping": 56.92,
+      "age_years": 10.5,
+      "building_type": "電梯大樓",
+      "bedrooms": 3,
+      "floor": "2/8F",
+      "lon": 121.5196671,
+      "lat": 25.0314651,
+      "location_precision_grade": "A",
+      "verification_status": "verified_exact",
+      "official_elementary": "東門、市大附小共同學區",
+      "official_junior": "中正",
+      "official_location": "中正區 新營里 10鄰",
+      "source_school_claim": "中正國中",
+      "source_count": 1,
+      "listing_count": 1,
+      "sources": [
+        "rakuya"
+      ],
+      "source_listings": [
+        {
+          "source": "rakuya",
+          "source_listing_id": null,
+          "source_url": "https://www.rakuya.com.tw/sell/result?grade=1&school=596&search=school&zipcode=100",
+          "title": "談價空間大中正藏璽3房雙車位",
+          "asking_wan": 4600
+        }
+      ],
+      "source_url": "https://www.rakuya.com.tw/sell/result?grade=1&school=596&search=school&zipcode=100",
+      "source_label": "rakuya",
+      "research_only": true
+    },
+    {
+      "canonical_home_id": "zhongzheng-nanchang2-43.14-5f",
+      "query_school": "中正",
+      "name": "中正國中學區電梯舒適美廈",
+      "community": null,
+      "street": "南昌路二段",
+      "asking_wan": 4600,
+      "asking_label": "4,600 萬",
+      "asking_range_wan": [
+        4600,
+        4600
+      ],
+      "total_ping": 43.14,
+      "age_years": 38.2,
+      "building_type": "電梯大樓",
+      "bedrooms": 3,
+      "floor": "5/10F",
+      "lon": null,
+      "lat": null,
+      "location_precision_grade": null,
+      "verification_status": "insufficient_location",
+      "official_elementary": null,
+      "official_junior": null,
+      "official_location": null,
+      "source_school_claim": "中正國中",
+      "source_count": 1,
+      "listing_count": 1,
+      "sources": [
+        "rakuya"
+      ],
+      "source_listings": [
+        {
+          "source": "rakuya",
+          "source_listing_id": null,
+          "source_url": "https://www.rakuya.com.tw/sell/result?grade=1&school=596&search=school&zipcode=100",
+          "title": "中正國中學區電梯舒適美廈",
+          "asking_wan": 4600
+        }
+      ],
+      "source_url": "https://www.rakuya.com.tw/sell/result?grade=1&school=596&search=school&zipcode=100",
+      "source_label": "rakuya",
+      "research_only": true
+    },
+    {
+      "canonical_home_id": "zhongzheng-heping1-47.46-1f",
+      "query_school": "中正",
+      "name": "古亭站中正國中庭園常翠",
+      "community": null,
+      "street": "和平西路一段",
+      "asking_wan": 5338,
+      "asking_label": "5,338–5,638 萬",
+      "asking_range_wan": [
+        5338,
+        5638
+      ],
+      "total_ping": 47.46,
+      "age_years": 18.2,
+      "building_type": "電梯大樓",
+      "bedrooms": 3,
+      "floor": "1/14F",
+      "lon": null,
+      "lat": null,
+      "location_precision_grade": null,
+      "verification_status": "insufficient_location",
+      "official_elementary": null,
+      "official_junior": null,
+      "official_location": null,
+      "source_school_claim": "中正國中",
+      "source_count": 2,
+      "listing_count": 2,
+      "sources": [
+        "alleyguide",
+        "rakuya"
+      ],
+      "source_listings": [
+        {
+          "source": "rakuya",
+          "source_listing_id": null,
+          "source_url": "https://www.rakuya.com.tw/sell/result?grade=1&school=596&search=school&zipcode=100",
+          "title": "古亭站中正國中庭園常翠",
+          "asking_wan": 5338
+        },
+        {
+          "source": "alleyguide",
+          "source_listing_id": "by98RsxN2",
+          "source_url": "https://www.alleyguide.com.tw/listing/by98RsxN2",
+          "title": "中正國中捷運庭院一樓平面車位",
+          "asking_wan": 5638
+        }
+      ],
+      "source_url": "https://www.rakuya.com.tw/sell/result?grade=1&school=596&search=school&zipcode=100",
+      "source_label": "alleyguide + rakuya",
+      "research_only": true
+    },
+    {
+      "canonical_home_id": "zhongzheng-rulin-48.84-13f",
+      "query_school": "中正",
+      "name": "儒林天廈",
+      "community": "儒林天廈",
+      "street": "羅斯福路二段",
+      "asking_wan": 5888,
+      "asking_label": "5,888 萬",
+      "asking_range_wan": [
+        5888,
+        5888
+      ],
+      "total_ping": 48.84,
+      "age_years": 36.4,
+      "building_type": "電梯大樓",
+      "bedrooms": 4,
+      "floor": "13/20F",
+      "lon": null,
+      "lat": null,
+      "location_precision_grade": null,
+      "verification_status": "insufficient_location",
+      "official_elementary": null,
+      "official_junior": null,
+      "official_location": null,
+      "source_school_claim": "中正國中",
+      "source_count": 1,
+      "listing_count": 2,
+      "sources": [
+        "rakuya"
+      ],
+      "source_listings": [
+        {
+          "source": "rakuya",
+          "source_listing_id": null,
+          "source_url": "https://www.rakuya.com.tw/sell/result?grade=1&school=596&search=school&zipcode=100",
+          "title": "中正學區景觀後棟高樓大室內空間",
+          "asking_wan": 5888
+        },
+        {
+          "source": "rakuya",
+          "source_listing_id": null,
+          "source_url": "https://www.rakuya.com.tw/sell/result?grade=1&school=596&search=school&zipcode=100",
+          "title": "古亭捷運2分鐘高樓景觀中正國中金華國小",
+          "asking_wan": 5888
+        }
+      ],
+      "source_url": "https://www.rakuya.com.tw/sell/result?grade=1&school=596&search=school&zipcode=100",
+      "source_label": "rakuya",
+      "research_only": true
+    },
+    {
+      "canonical_home_id": "zhongzheng-nanchang1-52.7-1f",
+      "query_school": "中正",
+      "name": "中正國中學區中正紀念堂捷運一樓三面採光附坡車",
+      "community": null,
+      "street": "南昌路一段",
+      "asking_wan": 6200,
+      "asking_label": "6,200 萬",
+      "asking_range_wan": [
+        6200,
+        6200
+      ],
+      "total_ping": 52.7,
+      "age_years": 34.3,
+      "building_type": "電梯大樓",
+      "bedrooms": 3,
+      "floor": "1/6F",
+      "lon": null,
+      "lat": null,
+      "location_precision_grade": null,
+      "verification_status": "insufficient_location",
+      "official_elementary": null,
+      "official_junior": null,
+      "official_location": null,
+      "source_school_claim": "中正國中",
+      "source_count": 1,
+      "listing_count": 1,
+      "sources": [
+        "rakuya"
+      ],
+      "source_listings": [
+        {
+          "source": "rakuya",
+          "source_listing_id": null,
+          "source_url": "https://www.rakuya.com.tw/sell/result?grade=1&school=596&search=school&zipcode=100",
+          "title": "中正國中學區中正紀念堂捷運一樓三面採光附坡車",
+          "asking_wan": 6200
+        }
+      ],
+      "source_url": "https://www.rakuya.com.tw/sell/result?grade=1&school=596&search=school&zipcode=100",
+      "source_label": "rakuya",
+      "research_only": true
+    },
+    {
+      "canonical_home_id": "zhongzheng-first-movement-95.4-4f",
+      "query_school": "中正",
+      "name": "第一樂章",
+      "community": "第一樂章",
+      "street": "金華街",
+      "asking_wan": 11988,
+      "asking_label": "11,988 萬",
+      "asking_range_wan": [
+        11988,
+        11988
+      ],
+      "total_ping": 95.4,
+      "age_years": 20,
+      "building_type": "電梯大樓",
+      "bedrooms": 4,
+      "floor": "4/13F",
+      "lon": null,
+      "lat": null,
+      "location_precision_grade": null,
+      "verification_status": "insufficient_location",
+      "official_elementary": null,
+      "official_junior": null,
+      "official_location": null,
+      "source_school_claim": "中正國中",
+      "source_count": 1,
+      "listing_count": 2,
+      "sources": [
+        "rakuya"
+      ],
+      "source_listings": [
+        {
+          "source": "rakuya",
+          "source_listing_id": null,
+          "source_url": "https://www.rakuya.com.tw/sell/result?grade=1&school=596&search=school&zipcode=100",
+          "title": "第一樂章豪邸雙坡車",
+          "asking_wan": 11988
+        },
+        {
+          "source": "rakuya",
+          "source_listing_id": null,
+          "source_url": "https://www.rakuya.com.tw/sell/result?grade=1&school=596&search=school&zipcode=100",
+          "title": "第一樂章豪邸加雙坡車",
+          "asking_wan": 11988
+        }
+      ],
+      "source_url": "https://www.rakuya.com.tw/sell/result?grade=1&school=596&search=school&zipcode=100",
+      "source_label": "rakuya",
+      "research_only": true
+    },
+    {
+      "canonical_home_id": "zhongzheng-roosevelt1-591-s20785940",
+      "query_school": "中正",
+      "name": "市大附小中正國中明星學區三房",
+      "community": null,
+      "street": "羅斯福路一段",
+      "asking_wan": null,
+      "asking_label": "價格待補",
+      "asking_range_wan": null,
+      "total_ping": null,
+      "age_years": null,
+      "building_type": "公寓",
+      "bedrooms": 3,
+      "floor": "3F",
+      "lon": null,
+      "lat": null,
+      "location_precision_grade": null,
+      "verification_status": "insufficient_location",
+      "official_elementary": null,
+      "official_junior": null,
+      "official_location": null,
+      "source_school_claim": "中正國中",
+      "source_count": 1,
+      "listing_count": 1,
+      "sources": [
+        "591-search-index"
+      ],
+      "source_listings": [
+        {
+          "source": "591-search-index",
+          "source_listing_id": "S20785940",
+          "source_url": "https://sale.591.com.tw/home/house/detail/2/20785940.html",
+          "title": "市大附小中正國中明星學區三房",
+          "asking_wan": null
+        }
+      ],
+      "source_url": "https://sale.591.com.tw/home/house/detail/2/20785940.html",
+      "source_label": "591-search-index",
+      "research_only": true
+    },
+    {
+      "canonical_home_id": "zhongzheng-591-s20475655",
+      "query_school": "中正",
+      "name": "中正國中市大附小單一學區捷運宅",
+      "community": null,
+      "street": "中正區",
+      "asking_wan": null,
+      "asking_label": "價格待補",
+      "asking_range_wan": null,
+      "total_ping": null,
+      "age_years": null,
+      "building_type": "電梯大樓",
+      "bedrooms": null,
+      "floor": null,
+      "lon": null,
+      "lat": null,
+      "location_precision_grade": null,
+      "verification_status": "insufficient_location",
+      "official_elementary": null,
+      "official_junior": null,
+      "official_location": null,
+      "source_school_claim": "中正國中",
+      "source_count": 1,
+      "listing_count": 1,
+      "sources": [
+        "591-search-index"
+      ],
+      "source_listings": [
+        {
+          "source": "591-search-index",
+          "source_listing_id": "S20475655",
+          "source_url": "https://sale.591.com.tw/home/house/detail/2/20475655.html",
+          "title": "中正國中市大附小單一學區捷運宅",
+          "asking_wan": null
+        }
+      ],
+      "source_url": "https://sale.591.com.tw/home/house/detail/2/20475655.html",
+      "source_label": "591-search-index",
+      "research_only": true
+    },
+    {
+      "canonical_home_id": "jinhua-rich-lichi-13.04-3f",
+      "query_school": "金華",
+      "name": "Rich麗池",
+      "community": "Rich麗池",
+      "street": "羅斯福路二段",
+      "asking_wan": 1880,
+      "asking_label": "1,880 萬",
+      "asking_range_wan": [
+        1880,
+        1880
+      ],
+      "total_ping": 13.04,
+      "age_years": 17.6,
+      "building_type": "華廈",
+      "bedrooms": 1,
+      "floor": "3/7F",
+      "lon": null,
+      "lat": null,
+      "location_precision_grade": null,
+      "verification_status": "insufficient_location",
+      "official_elementary": null,
+      "official_junior": null,
+      "official_location": null,
+      "source_school_claim": "金華國中",
+      "source_count": 1,
+      "listing_count": 1,
+      "sources": [
+        "rakuya"
+      ],
+      "source_listings": [
+        {
+          "source": "rakuya",
+          "source_listing_id": null,
+          "source_url": "https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106",
+          "title": "金華國中明星學區電梯有管理近師大校園",
+          "asking_wan": 1880
+        }
+      ],
+      "source_url": "https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106",
+      "source_label": "rakuya",
+      "research_only": true
+    },
+    {
+      "canonical_home_id": "jinhua-money-14.9-3f",
+      "query_school": "金華",
+      "name": "大安MONEY賦寓",
+      "community": "大安MONEY賦寓",
+      "street": "羅斯福路三段",
+      "asking_wan": 2311,
+      "asking_label": "2,311 萬",
+      "asking_range_wan": [
+        2311,
+        2311
+      ],
+      "total_ping": 14.9,
+      "age_years": 1.3,
+      "building_type": "電梯大樓",
+      "bedrooms": 0,
+      "floor": "3/15F",
+      "lon": 121.52751,
+      "lat": 25.0217,
+      "location_precision_grade": "A-",
+      "verification_status": "verified_shared",
+      "official_elementary": "古亭",
+      "official_junior": "金華、民族、螢橋共同學區",
+      "official_location": "大安區 古莊里 17鄰",
+      "source_school_claim": "金華國中",
+      "source_count": 1,
+      "listing_count": 1,
+      "sources": [
+        "alleyguide"
+      ],
+      "source_listings": [
+        {
+          "source": "alleyguide",
+          "source_listing_id": "lD9JFqFD",
+          "source_url": "https://www.alleyguide.com.tw/listing/lD9JFqFD",
+          "title": "大安MONEY賦寓金華國中學區房一",
+          "asking_wan": 2311
+        }
+      ],
+      "source_url": "https://www.alleyguide.com.tw/listing/lD9JFqFD",
+      "source_label": "alleyguide",
+      "research_only": true
+    },
+    {
+      "canonical_home_id": "jinhua-pucheng-15.47-5f",
+      "query_school": "金華",
+      "name": "金華師大電梯鼎佳",
+      "community": null,
+      "street": "浦城街",
+      "asking_wan": 2350,
+      "asking_label": "2,350 萬",
+      "asking_range_wan": [
+        2350,
+        2350
+      ],
+      "total_ping": 15.47,
+      "age_years": 16.9,
+      "building_type": "公寓",
+      "bedrooms": 3,
+      "floor": "5/5F",
+      "lon": null,
+      "lat": null,
+      "location_precision_grade": null,
+      "verification_status": "insufficient_location",
+      "official_elementary": null,
+      "official_junior": null,
+      "official_location": null,
+      "source_school_claim": "金華國中",
+      "source_count": 1,
+      "listing_count": 1,
+      "sources": [
+        "rakuya"
+      ],
+      "source_listings": [
+        {
+          "source": "rakuya",
+          "source_listing_id": null,
+          "source_url": "https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106",
+          "title": "金華師大電梯鼎佳",
+          "asking_wan": 2350
+        }
+      ],
+      "source_url": "https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106",
+      "source_label": "rakuya",
+      "research_only": true
+    },
+    {
+      "canonical_home_id": "jinhua-daan-jinghua-16.04-8f",
+      "query_school": "金華",
+      "name": "大安晶華",
+      "community": "大安晶華",
+      "street": "羅斯福路二段",
+      "asking_wan": 2588,
+      "asking_label": "2,588 萬",
+      "asking_range_wan": [
+        2588,
+        2588
+      ],
+      "total_ping": 16.04,
+      "age_years": 20,
+      "building_type": "電梯大樓",
+      "bedrooms": 1,
+      "floor": "8/8F",
+      "lon": null,
+      "lat": null,
+      "location_precision_grade": null,
+      "verification_status": "insufficient_location",
+      "official_elementary": null,
+      "official_junior": null,
+      "official_location": null,
+      "source_school_claim": "金華國中",
+      "source_count": 1,
+      "listing_count": 1,
+      "sources": [
+        "rakuya"
+      ],
+      "source_listings": [
+        {
+          "source": "rakuya",
+          "source_listing_id": null,
+          "source_url": "https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106",
+          "title": "古亭大安晶華頂樓露臺戶",
+          "asking_wan": 2588
+        }
+      ],
+      "source_url": "https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106",
+      "source_label": "rakuya",
+      "research_only": true
+    },
+    {
+      "canonical_home_id": "jinhua-money-17.89-8f",
+      "query_school": "金華",
+      "name": "大安MONEY賦寓",
+      "community": "大安MONEY賦寓",
+      "street": "羅斯福路三段",
+      "asking_wan": 2860,
+      "asking_label": "2,860 萬",
+      "asking_range_wan": [
+        2860,
+        2860
+      ],
+      "total_ping": 17.89,
+      "age_years": 1.4,
+      "building_type": "電梯大樓",
+      "bedrooms": 0,
+      "floor": "8/15F",
+      "lon": null,
+      "lat": null,
+      "location_precision_grade": null,
+      "verification_status": "insufficient_location",
+      "official_elementary": null,
+      "official_junior": null,
+      "official_location": null,
+      "source_school_claim": "金華國中",
+      "source_count": 1,
+      "listing_count": 1,
+      "sources": [
+        "rakuya"
+      ],
+      "source_listings": [
+        {
+          "source": "rakuya",
+          "source_listing_id": null,
+          "source_url": "https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106",
+          "title": "台電捷運1分大安賦寓全新落成雙採光",
+          "asking_wan": 2860
+        }
+      ],
+      "source_url": "https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106",
+      "source_label": "rakuya",
+      "research_only": true
+    },
+    {
+      "canonical_home_id": "jinhua-money-18.2-8f",
+      "query_school": "金華",
+      "name": "設籍首選金華國中電梯新成屋",
+      "community": null,
+      "street": "羅斯福路三段",
+      "asking_wan": 3090,
+      "asking_label": "3,090 萬",
+      "asking_range_wan": [
+        3090,
+        3090
+      ],
+      "total_ping": 18.2,
+      "age_years": 1.3,
+      "building_type": "電梯大樓",
+      "bedrooms": 0,
+      "floor": "8/15F",
+      "lon": null,
+      "lat": null,
+      "location_precision_grade": null,
+      "verification_status": "insufficient_location",
+      "official_elementary": null,
+      "official_junior": null,
+      "official_location": null,
+      "source_school_claim": "金華國中",
+      "source_count": 1,
+      "listing_count": 1,
+      "sources": [
+        "alleyguide"
+      ],
+      "source_listings": [
+        {
+          "source": "alleyguide",
+          "source_listing_id": "vQLANqlFJ",
+          "source_url": "https://www.alleyguide.com.tw/listing/vQLANqlFJ",
+          "title": "設籍首選金華國中電梯新成屋",
+          "asking_wan": 3090
+        }
+      ],
+      "source_url": "https://www.alleyguide.com.tw/listing/vQLANqlFJ",
+      "source_label": "alleyguide",
+      "research_only": true
+    },
+    {
+      "canonical_home_id": "jinhua-yongkang-26.95-5f",
+      "query_school": "金華",
+      "name": "永康東門捷運新生金華美寓",
+      "community": null,
+      "street": "永康街",
+      "asking_wan": 3380,
+      "asking_label": "3,380 萬",
+      "asking_range_wan": [
+        3380,
+        3380
+      ],
+      "total_ping": 26.95,
+      "age_years": 43.9,
+      "building_type": "公寓",
+      "bedrooms": 3,
+      "floor": "5/5F",
+      "lon": null,
+      "lat": null,
+      "location_precision_grade": null,
+      "verification_status": "insufficient_location",
+      "official_elementary": null,
+      "official_junior": null,
+      "official_location": null,
+      "source_school_claim": "金華國中",
+      "source_count": 1,
+      "listing_count": 1,
+      "sources": [
+        "rakuya"
+      ],
+      "source_listings": [
+        {
+          "source": "rakuya",
+          "source_listing_id": null,
+          "source_url": "https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106",
+          "title": "永康東門捷運新生金華美寓",
+          "asking_wan": 3380
+        }
+      ],
+      "source_url": "https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106",
+      "source_label": "rakuya",
+      "research_only": true
+    },
+    {
+      "canonical_home_id": "jinhua-jinshan2-31.32-5f",
+      "query_school": "金華",
+      "name": "新生金華綠蔭美宅頂佳",
+      "community": null,
+      "street": "金山南路二段",
+      "asking_wan": 3488,
+      "asking_label": "3,488 萬",
+      "asking_range_wan": [
+        3488,
+        3488
+      ],
+      "total_ping": 31.32,
+      "age_years": 43.9,
+      "building_type": "公寓",
+      "bedrooms": 6,
+      "floor": "5/5F",
+      "lon": null,
+      "lat": null,
+      "location_precision_grade": null,
+      "verification_status": "insufficient_location",
+      "official_elementary": null,
+      "official_junior": null,
+      "official_location": null,
+      "source_school_claim": "金華國中",
+      "source_count": 1,
+      "listing_count": 2,
+      "sources": [
+        "rakuya"
+      ],
+      "source_listings": [
+        {
+          "source": "rakuya",
+          "source_listing_id": null,
+          "source_url": "https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106",
+          "title": "新生金華綠蔭美宅頂佳",
+          "asking_wan": 3488
+        },
+        {
+          "source": "rakuya",
+          "source_listing_id": null,
+          "source_url": "https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106",
+          "title": "新生金華邊間綠蔭頂家",
+          "asking_wan": 3488
+        }
+      ],
+      "source_url": "https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106",
+      "source_label": "rakuya",
+      "research_only": true
+    },
+    {
+      "canonical_home_id": "jinhua-taishun-35.2-4f",
+      "query_school": "金華",
+      "name": "師大和平空中花園",
+      "community": null,
+      "street": "泰順街",
+      "asking_wan": 3680,
+      "asking_label": "3,680 萬",
+      "asking_range_wan": [
+        3680,
+        3680
+      ],
+      "total_ping": 35.2,
+      "age_years": 60.7,
+      "building_type": "公寓",
+      "bedrooms": 2,
+      "floor": "4/4F",
+      "lon": null,
+      "lat": null,
+      "location_precision_grade": null,
+      "verification_status": "insufficient_location",
+      "official_elementary": null,
+      "official_junior": null,
+      "official_location": null,
+      "source_school_claim": "金華國中",
+      "source_count": 1,
+      "listing_count": 1,
+      "sources": [
+        "rakuya"
+      ],
+      "source_listings": [
+        {
+          "source": "rakuya",
+          "source_listing_id": null,
+          "source_url": "https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106",
+          "title": "師大和平空中花園",
+          "asking_wan": 3680
+        }
+      ],
+      "source_url": "https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106",
+      "source_label": "rakuya",
+      "research_only": true
+    },
+    {
+      "canonical_home_id": "jinhua-yongkang-36.04-4f",
+      "query_school": "金華",
+      "name": "永康街金華學區美寓",
+      "community": null,
+      "street": "永康街",
+      "asking_wan": 3800,
+      "asking_label": "3,800 萬",
+      "asking_range_wan": [
+        3800,
+        3800
+      ],
+      "total_ping": 36.04,
+      "age_years": 41.3,
+      "building_type": "公寓",
+      "bedrooms": 4,
+      "floor": "4/5F",
+      "lon": null,
+      "lat": null,
+      "location_precision_grade": null,
+      "verification_status": "insufficient_location",
+      "official_elementary": null,
+      "official_junior": null,
+      "official_location": null,
+      "source_school_claim": "金華國中",
+      "source_count": 1,
+      "listing_count": 1,
+      "sources": [
+        "alleyguide"
+      ],
+      "source_listings": [
+        {
+          "source": "alleyguide",
+          "source_listing_id": "AqH574fKf",
+          "source_url": "https://www.alleyguide.com.tw/listing/AqH574fKf",
+          "title": "永康街金華學區美寓",
+          "asking_wan": 3800
+        }
+      ],
+      "source_url": "https://www.alleyguide.com.tw/listing/AqH574fKf",
+      "source_label": "alleyguide",
+      "research_only": true
+    },
+    {
+      "canonical_home_id": "jinhua-yongkang-34.14-4f",
+      "query_school": "金華",
+      "name": "永康公園雙金華學區庭園美寓",
+      "community": null,
+      "street": "永康街",
+      "asking_wan": 3980,
+      "asking_label": "3,980 萬",
+      "asking_range_wan": [
+        3980,
+        3980
+      ],
+      "total_ping": 34.14,
+      "age_years": 53.6,
+      "building_type": "公寓",
+      "bedrooms": 4,
+      "floor": "4/4F",
+      "lon": null,
+      "lat": null,
+      "location_precision_grade": null,
+      "verification_status": "insufficient_location",
+      "official_elementary": null,
+      "official_junior": null,
+      "official_location": null,
+      "source_school_claim": "金華國中",
+      "source_count": 1,
+      "listing_count": 1,
+      "sources": [
+        "rakuya"
+      ],
+      "source_listings": [
+        {
+          "source": "rakuya",
+          "source_listing_id": null,
+          "source_url": "https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106",
+          "title": "永康公園雙金華學區庭園美寓",
+          "asking_wan": 3980
+        }
+      ],
+      "source_url": "https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106",
+      "source_label": "rakuya",
+      "research_only": true
+    },
+    {
+      "canonical_home_id": "jinhua-qingtian-fudi-39.68-9f",
+      "query_school": "金華",
+      "name": "青田福邸",
+      "community": "青田福邸",
+      "street": "青田街",
+      "asking_wan": 4500,
+      "asking_label": "4,500 萬",
+      "asking_range_wan": [
+        4500,
+        4500
+      ],
+      "total_ping": 39.68,
+      "age_years": 42.4,
+      "building_type": "電梯大樓",
+      "bedrooms": 3,
+      "floor": "9/12F",
+      "lon": null,
+      "lat": null,
+      "location_precision_grade": null,
+      "verification_status": "insufficient_location",
+      "official_elementary": null,
+      "official_junior": null,
+      "official_location": null,
+      "source_school_claim": "金華國中",
+      "source_count": 1,
+      "listing_count": 1,
+      "sources": [
+        "rakuya"
+      ],
+      "source_listings": [
+        {
+          "source": "rakuya",
+          "source_listing_id": null,
+          "source_url": "https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106",
+          "title": "青田福邸採光宅",
+          "asking_wan": 4500
+        }
+      ],
+      "source_url": "https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106",
+      "source_label": "rakuya",
+      "research_only": true
+    },
+    {
+      "canonical_home_id": "jinhua-xinsheng1-30.45-1f",
+      "query_school": "金華",
+      "name": "大安森林公園金華一樓",
+      "community": null,
+      "street": "新生南路一段",
+      "asking_wan": 4788,
+      "asking_label": "4,788 萬",
+      "asking_range_wan": [
+        4788,
+        4788
+      ],
+      "total_ping": 30.45,
+      "age_years": 59.5,
+      "building_type": "公寓",
+      "bedrooms": 2,
+      "floor": "1/4F",
+      "lon": null,
+      "lat": null,
+      "location_precision_grade": null,
+      "verification_status": "insufficient_location",
+      "official_elementary": null,
+      "official_junior": null,
+      "official_location": null,
+      "source_school_claim": "金華國中",
+      "source_count": 2,
+      "listing_count": 2,
+      "sources": [
+        "591-search-index",
+        "alleyguide"
+      ],
+      "source_listings": [
+        {
+          "source": "alleyguide",
+          "source_listing_id": "6Av0q5rH1",
+          "source_url": "https://www.alleyguide.com.tw/listing/6Av0q5rH1",
+          "title": "大安森林公園金華一樓",
+          "asking_wan": 4788
+        },
+        {
+          "source": "591-search-index",
+          "source_listing_id": "S20662463",
+          "source_url": "https://sale.591.com.tw/home/house/detail/2/20662463.html",
+          "title": "金華國中新生南一樓大安森林公園站",
+          "asking_wan": null
+        }
+      ],
+      "source_url": "https://www.alleyguide.com.tw/listing/6Av0q5rH1",
+      "source_label": "591-search-index + alleyguide",
+      "research_only": true
+    },
+    {
+      "canonical_home_id": "jinhua-heping1-41.82-4f",
+      "query_school": "金華",
+      "name": "森林公園優質華廈",
+      "community": null,
+      "street": "和平東路一段",
+      "asking_wan": 4884,
+      "asking_label": "4,884 萬",
+      "asking_range_wan": [
+        4884,
+        4884
+      ],
+      "total_ping": 41.82,
+      "age_years": 35.4,
+      "building_type": "電梯大樓",
+      "bedrooms": 3,
+      "floor": "4/10F",
+      "lon": null,
+      "lat": null,
+      "location_precision_grade": null,
+      "verification_status": "insufficient_location",
+      "official_elementary": null,
+      "official_junior": null,
+      "official_location": null,
+      "source_school_claim": "金華國中",
+      "source_count": 1,
+      "listing_count": 1,
+      "sources": [
+        "rakuya"
+      ],
+      "source_listings": [
+        {
+          "source": "rakuya",
+          "source_listing_id": null,
+          "source_url": "https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106",
+          "title": "森林公園優質華廈",
+          "asking_wan": 4884
+        }
+      ],
+      "source_url": "https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106",
+      "source_label": "rakuya",
+      "research_only": true
+    },
+    {
+      "canonical_home_id": "jinhua-linyi-43.23-4f",
+      "query_school": "金華",
+      "name": "臨沂綠蔭靜巷電梯美宅",
+      "community": null,
+      "street": "臨沂街",
+      "asking_wan": 4980,
+      "asking_label": "4,980 萬",
+      "asking_range_wan": [
+        4980,
+        4980
+      ],
+      "total_ping": 43.23,
+      "age_years": 57.8,
+      "building_type": "公寓",
+      "bedrooms": 6,
+      "floor": "4F",
+      "lon": null,
+      "lat": null,
+      "location_precision_grade": null,
+      "verification_status": "insufficient_location",
+      "official_elementary": null,
+      "official_junior": null,
+      "official_location": null,
+      "source_school_claim": "金華國中",
+      "source_count": 1,
+      "listing_count": 1,
+      "sources": [
+        "alleyguide"
+      ],
+      "source_listings": [
+        {
+          "source": "alleyguide",
+          "source_listing_id": "tpmrLUsub",
+          "source_url": "https://www.alleyguide.com.tw/listing/tpmrLUsub",
+          "title": "臨沂綠蔭靜巷電梯美宅",
+          "asking_wan": 4980
+        }
+      ],
+      "source_url": "https://www.alleyguide.com.tw/listing/tpmrLUsub",
+      "source_label": "alleyguide",
+      "research_only": true
+    },
+    {
+      "canonical_home_id": "jinhua-xinsheng1-30.92-1f",
+      "query_school": "金華",
+      "name": "大安森林面公園四房美宅",
+      "community": null,
+      "street": "新生南路一段",
+      "asking_wan": 5280,
+      "asking_label": "5,280 萬",
+      "asking_range_wan": [
+        5280,
+        5280
+      ],
+      "total_ping": 30.92,
+      "age_years": 44.8,
+      "building_type": "華廈",
+      "bedrooms": 4,
+      "floor": "1/7F",
+      "lon": null,
+      "lat": null,
+      "location_precision_grade": null,
+      "verification_status": "insufficient_location",
+      "official_elementary": null,
+      "official_junior": null,
+      "official_location": null,
+      "source_school_claim": "金華國中",
+      "source_count": 1,
+      "listing_count": 1,
+      "sources": [
+        "rakuya"
+      ],
+      "source_listings": [
+        {
+          "source": "rakuya",
+          "source_listing_id": null,
+          "source_url": "https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106",
+          "title": "大安森林面公園四房美宅",
+          "asking_wan": 5280
+        }
+      ],
+      "source_url": "https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106",
+      "source_label": "rakuya",
+      "research_only": true
+    },
+    {
+      "canonical_home_id": "jinhua-roosevelt2-71.05-2f",
+      "query_school": "金華",
+      "name": "古亭捷運電梯大宅",
+      "community": null,
+      "street": "羅斯福路二段",
+      "asking_wan": 5980,
+      "asking_label": "5,980 萬",
+      "asking_range_wan": [
+        5980,
+        5980
+      ],
+      "total_ping": 71.05,
+      "age_years": 37.7,
+      "building_type": "電梯大樓",
+      "bedrooms": 5,
+      "floor": "2/5F",
+      "lon": null,
+      "lat": null,
+      "location_precision_grade": null,
+      "verification_status": "insufficient_location",
+      "official_elementary": null,
+      "official_junior": null,
+      "official_location": null,
+      "source_school_claim": "金華國中",
+      "source_count": 1,
+      "listing_count": 1,
+      "sources": [
+        "rakuya"
+      ],
+      "source_listings": [
+        {
+          "source": "rakuya",
+          "source_listing_id": null,
+          "source_url": "https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106",
+          "title": "古亭捷運電梯大宅",
+          "asking_wan": 5980
+        }
+      ],
+      "source_url": "https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106",
+      "source_label": "rakuya",
+      "research_only": true
+    },
+    {
+      "canonical_home_id": "jinhua-chaozhou-56.98-5f",
+      "query_school": "金華",
+      "name": "大安森林新生金華一層一戶挑高3房車",
+      "community": null,
+      "street": "潮州街",
+      "asking_wan": 6580,
+      "asking_label": "6,580 萬",
+      "asking_range_wan": [
+        6580,
+        6580
+      ],
+      "total_ping": 56.98,
+      "age_years": 36.2,
+      "building_type": "華廈",
+      "bedrooms": 3,
+      "floor": "5/6F",
+      "lon": null,
+      "lat": null,
+      "location_precision_grade": null,
+      "verification_status": "insufficient_location",
+      "official_elementary": null,
+      "official_junior": null,
+      "official_location": null,
+      "source_school_claim": "金華國中",
+      "source_count": 1,
+      "listing_count": 1,
+      "sources": [
+        "rakuya"
+      ],
+      "source_listings": [
+        {
+          "source": "rakuya",
+          "source_listing_id": null,
+          "source_url": "https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106",
+          "title": "大安森林新生金華一層一戶挑高3房車",
+          "asking_wan": 6580
+        }
+      ],
+      "source_url": "https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106",
+      "source_label": "rakuya",
+      "research_only": true
+    },
+    {
+      "canonical_home_id": "jinhua-taishun-50.28-1f",
+      "query_school": "金華",
+      "name": "泰順街一樓加地下室",
+      "community": null,
+      "street": "泰順街",
+      "asking_wan": 6980,
+      "asking_label": "6,980 萬",
+      "asking_range_wan": [
+        6980,
+        6980
+      ],
+      "total_ping": 50.28,
+      "age_years": 44,
+      "building_type": "公寓",
+      "bedrooms": 3,
+      "floor": "1/5F",
+      "lon": null,
+      "lat": null,
+      "location_precision_grade": null,
+      "verification_status": "insufficient_location",
+      "official_elementary": null,
+      "official_junior": null,
+      "official_location": null,
+      "source_school_claim": "金華國中",
+      "source_count": 1,
+      "listing_count": 1,
+      "sources": [
+        "rakuya"
+      ],
+      "source_listings": [
+        {
+          "source": "rakuya",
+          "source_listing_id": null,
+          "source_url": "https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106",
+          "title": "泰順街一樓加地下室",
+          "asking_wan": 6980
+        }
+      ],
+      "source_url": "https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106",
+      "source_label": "rakuya",
+      "research_only": true
+    },
+    {
+      "canonical_home_id": "jinhua-xueyuan-55.36-9f",
+      "query_school": "金華",
+      "name": "學苑大廈",
+      "community": "學苑大廈",
+      "street": "新生南路三段",
+      "asking_wan": 6980,
+      "asking_label": "6,980 萬",
+      "asking_range_wan": [
+        6980,
+        6980
+      ],
+      "total_ping": 55.36,
+      "age_years": 47,
+      "building_type": "電梯大樓",
+      "bedrooms": 4,
+      "floor": "9/12F",
+      "lon": null,
+      "lat": null,
+      "location_precision_grade": null,
+      "verification_status": "insufficient_location",
+      "official_elementary": null,
+      "official_junior": null,
+      "official_location": null,
+      "source_school_claim": "金華國中",
+      "source_count": 1,
+      "listing_count": 1,
+      "sources": [
+        "rakuya"
+      ],
+      "source_listings": [
+        {
+          "source": "rakuya",
+          "source_listing_id": null,
+          "source_url": "https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106",
+          "title": "捷運台電金華國中龍門國中",
+          "asking_wan": 6980
+        }
+      ],
+      "source_url": "https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106",
+      "source_label": "rakuya",
+      "research_only": true
+    },
+    {
+      "canonical_home_id": "jinhua-taishun-48.54-1f",
+      "query_school": "金華",
+      "name": "泰順街前後庭院三房有車位",
+      "community": null,
+      "street": "泰順街",
+      "asking_wan": 6999,
+      "asking_label": "6,999 萬",
+      "asking_range_wan": [
+        6999,
+        6999
+      ],
+      "total_ping": 48.54,
+      "age_years": 35,
+      "building_type": "電梯大樓",
+      "bedrooms": 3,
+      "floor": "1/6F",
+      "lon": null,
+      "lat": null,
+      "location_precision_grade": null,
+      "verification_status": "insufficient_location",
+      "official_elementary": null,
+      "official_junior": null,
+      "official_location": null,
+      "source_school_claim": "金華國中",
+      "source_count": 1,
+      "listing_count": 1,
+      "sources": [
+        "rakuya"
+      ],
+      "source_listings": [
+        {
+          "source": "rakuya",
+          "source_listing_id": null,
+          "source_url": "https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106",
+          "title": "泰順街前後庭院三房有車位",
+          "asking_wan": 6999
+        }
+      ],
+      "source_url": "https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106",
+      "source_label": "rakuya",
+      "research_only": true
+    },
+    {
+      "canonical_home_id": "jinhua-yongkang-liyuan-63.41-4f",
+      "query_school": "金華",
+      "name": "永康麗園",
+      "community": "永康麗園",
+      "street": "新生南路二段",
+      "asking_wan": 7680,
+      "asking_label": "7,680 萬",
+      "asking_range_wan": [
+        7680,
+        7680
+      ],
+      "total_ping": 63.41,
+      "age_years": 30.7,
+      "building_type": "電梯大樓",
+      "bedrooms": 3,
+      "floor": "4/9F",
+      "lon": 121.53159,
+      "lat": 25.031582,
+      "location_precision_grade": "A-",
+      "verification_status": "verified_exact",
+      "official_elementary": "新生",
+      "official_junior": "金華",
+      "official_location": "大安區 福住里 1鄰",
+      "source_school_claim": "金華國中",
+      "source_count": 2,
+      "listing_count": 2,
+      "sources": [
+        "591-search-index",
+        "rakuya"
+      ],
+      "source_listings": [
+        {
+          "source": "rakuya",
+          "source_listing_id": null,
+          "source_url": "https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106",
+          "title": "大安森林綠景3房車",
+          "asking_wan": 7680
+        },
+        {
+          "source": "591-search-index",
+          "source_listing_id": "S20350827",
+          "source_url": "https://sale.591.com.tw/home/house/detail/2/20350827.html",
+          "title": "大安森林綠景3房車",
+          "asking_wan": 7680
+        }
+      ],
+      "source_url": "https://www.rakuya.com.tw/sell/result?keyword=%E9%87%91%E8%8F%AF%E5%9C%8B%E4%B8%AD&zipcode=106",
+      "source_label": "591-search-index + rakuya",
+      "research_only": true
+    },
+    {
+      "canonical_home_id": "jinhua-591-s20794861",
+      "query_school": "金華",
+      "name": "東門站走5分三面採光美寓",
+      "community": null,
+      "street": "東門生活圈",
+      "asking_wan": null,
+      "asking_label": "價格待補",
+      "asking_range_wan": null,
+      "total_ping": null,
+      "age_years": null,
+      "building_type": "公寓",
+      "bedrooms": 4,
+      "floor": null,
+      "lon": null,
+      "lat": null,
+      "location_precision_grade": null,
+      "verification_status": "insufficient_location",
+      "official_elementary": null,
+      "official_junior": null,
+      "official_location": null,
+      "source_school_claim": "金華國中",
+      "source_count": 1,
+      "listing_count": 1,
+      "sources": [
+        "591-search-index"
+      ],
+      "source_listings": [
+        {
+          "source": "591-search-index",
+          "source_listing_id": "S20794861",
+          "source_url": "https://sale.591.com.tw/home/house/detail/2/20794861.html",
+          "title": "東門站走5分三面採光美寓",
+          "asking_wan": null
+        }
+      ],
+      "source_url": "https://sale.591.com.tw/home/house/detail/2/20794861.html",
+      "source_label": "591-search-index",
+      "research_only": true
+    }
+  ]
+}

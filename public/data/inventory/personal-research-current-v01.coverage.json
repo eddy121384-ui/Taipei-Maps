@@ -1,0 +1,70 @@
+{
+  "schema_version": "0.1",
+  "snapshot_id": "2026-08-29-v01",
+  "observed_at": "2026-08-29T14:40:00+08:00",
+  "research_only": true,
+  "complete_market_inventory": false,
+  "source_policy": "Public search/discovery snapshot. No unauthorized bulk 591 crawler. Photos, full descriptions and personal contact data are not stored.",
+  "sources": {
+    "rakuya": 29,
+    "alleyguide": 10,
+    "591-search-index": 6
+  },
+  "raw_listing_rows": 45,
+  "canonical_unique_homes": 37,
+  "duplicate_rows_collapsed": 8,
+  "cross_source_homes": 5,
+  "verification_status": {
+    "insufficient_location": 34,
+    "verified_exact": 2,
+    "verified_shared": 1
+  },
+  "school_coverage": {
+    "金華": {
+      "canonical_homes": 23,
+      "verified_exact": 1,
+      "verified_shared": 1,
+      "insufficient_location": 21,
+      "mismatch": 0
+    },
+    "中正": {
+      "canonical_homes": 14,
+      "verified_exact": 1,
+      "verified_shared": 0,
+      "insufficient_location": 13,
+      "mismatch": 0
+    }
+  },
+  "field_completeness": {
+    "asking_wan": {
+      "count": 34,
+      "total": 37,
+      "ratio": 0.9189
+    },
+    "total_ping": {
+      "count": 33,
+      "total": 37,
+      "ratio": 0.8919
+    },
+    "age_years": {
+      "count": 34,
+      "total": 37,
+      "ratio": 0.9189
+    },
+    "building_type": {
+      "count": 37,
+      "total": 37,
+      "ratio": 1
+    },
+    "bedrooms": {
+      "count": 36,
+      "total": 37,
+      "ratio": 0.973
+    },
+    "floor": {
+      "count": 35,
+      "total": 37,
+      "ratio": 0.9459
+    }
+  }
+}

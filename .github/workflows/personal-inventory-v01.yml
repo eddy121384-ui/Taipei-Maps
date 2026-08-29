@@ -1,0 +1,47 @@
+name: Personal research inventory v0.1
+
+on:
+  push:
+    branches:
+      - research/personal-inventory-v01
+    paths:
+      - 'public/data/inventory/personal-research-2026-08-29-v01.raw.json'
+      - 'tools/research/build_personal_inventory_snapshot_v01.mjs'
+      - 'tools/dev/test_personal_inventory_snapshot_v01.mjs'
+      - '.github/workflows/personal-inventory-v01.yml'
+  pull_request:
+    paths:
+      - 'public/data/inventory/personal-research-2026-08-29-v01.raw.json'
+      - 'public/data/inventory/personal-research-current-v01.json'
+      - 'public/data/inventory/personal-research-current-v01.coverage.json'
+      - 'tools/research/build_personal_inventory_snapshot_v01.mjs'
+      - 'tools/dev/test_personal_inventory_snapshot_v01.mjs'
+      - '.github/workflows/personal-inventory-v01.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build canonical snapshot
+        run: node tools/research/build_personal_inventory_snapshot_v01.mjs
+      - name: Validate snapshot
+        run: node tools/dev/test_personal_inventory_snapshot_v01.mjs
+      - name: Commit generated snapshot on research branch
+        if: github.event_name == 'push'
+        run: |
+          if [ -z "$(git status --porcelain -- public/data/inventory/personal-research-current-v01.json public/data/inventory/personal-research-current-v01.coverage.json)" ]; then
+            echo "Snapshot already current."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/inventory/personal-research-current-v01.json public/data/inventory/personal-research-current-v01.coverage.json
+          git commit -m "data: refresh canonical personal inventory snapshot"
+          git push

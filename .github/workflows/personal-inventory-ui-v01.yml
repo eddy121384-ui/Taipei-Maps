@@ -7,6 +7,7 @@ on:
     paths:
       - 'public/data/inventory/personal-research-current-v01.json'
       - 'tools/research/apply_personal_inventory_ui_v01.mjs'
+      - 'tools/dev/test_personal_inventory_ui_v01.mjs'
       - '.github/workflows/personal-inventory-ui-v01.yml'
 
 permissions:
@@ -22,10 +23,10 @@ jobs:
           node-version: '22'
       - name: Apply personal inventory UI bridge
         run: node tools/research/apply_personal_inventory_ui_v01.mjs
-      - name: Run inventory filter regression
-        run: node tools/dev/test_inventory_filters_v01.mjs
-      - name: Run school inventory regression
+      - name: Run school inventory fixture regression
         run: node tools/dev/test_school_inventory_prototype_v01.mjs
+      - name: Run personal snapshot UI regression
+        run: node tools/dev/test_personal_inventory_ui_v01.mjs
       - name: Commit UI bridge if changed
         run: |
           if git diff --quiet -- public/inventory-prototype-v01.js public/mobile-school-inventory-v04.html; then

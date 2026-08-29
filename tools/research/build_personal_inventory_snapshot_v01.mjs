@@ -11,6 +11,7 @@ const populated=v=>v!==null&&v!==undefined&&v!=='';
 const completeness=row=>[
   'asking_wan','total_ping','age_years','building_type','bedrooms','floor','street','community','lon','lat','location_precision_grade'
 ].reduce((n,k)=>n+(populated(row[k])?1:0),0);
+const buildingForm=type=>String(type||'').includes('公寓')||String(type||'').includes('透天')?'walkup':String(type||'').includes('電梯')||String(type||'').includes('華廈')?'elevator':null;
 
 const groups=new Map();
 for(const row of rows){
@@ -45,19 +46,27 @@ for(const [key,group] of groups){
   }));
   const verifiedRow=group.find(r=>r.verification_status)||{};
   const status=verification(group);
+  const askingMin=asking.length?asking[0]:null;
+  const area=populated(rep.total_ping)?Number(rep.total_ping):null;
+  const bedrooms=populated(rep.bedrooms)?Number(rep.bedrooms):null;
+  const unitPrice=askingMin&&area?Number((askingMin/area).toFixed(2)):null;
   homes.push({
+    id:key,
     canonical_home_id:key,
     query_school:rep.query_school,
     name:rep.community||rep.title,
     community:rep.community||null,
     street:rep.street||null,
-    asking_wan:asking.length?asking[0]:null,
+    asking_wan:askingMin,
     asking_label:asking.length===0?'價格待補':asking.length===1?`${asking[0].toLocaleString('en-US')} 萬`:`${asking[0].toLocaleString('en-US')}–${asking.at(-1).toLocaleString('en-US')} 萬`,
     asking_range_wan:asking.length?[asking[0],asking.at(-1)]:null,
-    total_ping:populated(rep.total_ping)?Number(rep.total_ping):null,
+    unit_price_label:unitPrice?`約 ${unitPrice.toLocaleString('en-US')} 萬/坪（canonical min ask）`:null,
+    total_ping:area,
     age_years:populated(rep.age_years)?Number(rep.age_years):null,
     building_type:rep.building_type||null,
-    bedrooms:populated(rep.bedrooms)?Number(rep.bedrooms):null,
+    building_form:buildingForm(rep.building_type),
+    bedrooms,
+    layout:bedrooms>0?`${bedrooms}房`:bedrooms===0?'開放式／套房':null,
     floor:rep.floor||null,
     lon:populated(verifiedRow.lon)?Number(verifiedRow.lon):null,
     lat:populated(verifiedRow.lat)?Number(verifiedRow.lat):null,
@@ -66,6 +75,7 @@ for(const [key,group] of groups){
     official_elementary:verifiedRow.official_elementary||null,
     official_junior:verifiedRow.official_junior||null,
     official_location:verifiedRow.official_location||null,
+    external_school_claim:`${rep.query_school}國中`,
     source_school_claim:`${rep.query_school}國中`,
     source_count:sources.length,
     listing_count:group.length,
@@ -73,11 +83,12 @@ for(const [key,group] of groups){
     source_listings:sourceListings,
     source_url:sourceListings[0]?.source_url||null,
     source_label:sources.join(' + '),
+    note:status==='insufficient_location'?'公開來源目前只足以辨識到街道／社區級，尚不足以用官方里鄰界驗證；不製造假座標。':status==='verified_shared'?'官方為共同學區，不能簡化成單一學校。':'',
     research_only:true
   });
 }
 
-homes.sort((a,b)=>a.query_school.localeCompare(b.query_school,'zh-Hant')-(0)||((a.asking_wan??Infinity)-(b.asking_wan??Infinity)));
+homes.sort((a,b)=>a.query_school.localeCompare(b.query_school,'zh-Hant')||((a.asking_wan??Infinity)-(b.asking_wan??Infinity)));
 
 const statusCounts=homes.reduce((acc,h)=>(acc[h.verification_status]=(acc[h.verification_status]||0)+1,acc),{});
 const sourceCounts=rows.reduce((acc,r)=>(acc[r.source]=(acc[r.source]||0)+1,acc),{});

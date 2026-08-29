@@ -5,6 +5,8 @@ on:
     paths:
       - 'public/maplibre-pmtiles-provider-spike.html'
       - 'public/inventory-prototype-v01.js'
+      - 'public/inventory-filter-core-v01.mjs'
+      - 'public/mobile-school-inventory-v04.html'
       - 'public/data/inventory/school-district-inventory-prototype-v01.json'
       - 'tools/dev/test_school_inventory_prototype_v01.mjs'
       - 'start-desktop-full-stack-smoke.bat'
@@ -15,6 +17,8 @@ on:
     paths:
       - 'public/maplibre-pmtiles-provider-spike.html'
       - 'public/inventory-prototype-v01.js'
+      - 'public/inventory-filter-core-v01.mjs'
+      - 'public/mobile-school-inventory-v04.html'
       - 'public/data/inventory/school-district-inventory-prototype-v01.json'
       - 'tools/dev/test_school_inventory_prototype_v01.mjs'
       - 'start-desktop-full-stack-smoke.bat'
@@ -28,7 +32,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Inventory UX semantic regression
+      - name: Inventory UX + filter semantic regression
         run: node tools/dev/test_school_inventory_prototype_v01.mjs
       - name: Existing Location Summary regression
         run: node tools/dev/test_location_summary_desktop_integration_v01.mjs

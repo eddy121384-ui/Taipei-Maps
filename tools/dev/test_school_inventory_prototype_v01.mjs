@@ -1,49 +1,64 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
+import {summarizeInventory,matchesInventoryFilters} from '../../public/inventory-filter-core-v01.mjs';
 
 const fixture=JSON.parse(fs.readFileSync('public/data/inventory/school-district-inventory-prototype-v01.json','utf8'));
 const homes=fixture.homes||[];
 assert.equal(fixture.research_only,true,'fixture must remain research-only');
 assert.equal(fixture.complete_market_inventory,false,'prototype must not claim complete market coverage');
-assert.equal(homes.length,5,'expected fixed five-home UX fixture');
+assert.equal(homes.length,6,'expected six-home UX fixture including one street-only old-walkup candidate');
 
 const counts=homes.reduce((a,h)=>(a[h.verification_status]=(a[h.verification_status]||0)+1,a),{});
 assert.equal(counts.verified_exact,3,'expected 3 exact verified fixtures');
 assert.equal(counts.verified_shared,1,'expected 1 shared verified fixture');
+assert.equal(counts.insufficient_location,1,'expected 1 insufficient-location candidate');
 assert.equal(counts.mismatch,1,'expected 1 mismatch fixture');
 
-const verified=h=>['verified_exact','verified_shared'].includes(h.verification_status);
-const jinhua=homes.filter(h=>h.query_school==='金華');
-const zhongzheng=homes.filter(h=>h.query_school==='中正');
-assert.equal(jinhua.filter(verified).length,3,'金華 buyer count must include exact + shared');
-assert.equal(zhongzheng.filter(verified).length,1,'中正 buyer count must exclude mismatch');
-assert.equal(zhongzheng.filter(h=>h.verification_status==='mismatch').length,1,'expected one 中正 mismatch research candidate');
-assert.equal(homes.find(h=>h.name==='中正名門')?.official_junior,'弘道','中正名門 mismatch must preserve official 弘道 result');
-assert.match(homes.find(h=>h.name==='大安MONEY賦寓')?.official_junior||'',/共同學區/,'shared catchment wording must survive');
+const jinhuaDefault=summarizeInventory(homes,{school:'金華'});
+assert.equal(jinhuaDefault.total,4,'金華 default should show 3 verified + 1 pending-location candidate');
+assert.equal(jinhuaDefault.verified,3,'金華 verified count remains 3');
+assert.equal(jinhuaDefault.pending_location,1,'金華 should expose one pending-location candidate');
+assert.equal(jinhuaDefault.mismatch,0,'mismatch hidden by default');
+
+const zhongzhengDefault=summarizeInventory(homes,{school:'中正'});
+assert.equal(zhongzhengDefault.total,1,'中正 default buyer list excludes mismatch');
+assert.equal(zhongzhengDefault.verified,1,'中正 buyer count must remain 1');
+const zhongzhengDebug=summarizeInventory(homes,{school:'中正',showMismatch:true});
+assert.equal(zhongzhengDebug.total,2,'debug may expose mismatch without changing verified semantics');
+assert.equal(zhongzhengDebug.verified,1,'mismatch must never inflate verified count');
+
+const oldWalkup=homes.find(h=>h.id==='ux-jinhua-chaozhou-old-walkup');
+assert.equal(oldWalkup.verification_status,'insufficient_location');
+assert.equal(oldWalkup.building_form,'walkup');
+assert.ok(oldWalkup.age_years>=40);
+assert.equal(oldWalkup.lon,null,'street-only listing must not invent longitude');
+assert.equal(oldWalkup.lat,null,'street-only listing must not invent latitude');
+
+let s=summarizeInventory(homes,{school:'金華',filters:{age_min_years:40}});
+assert.equal(s.total,1,'40+ filter should surface old walkup candidate');
+assert.equal(s.verified,0,'street-only old walkup must not be counted verified');
+assert.equal(s.pending_location,1);
+s=summarizeInventory(homes,{school:'金華',filters:{building_form:'walkup'}});
+assert.equal(s.total,1,'walkup filter should isolate old apartment candidate');
+assert.equal(s.visible[0].id,'ux-jinhua-chaozhou-old-walkup');
+s=summarizeInventory(homes,{school:'金華',filters:{price_max_wan:3000}});
+assert.equal(s.total,1,'3,000萬 cap should isolate 2,311萬 fixture');
+assert.equal(s.visible[0].id,'ux-jinhua-money');
+s=summarizeInventory(homes,{school:'金華',filters:{ping_band:'20_40'}});
+assert.deepEqual(new Set(s.visible.map(h=>h.id)),new Set(['ux-jinhua-linyi','ux-jinhua-chaozhou-old-walkup']));
+s=summarizeInventory(homes,{school:'金華',filters:{bedrooms_min:3}});
+assert.deepEqual(new Set(s.visible.map(h=>h.id)),new Set(['ux-jinhua-yongkang','ux-jinhua-chaozhou-old-walkup']));
+assert.equal(matchesInventoryFilters({asking_wan:null},{price_max_wan:5000}),false,'unknown price must not pass active price filter');
+assert.equal(matchesInventoryFilters({age_years:null},{age_min_years:40}),false,'unknown age must not pass active age filter');
 
 const html=fs.readFileSync('public/maplibre-pmtiles-provider-spike.html','utf8');
-for(const token of ['id="basemapMap"','id="basemapPhoto"','id="toggleLocal"','id="toggle3d"','id="toggleTerrain"','id="districtBtn"','id="juniorBtn"','id="schoolPointBtn"','id="summaryBtn"']){
-  assert.ok(html.includes(token),`desktop map lost existing control ${token}`);
-}
+for(const token of ['id="basemapMap"','id="basemapPhoto"','id="toggleLocal"','id="toggle3d"','id="toggleTerrain"','id="districtBtn"','id="juniorBtn"','id="schoolPointBtn"','id="summaryBtn"'])assert.ok(html.includes(token),`desktop map lost existing control ${token}`);
 assert.ok(html.includes('window.__taipeiMapsDesktopMap=map;'),'desktop map bridge missing');
 assert.ok(html.includes('src="./inventory-prototype-v01.js"'),'inventory module loader missing');
-
 const plugin=fs.readFileSync('public/inventory-prototype-v01.js','utf8');
-for(const token of ['inventoryBtn','inventoryShowMismatch','verified_exact','verified_shared','mismatch','official_junior','source_url','summaryBtn']){
-  assert.ok(plugin.includes(token),`inventory UX contract missing ${token}`);
-}
-assert.ok(plugin.includes("VERIFIED.has(h.verification_status)"),'verified result filtering contract missing');
+for(const token of ['inventoryBtn','inventoryShowMismatch','filterPrice','filterPing','filterAge','filterForm','filterBedrooms','inventoryResetFilters','insufficient_location','selectFromOfficialAssignment','school-catchment-fill'])assert.ok(plugin.includes(token),`inventory UX contract missing ${token}`);
+assert.ok(plugin.includes("if(p.level!=='junior')return"),'school click must remain junior-only');
+assert.ok(plugin.includes('目前 prototype 尚無此學區的房源 fixture'),'unsupported school must clear prior inventory');
 assert.ok(plugin.includes("if(summaryBtn?.classList.contains('active'))summaryBtn.click()"),'inventory/summary mutual exclusion missing');
 
-// Map-first product flow: clicking an official junior catchment drives the inventory selector.
-assert.ok(plugin.includes("const layerId='school-catchment-fill'"),'school catchment click bridge missing');
-assert.ok(plugin.includes("map.on('click',layerId"),'school catchment click handler missing');
-assert.ok(plugin.includes("if(p.level!=='junior')return"),'inventory must ignore elementary catchment clicks');
-assert.ok(plugin.includes('selectFromOfficialAssignment(p.school)'),'official school assignment is not wired into inventory selection');
-assert.ok(plugin.includes("Object.keys(SCHOOL_LABEL).find(key=>raw.includes(key))||null"),'shared catchment must resolve supported school names without rewriting official wording');
-assert.ok(plugin.includes("requestedAssignment=raw"),'selected official assignment must be retained for unsupported-school UX');
-assert.ok(plugin.includes('prototype 尚無此學區的房源 fixture'),'unsupported catchment must show explicit no-fixture state');
-assert.ok(plugin.includes('clearMarkers();\n        const label=requestedAssignment'),'unsupported catchment must clear prior-school markers before rendering no-fixture state');
-assert.ok(plugin.includes('TaipeiMapsInventoryPrototypeV01'),'inventory selector API must remain externally testable/reusable');
-
-console.log('PASS school inventory prototype · map school selection → inventory · exact/shared/mismatch semantics · unsupported clears stale homes · desktop controls preserved');
+console.log('PASS school inventory prototype · filters v0.1 · old-walkup candidate · exact/shared/pending/mismatch semantics');

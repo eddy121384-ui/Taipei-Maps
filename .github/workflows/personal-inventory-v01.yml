@@ -36,7 +36,7 @@ jobs:
       - name: Commit generated snapshot on research branch
         if: github.event_name == 'push'
         run: |
-          if git diff --quiet; then
+          if [ -z "$(git status --porcelain -- public/data/inventory/personal-research-current-v01.json public/data/inventory/personal-research-current-v01.coverage.json)" ]; then
             echo "Snapshot already current."
             exit 0
           fi

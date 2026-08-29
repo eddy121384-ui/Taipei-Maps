@@ -131,6 +131,7 @@
     {id:'local-official-flat',type:'fill',source:'localOfficial','source-layer':localSourceLayer,minzoom:13,layout:{visibility:'none'},paint:{'fill-color':'#f7f8f9','fill-opacity':.9,'fill-outline-color':'rgba(70,80,90,.3)'}}
   ];
   const map=core.createMap({container:'map',view:{...core.PLACES.daan,zoom:15,pitch:0,bearing:0},overtureUrl:overture.candidate.url,hasParts:overture.hasParts,extraSources,extraLayers});
+  window.__taipeiMapsDesktopMap=map;
   map.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'top-right');
   map.addControl(new maplibregl.ScaleControl({maxWidth:120,unit:'metric'}),'bottom-right');
 
@@ -252,5 +253,6 @@
   initSummary();
 })();
 </script>
+<script type="module" src="./inventory-prototype-v01.js"></script>
 </body>
 </html>

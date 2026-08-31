@@ -10,9 +10,11 @@ const desktopOverlay=fs.readFileSync('public/radius-inventory-desktop-v01.js','u
 // The committed architecture is intentionally overlay-based: the existing
 // school inventory shells expose their map instance and load a separate radius
 // module. Do not require generated radius markup to be inlined into the shell.
+// Mobile may load the overlay from a pinned jsDelivr URL for Safari/Vercel
+// compatibility, so lock the module filename rather than one specific URL form.
 for(const token of [
   'window.__taipeiMapsMobileMap=map',
-  './radius-inventory-mobile-v01.js',
+  'radius-inventory-mobile-v01.js',
   "map.on('click','school-catchment-fill'"
 ])assert.ok(mobileShell.includes(token),`mobile radius loader contract missing: ${token}`);
 

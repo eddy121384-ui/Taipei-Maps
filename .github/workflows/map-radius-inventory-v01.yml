@@ -6,18 +6,22 @@ on:
       - feat/map-radius-inventory-v01
     paths:
       - 'public/inventory-spatial-core-v01.mjs'
-      - 'tools/research/apply_map_radius_inventory_v01.mjs'
+      - 'public/radius-inventory-mobile-v01.js'
+      - 'public/radius-inventory-desktop-v01.js'
+      - 'tools/research/apply_map_radius_inventory_v02.mjs'
       - 'tools/dev/test_inventory_spatial_v01.mjs'
-      - 'tools/dev/test_map_radius_inventory_v01.mjs'
+      - 'tools/dev/test_map_radius_inventory_overlay_v01.mjs'
       - '.github/workflows/map-radius-inventory-v01.yml'
   pull_request:
     paths:
       - 'public/inventory-spatial-core-v01.mjs'
-      - 'public/inventory-prototype-v01.js'
+      - 'public/radius-inventory-mobile-v01.js'
+      - 'public/radius-inventory-desktop-v01.js'
       - 'public/mobile-school-inventory-v04.html'
-      - 'tools/research/apply_map_radius_inventory_v01.mjs'
+      - 'public/maplibre-pmtiles-provider-spike.html'
+      - 'tools/research/apply_map_radius_inventory_v02.mjs'
       - 'tools/dev/test_inventory_spatial_v01.mjs'
-      - 'tools/dev/test_map_radius_inventory_v01.mjs'
+      - 'tools/dev/test_map_radius_inventory_overlay_v01.mjs'
       - '.github/workflows/map-radius-inventory-v01.yml'
 
 permissions:
@@ -31,25 +35,25 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Apply radius inventory UI
-        run: node tools/research/apply_map_radius_inventory_v01.mjs
+      - name: Apply radius inventory overlay loaders
+        run: node tools/research/apply_map_radius_inventory_v02.mjs
       - name: Spatial semantic regression
         run: node tools/dev/test_inventory_spatial_v01.mjs
       - name: Existing school inventory regression
         run: node tools/dev/test_school_inventory_prototype_v01.mjs
       - name: Personal snapshot regression
         run: node tools/dev/test_personal_inventory_snapshot_v01.mjs
-      - name: Radius UI static contract
-        run: node tools/dev/test_map_radius_inventory_v01.mjs
-      - name: Commit generated UI on feature branch
+      - name: Radius overlay static contract
+        run: node tools/dev/test_map_radius_inventory_overlay_v01.mjs
+      - name: Commit generated loaders on feature branch
         if: github.event_name == 'push'
         run: |
-          if [ -z "$(git status --porcelain -- public/inventory-prototype-v01.js public/mobile-school-inventory-v04.html)" ]; then
-            echo "Radius UI already current."
+          if [ -z "$(git status --porcelain -- public/mobile-school-inventory-v04.html public/maplibre-pmtiles-provider-spike.html)" ]; then
+            echo "Radius overlay loaders already current."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/inventory-prototype-v01.js public/mobile-school-inventory-v04.html
-          git commit -m "feat: add map radius inventory search to desktop and mobile"
+          git add public/mobile-school-inventory-v04.html public/maplibre-pmtiles-provider-spike.html
+          git commit -m "feat: load map radius inventory on desktop and mobile"
           git push

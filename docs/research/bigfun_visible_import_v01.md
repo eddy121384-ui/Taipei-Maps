@@ -1,63 +1,64 @@
-# BigFun Search Results Collector v0.2
+# BigFun Search Results Collector v0.3
 
 Issue #77. Personal-research spike only.
 
 ## Purpose
 
-Let the user browse BigFun normally and explicitly collect the listing cards already loaded on each current result page into a persistent local basket, then export the basket to 卜居 as temporary research inventory.
+Let the user browse BigFun normally, collect the listing cards already loaded on each current result page into a persistent local basket, then import the accumulated basket into 卜居 temporary inventory.
 
-## Browser helper
+## Edge / Chromium helper
 
-Unpacked Chromium extension folder:
+Folder: `tools/browser/bigfun-visible-helper-v01/`
 
-`tools/browser/bigfun-visible-helper-v01/`
+Install/reload in Edge via `edge://extensions` → Developer mode → Load unpacked / Reload.
 
-Edge install/update:
+The helper runs only on `https://www.ibigfun.com/*` and requests no extension permissions.
 
-1. Open `edge://extensions`.
-2. Enable Developer mode.
-3. Choose **Load unpacked** for first install, or **Reload** after pulling a new revision.
-4. Select the folder above.
+## Collection flow
 
-The extension runs only on `https://www.ibigfun.com/*` and requests no extension permissions.
-
-## Collection semantics
-
-Collection is explicit and page-by-page:
-
-1. Open the collector (`📦 卜居收集籃`).
-2. It scans listing-like cards already loaded in the current BigFun result page DOM, including cards outside the current viewport when they are still rendered by BigFun.
-3. Review the detected current-page rows; deselect any row if needed.
+1. Open BigFun normal map/list results.
+2. Open `📦 卜居收集籃` (left side; panel can be dragged).
+3. Review current-page detected cards and their `相關地址`.
 4. Click `＋ 收集本頁`.
-5. Browse/turn to the next BigFun result page normally.
-6. Open the collector and click `＋ 收集本頁` again.
-7. The local basket persists across normal BigFun page navigation and deduplicates already-collected rows.
-8. Click `📦 下載全部 JSON` when ready to import the complete basket into 卜居.
+5. Turn the BigFun page normally and collect again.
+6. Basket persists in localStorage and deduplicates rows.
+7. Download `buju.bigfun-visible.v0.3` JSON.
+8. Import with `📥 BigFun JSON` in 卜居.
 
-The helper does **not**:
+The helper does not auto-scroll, auto-paginate, call BigFun APIs, use XHR/fetch, or read internal endpoints. Map cluster counts are not converted into homes until BigFun renders the underlying normal result cards.
 
-- call BigFun APIs;
-- use `fetch`/XHR;
-- auto-scroll or automatically paginate;
-- query inventory that BigFun has not loaded into the current page DOM;
-- collect photos, full descriptions, phone numbers, owner identity, transcripts, or other personal data.
+## Address preservation
 
-Therefore a BigFun map cluster count is not itself exportable inventory. The underlying homes must first be presented by BigFun as normal loaded result cards.
+v0.3 explicitly extracts the BigFun card field `相關地址` and stores it as `address_text`. The original multi-line card text is also preserved for parsing/provenance.
 
-## Export schema
+The address is shown in 卜居 as **BigFun 相關地址 — 尚未官方驗證**. It must not be relabeled as an official address.
 
-`schema: buju.bigfun-visible.v0.2`
+## Map placement in 卜居
 
-The basket contains factual text/source fields captured from loaded result cards. `public/bigfun-visible-import-core-v01.mjs` normalizes them into minimal fields such as title, asking price, ping, age, bedrooms, floor, address text, source URL/page URL, capture time, and lat/lon only when already exposed as usable DOM data attributes.
+If the imported BigFun DOM already exposes trustworthy coordinates, those coordinates are used.
 
-All imported rows remain `verification_status=insufficient_location` until 卜居 resolves authoritative location/school truth.
+Otherwise, when a BigFun related address is available, 卜居 performs a research-only address geocode using the OpenStreetMap Nominatim public search service:
 
-## 卜居 desktop import
+- user-triggered by the JSON import / relocate action;
+- one request at a time, minimum 1100 ms between network requests;
+- localStorage cache by normalized address;
+- maximum 50 uncached network requests per run;
+- Taipei bounding guard;
+- endpoint can be overridden at runtime via `BUJU_GEOCODER_ENDPOINT` or `localStorage['buju.geocoder.endpoint']`;
+- successful results are labeled `location_basis=address-geocode-osm` and displayed as **approximate, non-official** pins;
+- failed/unresolved addresses stay list-only; no fake coordinates.
 
-`public/bigfun-visible-import-desktop-v01.js` adds `📥 BigFun JSON` to the desktop engineering map.
+UI includes OpenStreetMap attribution and a link to the Nominatim usage policy.
 
-Imported rows are stored in `sessionStorage` only and are not written into the #73 personal research snapshot. Rows with trustworthy coordinates can render temporary purple pins; rows without coordinates stay list-only.
+## Import semantics
 
-## Physical smoke status
+Imported rows remain temporary/session-only and do not modify the #73 persistent snapshot. School truth remains `insufficient_location` until the existing official resolver verifies it.
 
-Edge authenticated smoke confirmed that image-backed detection can match one visible BigFun listing card to one candidate after selector tuning. v0.2 now needs a physical smoke for full current-page detection, page-to-page basket persistence/deduplication, and final JSON import into 卜居.
+## Physical smoke target
+
+- full BigFun page detection remains correct;
+- collector no longer obstructs BigFun pagination;
+- `相關地址` survives BigFun → JSON → 卜居;
+- imported address rows progressively receive approximate pins when geocoding resolves;
+- clicking a card/pin focuses the location;
+- unresolved addresses remain visible without invented coordinates.

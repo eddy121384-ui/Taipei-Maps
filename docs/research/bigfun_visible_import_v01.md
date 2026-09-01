@@ -54,11 +54,12 @@ UI includes OpenStreetMap attribution and a link to the Nominatim usage policy.
 
 Imported rows remain temporary/session-only and do not modify the #73 persistent snapshot. School truth remains `insufficient_location` until the existing official resolver verifies it.
 
-## Physical smoke target
+## Physical smoke status
 
-- full BigFun page detection remains correct;
-- collector no longer obstructs BigFun pagination;
-- `相關地址` survives BigFun → JSON → 卜居;
-- imported address rows progressively receive approximate pins when geocoding resolves;
-- clicking a card/pin focuses the location;
-- unresolved addresses remain visible without invented coordinates.
+The v0.2 Edge smoke confirmed full-page collection: 20 detected / 20 collected on a BigFun result page. The same smoke exposed three v0.3 fixes now implemented:
+
+- preserve BigFun `相關地址` through JSON into 卜居;
+- address-geocode imported rows into approximate map pins;
+- move the helper launcher/panel away from BigFun right-side pagination and make the panel draggable.
+
+Next physical smoke should verify those three fixes end-to-end.

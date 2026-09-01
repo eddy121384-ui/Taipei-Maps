@@ -2,7 +2,7 @@ import {normalizeBigFunVisibleExport,toTemporaryInventoryHomes} from './bigfun-v
 import {geocodeBigFunHomes} from './bigfun-address-geocode-v01.mjs';
 
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
 const finite=v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v));
 
 async function waitForMap(){for(let i=0;i<160;i+=1){if(window.__taipeiMapsDesktopMap&&window.maplibregl)return window.__taipeiMapsDesktopMap;await sleep(100)}throw new Error('desktop map bridge unavailable')}
@@ -28,7 +28,7 @@ function injectStyle(){if(document.querySelector('#bigfunVisibleImportStyle'))re
   async function locateAddresses({fit=true}={}){
     const run=++geocodeRun;const candidates=homes.filter(h=>!finite(h.lon)&&!finite(h.lat)&&h.address_text).length;if(!candidates){render();if(fit)fitLocated();return}
     stat.innerHTML=`地址定位中… 0 / ${candidates}；已存在的座標不會覆蓋。`;
-    const result=await geocodeBigFunHomes(homes,{onProgress:p=>{if(run!==geocodeRun)return;stat.innerHTML=`地址定位中… 已定位 ${p.located} · 失敗 ${p.failed} · cache ${p.cache_hits}`}});
+    const result=await geocodeBigFunHomes(homes,{onProgress:p=>{if(run!==geocodeRun)return;if(Number.isInteger(p.home_index)&&p.home){homes[p.home_index]={...p.home};renderMarkers()}stat.innerHTML=`地址定位中… 已定位 ${p.located} · 失敗 ${p.failed} · 略過 ${p.skipped||0} · cache ${p.cache_hits}`}});
     if(run!==geocodeRun)return;homes=result.homes;render();if(fit)fitLocated();
   }
   function setPayload(raw){payload=normalizeBigFunVisibleExport(raw);homes=toTemporaryInventoryHomes(payload);sessionStorage.setItem(sessionKey,JSON.stringify(payload));render();panel.classList.add('open');button.classList.add('active');locateAddresses({fit:true})}

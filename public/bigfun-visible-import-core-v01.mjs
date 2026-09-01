@@ -1,7 +1,7 @@
 const SAFE_SOURCE='bigfun-visible';
 
 const clean=v=>String(v??'').replace(/\s+/g,' ').trim();
-const num=s=>{const n=Number(String(s??'').replace(/,/g,''));return Number.isFinite(n)?n:null};
+const num=s=>{if(s===null||s===undefined)return null;const raw=String(s).replace(/,/g,'').trim();if(!raw)return null;const n=Number(raw);return Number.isFinite(n)?n:null};
 
 export function parseVisibleListingText(text=''){
   const raw=clean(text);

@@ -55,6 +55,8 @@ echo [4/5] Running radius + inventory regressions...
 if errorlevel 1 goto :fail
 "%NODE_CMD%" tools\dev\test_map_radius_inventory_v01.mjs
 if errorlevel 1 goto :fail
+"%NODE_CMD%" tools\dev\test_bigfun_spatial_launcher_v01.mjs
+if errorlevel 1 goto :fail
 "%NODE_CMD%" tools\dev\test_personal_inventory_snapshot_v01.mjs
 if errorlevel 1 goto :fail
 
@@ -66,6 +68,8 @@ echo   - Click [PIN] Nearby / 附近.
 echo   - Click any map point; a 1km circle and center marker should appear.
 echo   - Switch 300m / 500m / 1km / 2km; circle and list should update.
 echo   - Click another map point; search center should move.
+echo   - After choosing a center, [BigFun search nearby] should enable and open BigFun with the same lat/lng.
+echo   - BigFun launcher must only deep-link; Buju must not fetch or scrape BigFun content.
 echo   - Price / area / age / building-form / bedrooms filters still apply.
 echo   - UI must disclose located coverage; current research snapshot is only 3/37 located.
 echo   - Unlocated candidates must never receive fake pins.

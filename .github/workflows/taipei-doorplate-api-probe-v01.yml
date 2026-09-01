@@ -1,0 +1,23 @@
+name: Taipei official doorplate API probe v0.1
+
+on:
+  push:
+    branches: [feat/bigfun-visible-results-import-v01]
+    paths:
+      - tools/research/probe_taipei_doorplate_api_v01.mjs
+      - .github/workflows/taipei-doorplate-api-probe-v01.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Probe official Taipei doorplate API
+        run: node tools/research/probe_taipei_doorplate_api_v01.mjs

@@ -3,7 +3,7 @@ setlocal
 cd /d "%~dp0"
 
 echo ==========================================================
-echo   Buju - BigFun Search Results Collector v0.2 smoke
+echo   Buju - BigFun Search Results Collector v0.3 smoke
 echo   Issue #77
 echo ==========================================================
 echo.
@@ -67,12 +67,13 @@ echo   - after each update: press Reload on the extension card
 echo.
 echo Test flow:
 echo   1. Browse BigFun normally and open a map/list result page.
-echo   2. Click [Buju Basket] / 卜居收集籃.
-echo   3. Confirm current-page detected rows, then click [+ Collect Page].
-echo   4. Turn to the next BigFun page normally and collect again.
-echo   5. Confirm basket count accumulates without duplicates.
-echo   6. Download the full JSON basket.
-echo   7. In Buju desktop click [BigFun JSON] and choose that file.
+echo   2. Click [Buju Basket] / 卜居收集籃 on the LEFT side.
+echo   3. Confirm current-page rows include BigFun related addresses.
+echo   4. Collect page 1, turn BigFun page normally, collect page 2.
+echo   5. Download the full JSON basket.
+echo   6. In Buju desktop click [BigFun JSON] and choose that file.
+echo   7. Confirm addresses remain visible and address-geocoded pins appear progressively.
+echo   8. OSM/Nominatim address pins are approximate research locations, not official coordinates.
 echo.
 call start-desktop-full-stack-smoke.bat
 exit /b %errorlevel%

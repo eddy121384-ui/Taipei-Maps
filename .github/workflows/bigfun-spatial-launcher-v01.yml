@@ -1,0 +1,54 @@
+name: BigFun spatial launcher v0.1
+
+on:
+  push:
+    branches:
+      - feat/map-radius-inventory-v01
+    paths:
+      - 'public/bigfun-spatial-launcher-v01.js'
+      - 'tools/dev/test_bigfun_spatial_launcher_v01.mjs'
+      - 'tools/research/apply_bigfun_spatial_launcher_v01.mjs'
+      - '.github/workflows/bigfun-spatial-launcher-v01.yml'
+  pull_request:
+    paths:
+      - 'public/bigfun-spatial-launcher-v01.js'
+      - 'public/maplibre-pmtiles-provider-spike.html'
+      - 'public/mobile-school-inventory-v04.html'
+      - 'start-map-radius-inventory-smoke.bat'
+      - 'tools/dev/test_bigfun_spatial_launcher_v01.mjs'
+      - 'tools/research/apply_bigfun_spatial_launcher_v01.mjs'
+      - '.github/workflows/bigfun-spatial-launcher-v01.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  bigfun-launcher:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Apply BigFun launcher loaders
+        run: node tools/research/apply_bigfun_spatial_launcher_v01.mjs
+      - name: Existing radius semantics
+        run: node tools/dev/test_inventory_spatial_v01.mjs
+      - name: Existing radius UI contract
+        run: node tools/dev/test_map_radius_inventory_v01.mjs
+      - name: BigFun deep-link contract
+        run: node tools/dev/test_bigfun_spatial_launcher_v01.mjs
+      - name: Existing personal snapshot regression
+        run: node tools/dev/test_personal_inventory_snapshot_v01.mjs
+      - name: Commit generated shell wiring
+        if: github.event_name == 'push'
+        run: |
+          if [ -z "$(git status --porcelain -- public/maplibre-pmtiles-provider-spike.html public/mobile-school-inventory-v04.html start-map-radius-inventory-smoke.bat)" ]; then
+            echo "BigFun launcher wiring already current."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/maplibre-pmtiles-provider-spike.html public/mobile-school-inventory-v04.html start-map-radius-inventory-smoke.bat
+          git commit -m "feat: wire BigFun spatial launcher into radius search"
+          git push

@@ -1,13 +1,6 @@
-# Runtime-generated Taipei official building-height data
-/public/generated/citydashboard_tp_building_height_*.geojson
-/public/generated/taipei_building_height_*.geojson
-/public/generated/taipei_building_height_*.pmtiles
-/public/generated/taipei_building_height_*.json
-/public/generated/taipei_building_height_*.tsv.gz
-
-# Runtime-generated Taipei official MRT line data
-/public/generated/taipei_mrt_lines_official.geojson
-/public/generated/taipei_mrt_lines_official.audit.json
+# Runtime-generated local map/data artifacts
+# This directory is rebuilt by smoke/build tooling and must never block branch switching.
+/public/generated/
 
 # Downloaded local build tooling / portable runtimes
 /.cache/

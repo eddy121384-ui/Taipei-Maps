@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Buju BigFun Visible Import v0.1",
+  "version": "0.1.0",
+  "description": "User-triggered export of currently visible BigFun listing facts for personal research in Buju.",
+  "content_scripts": [
+    {
+      "matches": ["https://www.ibigfun.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

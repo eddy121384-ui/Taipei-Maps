@@ -24,14 +24,15 @@ export async function geocodeBigFunHomes(homes=[],options={}){
   const endpoint=options.endpoint||configuredEndpoint();
   const cache=readCache(),out=homes.map(h=>({...h}));
   let attempted=0,networkRequests=0,located=0,failed=0,skipped=0,cacheHits=0,lastRequestAt=0;
+  const emit=(i,query,cached)=>onProgress({home_index:i,home:{...out[i]},index:i+1,total:out.length,attempted,network_requests:networkRequests,located,failed,skipped,cache_hits:cacheHits,address:query,cached});
 
   for(let i=0;i<out.length;i+=1){
     const home=out[i];if(finite(home.lat)&&finite(home.lon))continue;
     const query=normalizeTaipeiAddressForGeocode(home.address_text||home.street||'');if(!query||!/台北市.*區/.test(query))continue;
     attempted+=1;
     const cached=cache[query];
-    if(cached&&isTaipeiCoordinate(cached.lat,cached.lon)){home.lat=Number(cached.lat);home.lon=Number(cached.lon);home.location_basis='address-geocode-osm';home.geocode_label=cached.display_name||null;cacheHits+=1;located+=1;onProgress({index:i+1,total:out.length,attempted,network_requests:networkRequests,located,failed,skipped,cache_hits:cacheHits,address:query,cached:true});continue}
-    if(networkRequests>=maxRequests){skipped+=1;onProgress({index:i+1,total:out.length,attempted,network_requests:networkRequests,located,failed,skipped,cache_hits:cacheHits,address:query,cached:false});continue}
+    if(cached&&isTaipeiCoordinate(cached.lat,cached.lon)){home.lat=Number(cached.lat);home.lon=Number(cached.lon);home.location_basis='address-geocode-osm';home.geocode_label=cached.display_name||null;cacheHits+=1;located+=1;emit(i,query,true);continue}
+    if(networkRequests>=maxRequests){skipped+=1;emit(i,query,false);continue}
     const wait=Math.max(0,MIN_INTERVAL_MS-(Date.now()-lastRequestAt));if(wait)await sleep(wait);
     try{
       const params=new URLSearchParams({q:`${query}, 台灣`,format:'jsonv2',limit:'1',countrycodes:'tw','accept-language':'zh-TW',viewbox:'121.35,25.22,121.70,24.95',bounded:'1'});
@@ -40,7 +41,7 @@ export async function geocodeBigFunHomes(homes=[],options={}){
       const rows=await response.json(),first=Array.isArray(rows)?rows[0]:null;
       if(first&&isTaipeiCoordinate(first.lat,first.lon)){home.lat=Number(first.lat);home.lon=Number(first.lon);home.location_basis='address-geocode-osm';home.geocode_label=clean(first.display_name||'')||null;cache[query]={lat:home.lat,lon:home.lon,display_name:home.geocode_label,cached_at:new Date().toISOString()};writeCache(cache);located+=1}else failed+=1;
     }catch{failed+=1}
-    onProgress({index:i+1,total:out.length,attempted,network_requests:networkRequests,located,failed,skipped,cache_hits:cacheHits,address:query,cached:false});
+    emit(i,query,false);
   }
   return {homes:out,attempted,network_requests:networkRequests,located,failed,skipped,cache_hits:cacheHits,endpoint};
 }

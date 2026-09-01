@@ -8,20 +8,29 @@ const mobile=fs.readFileSync('public/mobile-school-inventory-v04.html','utf8');
 const smoke=fs.readFileSync('start-map-radius-inventory-smoke.bat','utf8');
 
 for(const token of [
-  "const BIGFUN_MAP_BASE='https://www.ibigfun.com/map/latest'",
-  "url.searchParams.set('lat'",
-  "url.searchParams.set('lng'",
-  "window.open(url,'_blank','noopener,noreferrer')",
-  '🔎 BigFun 搜這附近',
-  '只會開啟 BigFun 同座標頁面，不會從 BigFun 抓取資料',
-  '目前只帶圓心'
+  "const BIGFUN_SEARCH_URL='https://www.ibigfun.com/Monitor'",
+  '🔎 開 BigFun 找房比價',
+  '📋 複製圓心座標',
+  "window.open(BIGFUN_SEARCH_URL,'_blank','noopener,noreferrer')",
+  '目前不會自動把座標送進 BigFun',
+  'formatCenter',
+  'navigator.clipboard?.writeText'
 ])assert.ok(launcher.includes(token),`BigFun launcher contract missing: ${token}`);
 
-assert.ok(!launcher.includes('fetch('),'BigFun launcher v0.1 must not fetch BigFun content');
-assert.ok(!launcher.includes('XMLHttpRequest'),'BigFun launcher v0.1 must not use XHR');
+for(const forbidden of [
+  '/map/latest',
+  'query_on_market_by_id.php',
+  'api_key',
+  'api_id',
+  "url.searchParams.set('lat'",
+  "url.searchParams.set('lng'",
+  'fetch(',
+  'XMLHttpRequest'
+])assert.ok(!launcher.includes(forbidden),`BigFun launcher must not contain internal/deep-fetch token: ${forbidden}`);
+
 assert.ok(desktop.includes('./bigfun-spatial-launcher-v01.js'),'desktop must load BigFun spatial launcher');
 assert.ok(mobile.includes('/public/bigfun-spatial-launcher-v01.js'),'mobile must load BigFun spatial launcher');
 assert.ok(smoke.includes('test_bigfun_spatial_launcher_v01.mjs'),'desktop smoke must validate BigFun launcher');
 
 execFileSync(process.execPath,['--check','public/bigfun-spatial-launcher-v01.js'],{stdio:'pipe'});
-console.log('PASS BigFun spatial launcher v0.1 · lat/lng deep-link only · no BigFun data fetch');
+console.log('PASS BigFun spatial launcher v0.2 · official Monitor UI handoff + copy center · no internal endpoint / data fetch');

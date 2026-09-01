@@ -27,16 +27,18 @@ const importer=fs.readFileSync('public/bigfun-visible-import-desktop-v01.js','ut
 const manifest=fs.readFileSync('tools/browser/bigfun-visible-helper-v01/manifest.json','utf8');
 const shell=fs.readFileSync('public/maplibre-pmtiles-provider-spike.html','utf8');
 
-for(const token of ['📥 卜居匯出','scanVisible()','目前畫面','下載 JSON','複製 JSON','buju.bigfun-visible.v0.1','imageBackedCandidates()','hasVisibleImage','isHelperNode','identityKey'])assert.ok(helper.includes(token),`helper contract missing: ${token}`);
+for(const token of ['📦 卜居收集籃','scanLoadedPage()','＋ 收集本頁','已收集','📦 下載全部 JSON','複製全部 JSON','清空收集籃','buju.bigfun-visible.v0.2','localStorage','STORAGE_KEY','imageBackedCandidates()','hasRenderedImage','isHelperNode','recordKey'])assert.ok(helper.includes(token),`helper v0.2 contract missing: ${token}`);
 for(const forbidden of ['fetch(','XMLHttpRequest','api_key','ospc_api','query_on_market_by_id'])assert.ok(!helper.includes(forbidden),`helper must not call/internalize BigFun endpoint: ${forbidden}`);
-assert.ok(helper.includes("button.onclick=()=>{panel.classList.add('open');rescan()}"),'scan must be user-triggered');
+assert.ok(helper.includes("panel.querySelector('#bujuCollect').onclick=collectPage"),'collection must remain explicitly user-triggered');
 assert.ok(helper.includes("#bujuBigFunPanel,#bujuBigFunBtn"),'helper UI must be excluded from its own DOM scan');
 assert.ok(helper.includes('const imageCards=collapseCandidates(imageBackedCandidates())'),'real-estate image cards must be preferred before generic fallback');
+assert.ok(helper.includes('saveBasket(basket)'),'collected rows must persist across normal BigFun page navigation');
 assert.ok(manifest.includes('https://www.ibigfun.com/*'),'extension must be scoped to BigFun');
-assert.ok(!manifest.includes('permissions'),'v0.1 should require no extension privileges');
+assert.ok(manifest.includes('0.2.0'),'extension manifest should expose v0.2 collector');
+assert.ok(!manifest.includes('"permissions"'),'v0.2 should require no extension privileges');
 for(const token of ['📥 BigFun JSON','sessionStorage','toTemporaryInventoryHomes','官方地址／學區待驗證'])assert.ok(importer.includes(token),`desktop importer contract missing: ${token}`);
 assert.ok(!importer.includes('fetch('),'desktop importer must be local-file only');
 assert.ok(shell.includes('./bigfun-visible-import-desktop-v01.js'),'desktop shell must load visible importer');
 
 for(const file of ['public/bigfun-visible-import-core-v01.mjs','public/bigfun-visible-import-desktop-v01.js','tools/browser/bigfun-visible-helper-v01/content.js','tools/research/apply_bigfun_visible_import_v01.mjs'])execFileSync(process.execPath,['--check',file],{stdio:'pipe'});
-console.log('PASS BigFun visible import v0.1 · image-backed visible cards → JSON → temporary Buju inventory · no BigFun API');
+console.log('PASS BigFun collector v0.2 · user-triggered loaded-page cards → persistent basket → JSON → temporary Buju inventory · no BigFun API');

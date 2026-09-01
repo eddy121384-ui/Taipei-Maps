@@ -48,7 +48,7 @@ Otherwise, when a BigFun related address is available, 卜居 performs a researc
 - successful results are labeled `location_basis=address-geocode-osm` and displayed as **approximate, non-official** pins;
 - failed/unresolved addresses stay list-only; no fake coordinates.
 
-UI includes OpenStreetMap attribution and a link to the Nominatim usage policy.
+This is deliberately for small, user-triggered personal-research batches only. It is not a recurring/bulk geocoding pipeline. UI includes OpenStreetMap attribution and a link to the Nominatim usage policy.
 
 ## Import semantics
 

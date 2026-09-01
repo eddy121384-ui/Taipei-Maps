@@ -62,4 +62,4 @@ The v0.2 Edge smoke confirmed full-page collection: 20 detected / 20 collected o
 - address-geocode imported rows into approximate map pins;
 - move the helper launcher/panel away from BigFun right-side pagination and make the panel draggable.
 
-Next physical smoke should verify those three fixes end-to-end.
+Next physical smoke: collect at least two pages, confirm `相關地址` survives the export, import JSON, wait for progressive pin placement, and verify the BigFun pagination remains unobstructed.

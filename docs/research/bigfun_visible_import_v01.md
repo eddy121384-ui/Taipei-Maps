@@ -37,7 +37,7 @@ The address is shown in 卜居 as **BigFun 相關地址 — 尚未官方驗證**
 
 If the imported BigFun DOM already exposes trustworthy coordinates, those coordinates are used.
 
-Otherwise, when a BigFun related address is available, 卜居 performs a research-only address geocode using the OpenStreetMap Nominatim public search service:
+Otherwise, when a BigFun related address is available, 卜居 performs a research-only address geocode using the OpenStreetMap Nominatim public search service. This geocoder is separate from BigFun and does not call any BigFun endpoint.
 
 - user-triggered by the JSON import / relocate action;
 - one request at a time, minimum 1100 ms between network requests;

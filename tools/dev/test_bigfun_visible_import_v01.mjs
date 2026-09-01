@@ -44,9 +44,9 @@ assert.ok(manifest.includes('https://www.ibigfun.com/*'),'extension must be scop
 assert.ok(manifest.includes('0.3.0'),'extension manifest should expose v0.3 collector');
 assert.ok(!manifest.includes('"permissions"'),'collector should require no extension privileges');
 for(const token of ['📥 BigFun JSON','sessionStorage','toTemporaryInventoryHomes','BigFun 相關地址','地址定位（近似','geocodeBigFunHomes','fitBounds'])assert.ok(importer.includes(token),`desktop importer contract missing: ${token}`);
-for(const token of ['nominatim.openstreetmap.org/search','MIN_INTERVAL_MS=1100','CACHE_KEY','countrycodes','bounded'])assert.ok(geocoder.includes(token),`geocoder guard missing: ${token}`);
+for(const token of ['nominatim.openstreetmap.org/search','MIN_INTERVAL_MS=1100','DEFAULT_MAX_REQUESTS=50','CACHE_KEY','BUJU_GEOCODER_ENDPOINT','buju.geocoder.endpoint','countrycodes','bounded'])assert.ok(geocoder.includes(token),`geocoder guard missing: ${token}`);
 for(const forbidden of ['ibigfun.com','api_key','ospc_api','query_on_market_by_id'])assert.ok(!geocoder.includes(forbidden),`address geocoder must not use BigFun internal services: ${forbidden}`);
 assert.ok(shell.includes('./bigfun-visible-import-desktop-v01.js'),'desktop shell must load BigFun importer');
 
 for(const file of ['public/bigfun-visible-import-core-v01.mjs','public/bigfun-address-geocode-v01.mjs','public/bigfun-visible-import-desktop-v01.js','tools/browser/bigfun-visible-helper-v01/content.js','tools/research/apply_bigfun_visible_import_v01.mjs'])execFileSync(process.execPath,['--check',file],{stdio:'pipe'});
-console.log('PASS BigFun collector v0.3 · loaded-page basket + preserved address + cached OSM address pins · no BigFun API');
+console.log('PASS BigFun collector v0.3 · loaded-page basket + preserved address + capped cached OSM address pins · no BigFun API');

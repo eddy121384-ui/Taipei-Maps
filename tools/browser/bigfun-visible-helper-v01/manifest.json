@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Buju BigFun Search Results Collector v0.2",
-  "version": "0.2.0",
-  "description": "User-triggered collection of currently loaded BigFun search-result cards for personal research in Buju.",
+  "name": "Buju BigFun Search Results Collector v0.3",
+  "version": "0.3.0",
+  "description": "User-triggered collection of loaded BigFun search-result cards with address preservation for personal research in Buju.",
   "content_scripts": [
     {
       "matches": ["https://www.ibigfun.com/*"],

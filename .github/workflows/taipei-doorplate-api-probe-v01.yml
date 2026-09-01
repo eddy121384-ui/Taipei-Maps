@@ -6,6 +6,11 @@ on:
     paths:
       - tools/research/probe_taipei_doorplate_api_v01.mjs
       - .github/workflows/taipei-doorplate-api-probe-v01.yml
+  pull_request:
+    branches: [feat/map-radius-inventory-v01]
+    paths:
+      - tools/research/probe_taipei_doorplate_api_v01.mjs
+      - .github/workflows/taipei-doorplate-api-probe-v01.yml
   workflow_dispatch:
 
 permissions:

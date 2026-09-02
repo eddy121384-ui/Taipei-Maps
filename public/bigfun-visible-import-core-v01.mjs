@@ -80,10 +80,15 @@ function mergeRecords(a,b){
 export function normalizeBigFunVisibleRecord(record={},index=0){
   const parsed=parseVisibleListingText(record.visible_text||record.raw_visible_text||'');
   const sourceUrl=clean(record.source_url||record.href||'');
-  const idSeed=sourceUrl||`${parsed.title}|${parsed.asking_wan??''}|${parsed.total_ping??''}|${record.address_text||parsed.address_text||''}|${index}`;
+  const preservedUrls=[...new Set([...(Array.isArray(record.source_urls)?record.source_urls:[]),sourceUrl].map(clean).filter(Boolean))];
+  const idSeed=record.canonical_property_key||sourceUrl||`${parsed.title}|${parsed.asking_wan??''}|${parsed.total_ping??''}|${record.address_text||parsed.address_text||''}|${index}`;
   let hash=2166136261;for(const ch of idSeed){hash^=ch.charCodeAt(0);hash=Math.imul(hash,16777619)}
   const lat=num(record.lat),lon=num(record.lon??record.lng);
-  return {id:`bigfun-visible-${(hash>>>0).toString(16)}`,source:SAFE_SOURCE,source_label:'BigFun visible',source_url:sourceUrl||null,source_urls:sourceUrl?[sourceUrl]:[],source_count:sourceUrl?1:0,captured_at:record.captured_at||null,page_url:clean(record.page_url||'')||null,title:clean(record.title||parsed.title),asking_wan:num(record.asking_wan)??parsed.asking_wan,asking_range_wan:null,asking_values_wan:[],total_ping:num(record.total_ping)??parsed.total_ping,age_years:num(record.age_years)??parsed.age_years,bedrooms:num(record.bedrooms)??parsed.bedrooms,floor:clean(record.floor||parsed.floor||'')||null,address_text:clean(record.address_text||parsed.address_text||'')||null,lat,lon,raw_visible_text:clean(record.visible_text||record.raw_visible_text||parsed.raw_visible_text).slice(0,1600),verification_status:'insufficient_location',research_only:true,duplicate_collapsed_count:1};
+  const askingValues=[...(Array.isArray(record.asking_values_wan)?record.asking_values_wan:[]),...(Array.isArray(record.asking_range_wan)?record.asking_range_wan:[])].filter(finite).map(Number);
+  const asking=num(record.asking_wan)??parsed.asking_wan;
+  if(finite(asking))askingValues.push(Number(asking));
+  const uniqueAsks=[...new Set(askingValues)].sort((a,b)=>a-b);
+  return {id:record.id||`bigfun-visible-${(hash>>>0).toString(16)}`,source:SAFE_SOURCE,source_label:'BigFun visible',source_url:sourceUrl||preservedUrls[0]||null,source_urls:preservedUrls,source_count:Math.max(preservedUrls.length,Number(record.source_count)||0),captured_at:record.captured_at||null,page_url:clean(record.page_url||'')||null,title:clean(record.title||parsed.title),asking_wan:uniqueAsks.length?uniqueAsks[0]:asking,asking_range_wan:uniqueAsks.length?[uniqueAsks[0],uniqueAsks[uniqueAsks.length-1]]:null,asking_values_wan:uniqueAsks,total_ping:num(record.total_ping)??parsed.total_ping,age_years:num(record.age_years)??parsed.age_years,bedrooms:num(record.bedrooms)??parsed.bedrooms,floor:clean(record.floor||parsed.floor||'')||null,address_text:clean(record.address_text||parsed.address_text||'')||null,lat,lon,raw_visible_text:clean(record.visible_text||record.raw_visible_text||parsed.raw_visible_text).slice(0,1600),verification_status:'insufficient_location',research_only:true,duplicate_collapsed_count:Math.max(1,Number(record.duplicate_collapsed_count)||1),canonical_property_key:record.canonical_property_key||null};
 }
 
 export function normalizeBigFunVisibleExport(payload={}){
@@ -96,7 +101,8 @@ export function normalizeBigFunVisibleExport(payload={}){
   const items=[...dedup.values()].map(item=>{
     const asks=[item.asking_wan,...(item.asking_values_wan||[])].filter(finite).map(Number);
     const min=asks.length?Math.min(...asks):null,max=asks.length?Math.max(...asks):null;
-    return {...item,asking_wan:min,asking_range_wan:asks.length?[min,max]:null,asking_values_wan:[...new Set(asks)].sort((a,b)=>a-b),source_urls:sourceUrls(item),source_count:Math.max(sourceUrls(item).length,Number(item.source_count)||0),canonical_property_key:canonicalBigFunPropertyKey(item)};
+    const urls=sourceUrls(item);
+    return {...item,asking_wan:min,asking_range_wan:asks.length?[min,max]:null,asking_values_wan:[...new Set(asks)].sort((a,b)=>a-b),source_urls:urls,source_count:Math.max(urls.length,Number(item.source_count)||0),canonical_property_key:canonicalBigFunPropertyKey(item)};
   });
   return {schema:'buju.bigfun-visible.v0.3',imported_at:new Date().toISOString(),source:SAFE_SOURCE,count:items.length,items};
 }

@@ -11,6 +11,13 @@ export function normalizeTaipeiAddressForGeocode(address=''){
 export function isTaipeiCoordinate(lat,lon){const y=Number(lat),x=Number(lon);return Number.isFinite(y)&&Number.isFinite(x)&&y>=TAIPEI_BOUNDS.minLat&&y<=TAIPEI_BOUNDS.maxLat&&x>=TAIPEI_BOUNDS.minLon&&x<=TAIPEI_BOUNDS.maxLon}
 function readCache(){if(typeof localStorage==='undefined')return {};try{const v=JSON.parse(localStorage.getItem(CACHE_KEY)||'{}');return v&&typeof v==='object'?v:{}}catch{return {}}}
 function writeCache(cache){if(typeof localStorage==='undefined')return;try{localStorage.setItem(CACHE_KEY,JSON.stringify(cache))}catch{}}
+function restoreBigFunFallback(home){
+  if(finite(home.lat)&&finite(home.lon))return false;
+  if(isTaipeiCoordinate(home.source_lat,home.source_lon)){
+    home.lat=Number(home.source_lat);home.lon=Number(home.source_lon);home.location_basis='bigfun-dom-coordinate-fallback';return true;
+  }
+  return false;
+}
 
 export async function geocodeBigFunHomes(homes=[],options={}){
   const fetchImpl=options.fetchImpl||globalThis.fetch;
@@ -22,9 +29,14 @@ export async function geocodeBigFunHomes(homes=[],options={}){
   const emit=(i,query,cached)=>onProgress({home_index:i,home:{...out[i]},index:i+1,total:out.length,attempted,network_requests:requests,located,failed,skipped,cache_hits:cacheHits,address:query,cached,service_error:serviceError});
 
   for(let i=0;i<out.length;i+=1){
-    const home=out[i];if(finite(home.lat)&&finite(home.lon))continue;
+    const home=out[i];
     const query=normalizeTaipeiAddressForGeocode(home.address_text||home.street||'');
     if(!query||!/^(?:台北市|臺北市).+區/.test(query)){skipped+=1;continue}
+
+    // Address-bearing BigFun rows are deliberately re-located even when the
+    // page exposes lat/lon. BigFun map pins are presentation coordinates and
+    // may differ across brokers for the same physical home; official Taipei
+    // doorplate coordinates are the canonical location whenever available.
     attempted+=1;
     const cached=cache[query];
     if(cached&&isTaipeiCoordinate(cached.lat,cached.lon)){
@@ -34,13 +46,13 @@ export async function geocodeBigFunHomes(homes=[],options={}){
       requests+=1;
       const response=await fetchImpl(`${endpoint}?address=${encodeURIComponent(query)}`,{headers:{Accept:'application/json'}});
       const body=await response.json().catch(()=>null);
-      if(response.status===503){serviceError=body?.code||'doorplate_index_missing';failed+=1;emit(i,query,false);break}
-      if(!response.ok||!body?.ok){failed+=1;emit(i,query,false);continue}
+      if(response.status===503){serviceError=body?.code||'doorplate_index_missing';failed+=1;restoreBigFunFallback(home);emit(i,query,false);break}
+      if(!response.ok||!body?.ok){failed+=1;restoreBigFunFallback(home);emit(i,query,false);continue}
       if(isTaipeiCoordinate(body.lat,body.lon)){
         home.lat=Number(body.lat);home.lon=Number(body.lon);home.location_basis='taipei-official-doorplate';home.geocode_label=clean(body.matched_address||query)||query;
         cache[query]={lat:home.lat,lon:home.lon,matched_address:home.geocode_label,cached_at:new Date().toISOString()};writeCache(cache);located+=1;
-      }else failed+=1;
-    }catch(error){failed+=1;serviceError=serviceError||`lookup_request_failed:${error?.message||error}`}
+      }else{failed+=1;restoreBigFunFallback(home)}
+    }catch(error){failed+=1;serviceError=serviceError||`lookup_request_failed:${error?.message||error}`;restoreBigFunFallback(home)}
     emit(i,query,false);
   }
   return {homes:out,attempted,network_requests:requests,located,failed,skipped,cache_hits:cacheHits,endpoint,service_error:serviceError};

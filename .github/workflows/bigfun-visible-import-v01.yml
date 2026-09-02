@@ -2,7 +2,7 @@ name: BigFun visible import v0.1
 
 on:
   push:
-    branches: [feat/bigfun-visible-results-import-v01]
+    branches: [feat/bigfun-visible-results-import-v01, feat/market-inventory-ui-v02]
   pull_request:
     branches: [feat/map-radius-inventory-v01]
   workflow_dispatch:
@@ -32,6 +32,8 @@ jobs:
         run: node tools/dev/test_map_radius_inventory_v01.mjs
       - name: Existing personal snapshot regression
         run: node tools/dev/test_personal_inventory_snapshot_v01.mjs
+      - name: School inventory neutral-scope regression
+        run: node tools/dev/test_school_inventory_prototype_v01.mjs
       - name: Commit generated shell wiring
         if: github.event_name == 'push'
         run: |

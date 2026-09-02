@@ -24,6 +24,8 @@ jobs:
         run: node tools/research/apply_bigfun_visible_import_v01.mjs
       - name: BigFun visible import contract
         run: node tools/dev/test_bigfun_visible_import_v01.mjs
+      - name: Taipei official doorplate locator contract
+        run: node tools/dev/test_taipei_doorplate_locator_v01.mjs
       - name: Existing radius semantics
         run: node tools/dev/test_inventory_spatial_v01.mjs
       - name: Existing radius UI contract

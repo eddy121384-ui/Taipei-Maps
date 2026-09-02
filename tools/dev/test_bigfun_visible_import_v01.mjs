@@ -43,10 +43,10 @@ assert.ok(helper.includes('cursor:move'),'collector panel should be draggable');
 assert.ok(manifest.includes('https://www.ibigfun.com/*'),'extension must be scoped to BigFun');
 assert.ok(manifest.includes('0.3.0'),'extension manifest should expose v0.3 collector');
 assert.ok(!manifest.includes('"permissions"'),'collector should require no extension privileges');
-for(const token of ['📥 BigFun JSON','sessionStorage','toTemporaryInventoryHomes','BigFun 相關地址','地址定位（近似','geocodeBigFunHomes','fitBounds'])assert.ok(importer.includes(token),`desktop importer contract missing: ${token}`);
-for(const token of ['nominatim.openstreetmap.org/search','MIN_INTERVAL_MS=1100','DEFAULT_MAX_REQUESTS=50','CACHE_KEY','BUJU_GEOCODER_ENDPOINT','buju.geocoder.endpoint','countrycodes','bounded'])assert.ok(geocoder.includes(token),`geocoder guard missing: ${token}`);
-for(const forbidden of ['ibigfun.com','api_key','ospc_api','query_on_market_by_id'])assert.ok(!geocoder.includes(forbidden),`address geocoder must not use BigFun internal services: ${forbidden}`);
+for(const token of ['📥 BigFun JSON','sessionStorage','toTemporaryInventoryHomes','BigFun 相關地址','臺北市官方門牌座標','geocodeBigFunHomes','fitBounds','BIGFUN IMPORT v0.4'])assert.ok(importer.includes(token),`desktop importer contract missing: ${token}`);
+for(const token of ['/__buju/taipei-doorplate','taipei-official-doorplate','CACHE_KEY','doorplate_index_missing'])assert.ok(geocoder.includes(token),`official doorplate locator guard missing: ${token}`);
+for(const forbidden of ['nominatim.openstreetmap.org','ibigfun.com','api_key','ospc_api','query_on_market_by_id'])assert.ok(!geocoder.includes(forbidden),`address locator must not use external/internal listing geocoder: ${forbidden}`);
 assert.ok(shell.includes('./bigfun-visible-import-desktop-v01.js'),'desktop shell must load BigFun importer');
 
-for(const file of ['public/bigfun-visible-import-core-v01.mjs','public/bigfun-address-geocode-v01.mjs','public/bigfun-visible-import-desktop-v01.js','tools/browser/bigfun-visible-helper-v01/content.js','tools/research/apply_bigfun_visible_import_v01.mjs'])execFileSync(process.execPath,['--check',file],{stdio:'pipe'});
-console.log('PASS BigFun collector v0.3 · loaded-page basket + preserved address + capped cached OSM address pins · no BigFun API');
+for(const file of ['public/bigfun-visible-import-core-v01.mjs','public/bigfun-address-geocode-v01.mjs','public/bigfun-visible-import-desktop-v01.js','tools/browser/bigfun-visible-helper-v01/content.js','tools/data/taipei_doorplate_core_v01.mjs','tools/data/build_taipei_doorplate_index_v01.mjs','tools/dev/serve_single_engine_core.mjs','tools/research/apply_bigfun_visible_import_v01.mjs'])execFileSync(process.execPath,['--check',file],{stdio:'pipe'});
+console.log('PASS BigFun collector v0.4 · loaded-page basket + preserved address + local Taipei official doorplate pins · no BigFun API');

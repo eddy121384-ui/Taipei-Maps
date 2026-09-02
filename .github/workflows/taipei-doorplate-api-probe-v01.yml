@@ -1,0 +1,47 @@
+name: Taipei official doorplate API + full index smoke v0.2
+
+on:
+  push:
+    branches: [feat/bigfun-visible-results-import-v01]
+    paths:
+      - tools/research/probe_taipei_doorplate_api_v01.mjs
+      - tools/data/build_taipei_doorplate_index_v01.mjs
+      - tools/data/taipei_doorplate_core_v01.mjs
+      - tools/dev/test_taipei_doorplate_live_index_v01.mjs
+      - .github/workflows/taipei-doorplate-api-probe-v01.yml
+  pull_request:
+    branches: [feat/map-radius-inventory-v01]
+    paths:
+      - tools/research/probe_taipei_doorplate_api_v01.mjs
+      - tools/data/build_taipei_doorplate_index_v01.mjs
+      - tools/data/taipei_doorplate_core_v01.mjs
+      - tools/dev/test_taipei_doorplate_live_index_v01.mjs
+      - .github/workflows/taipei-doorplate-api-probe-v01.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  api-probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Probe official Taipei dataset API
+        run: node tools/research/probe_taipei_doorplate_api_v01.mjs
+
+  full-index-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Download and build official Taipei doorplate index
+        run: node tools/data/build_taipei_doorplate_index_v01.mjs --force
+      - name: Verify real BigFun sample addresses against official index
+        run: node tools/dev/test_taipei_doorplate_live_index_v01.mjs

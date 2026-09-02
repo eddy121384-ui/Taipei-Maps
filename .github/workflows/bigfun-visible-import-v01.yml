@@ -1,0 +1,44 @@
+name: BigFun visible import v0.1
+
+on:
+  push:
+    branches: [feat/bigfun-visible-results-import-v01]
+  pull_request:
+    branches: [feat/map-radius-inventory-v01]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  visible-import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Wire desktop importer
+        run: node tools/research/apply_bigfun_visible_import_v01.mjs
+      - name: BigFun visible import contract
+        run: node tools/dev/test_bigfun_visible_import_v01.mjs
+      - name: Taipei official doorplate locator contract
+        run: node tools/dev/test_taipei_doorplate_locator_v01.mjs
+      - name: Existing radius semantics
+        run: node tools/dev/test_inventory_spatial_v01.mjs
+      - name: Existing radius UI contract
+        run: node tools/dev/test_map_radius_inventory_v01.mjs
+      - name: Existing personal snapshot regression
+        run: node tools/dev/test_personal_inventory_snapshot_v01.mjs
+      - name: Commit generated shell wiring
+        if: github.event_name == 'push'
+        run: |
+          if [ -n "$(git status --porcelain public/maplibre-pmtiles-provider-spike.html)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add public/maplibre-pmtiles-provider-spike.html
+            git commit -m "feat: wire BigFun visible import into desktop"
+            git push
+          fi

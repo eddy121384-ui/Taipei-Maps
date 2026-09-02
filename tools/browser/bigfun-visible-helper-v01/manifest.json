@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Buju BigFun Search Results Collector v0.3",
+  "version": "0.3.0",
+  "description": "User-triggered collection of loaded BigFun search-result cards with address preservation for personal research in Buju.",
+  "content_scripts": [
+    {
+      "matches": ["https://www.ibigfun.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

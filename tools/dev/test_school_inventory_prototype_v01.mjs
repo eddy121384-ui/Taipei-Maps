@@ -58,7 +58,10 @@ assert.ok(html.includes('src="./inventory-prototype-v01.js"'),'inventory module 
 const plugin=fs.readFileSync('public/inventory-prototype-v01.js','utf8');
 for(const token of ['inventoryBtn','inventoryShowMismatch','filterPrice','filterPing','filterAge','filterForm','filterBedrooms','inventoryResetFilters','insufficient_location','selectFromOfficialAssignment','school-catchment-fill'])assert.ok(plugin.includes(token),`inventory UX contract missing ${token}`);
 assert.ok(plugin.includes("if(p.level!=='junior')return"),'school click must remain junior-only');
-assert.ok(plugin.includes('目前 prototype 尚無此學區的房源 fixture'),'unsupported school must clear prior inventory');
+assert.ok(plugin.includes('目前 research snapshot 尚未覆蓋'),'unsupported school must clear prior inventory');
+assert.ok(plugin.includes('let mode=false,school=null'),'inventory must open without a hard-coded school');
+assert.ok(!plugin.includes('data-school="金華" class="active"'),'金華 must not be preselected in the UI');
+assert.ok(plugin.includes('不再預設金華或中正'),'neutral-scope explanation missing');
 assert.ok(plugin.includes("if(summaryBtn?.classList.contains('active'))summaryBtn.click()"),'inventory/summary mutual exclusion missing');
 
-console.log('PASS school inventory prototype · filters v0.1 · old-walkup candidate · exact/shared/pending/mismatch semantics');
+console.log('PASS school inventory prototype · neutral scope + filters · old-walkup candidate · exact/shared/pending/mismatch semantics');

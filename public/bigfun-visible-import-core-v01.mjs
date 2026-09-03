@@ -14,6 +14,17 @@ export function extractBigFunAddressText(text=''){
   return clean(fallback?.[0]||'')||null;
 }
 
+export function extractBigFunListingLabel(text='',explicit=''){
+  const preferred=clean(explicit);
+  if(preferred&&!/^BigFun(?: visible| 刊登)?$/i.test(preferred))return preferred;
+  const raw=clean(text);
+  const known=['永慶房屋','信義房屋','住商不動產','台灣房屋','中信房屋','有巢氏房屋','東森房屋','太平洋房屋','群義房屋','大家房屋','樂屋網','好房網','HouseFun','591'];
+  const hit=known.find(label=>raw.includes(label));
+  if(hit)return hit;
+  const generic=raw.match(/([\u3400-\u9fffA-Za-z0-9]{1,12}(?:房屋|房仲|不動產))/);
+  return clean(generic?.[1]||'')||'BigFun 刊登';
+}
+
 export function parseVisibleListingText(text=''){
   const raw=clean(text);
   const lines=String(text??'').split(/\n+/).map(clean).filter(Boolean);
@@ -56,12 +67,63 @@ export function canonicalBigFunPropertyKey(item={}){
   const sourceUrl=clean(item.source_url||item.page_url||'');
   return `source:${sourceUrl}|title:${compact(item.title).slice(0,64)}|price:${round1(item.asking_wan)??'?'}|ping:${ping??'?'}|beds:${beds??'?'}`;
 }
+
 function sourceUrls(item={}){
   return [...new Set([...(Array.isArray(item.source_urls)?item.source_urls:[]),item.source_url].map(clean).filter(Boolean))];
 }
+function listingKey(listing={}){
+  const url=clean(listing.source_url||'');
+  if(url)return `url:${url}`;
+  return `fallback:${compact(listing.source_label)}|${compact(listing.title)}|${round1(listing.asking_wan)??'?'}|${round1(listing.total_ping)??'?'}|${compact(listing.floor)}`;
+}
+function normalizeSourceListing(listing={},fallback={}){
+  const sourceUrl=clean(listing.source_url||fallback.source_url||'')||null;
+  const raw=clean(listing.raw_visible_text||fallback.raw_visible_text||'');
+  return {
+    source_url:sourceUrl,
+    source_label:extractBigFunListingLabel(raw,listing.source_label||fallback.source_label||''),
+    title:clean(listing.title||fallback.title||'BigFun 可見物件'),
+    asking_wan:num(listing.asking_wan)??num(fallback.asking_wan),
+    total_ping:num(listing.total_ping)??num(fallback.total_ping),
+    bedrooms:num(listing.bedrooms)??num(fallback.bedrooms),
+    floor:clean(listing.floor||fallback.floor||'')||null,
+    captured_at:listing.captured_at||fallback.captured_at||null,
+    raw_visible_text:raw.slice(0,1600)
+  };
+}
+function mergeListing(a,b){
+  const ta=Date.parse(a?.captured_at||''),tb=Date.parse(b?.captured_at||'');
+  const newer=Number.isFinite(tb)&&(!Number.isFinite(ta)||tb>=ta)?b:a;
+  const older=newer===b?a:b;
+  const prefer=(x,y)=>x!==null&&x!==undefined&&x!==''?x:y;
+  return {...older,...newer,
+    source_url:prefer(newer.source_url,older.source_url),
+    source_label:prefer(newer.source_label,older.source_label),
+    title:prefer(newer.title,older.title),
+    asking_wan:prefer(newer.asking_wan,older.asking_wan),
+    total_ping:prefer(newer.total_ping,older.total_ping),
+    bedrooms:prefer(newer.bedrooms,older.bedrooms),
+    floor:prefer(newer.floor,older.floor),
+    raw_visible_text:prefer(newer.raw_visible_text,older.raw_visible_text)
+  };
+}
+function sourceListings(item={}){
+  const existing=Array.isArray(item.source_listings)?item.source_listings:[];
+  const urls=sourceUrls(item);
+  const fallback={source_url:item.source_url,source_label:item.source_label,title:item.title,asking_wan:item.asking_wan,total_ping:item.total_ping,bedrooms:item.bedrooms,floor:item.floor,captured_at:item.captured_at,raw_visible_text:item.raw_visible_text};
+  const seeds=existing.length?existing:urls.length?urls.map(url=>({...fallback,source_url:url})):((item.source_url||item.title||finite(item.asking_wan))?[fallback]:[]);
+  const map=new Map();
+  for(const seed of seeds){
+    const normalized=normalizeSourceListing(seed,fallback),key=listingKey(normalized);
+    if(!key)continue;
+    map.set(key,map.has(key)?mergeListing(map.get(key),normalized):normalized);
+  }
+  return [...map.values()];
+}
 function mergeRecords(a,b){
   const urls=[...new Set([...sourceUrls(a),...sourceUrls(b)])];
-  const asks=[a.asking_wan,b.asking_wan,...(Array.isArray(a.asking_values_wan)?a.asking_values_wan:[]),...(Array.isArray(b.asking_values_wan)?b.asking_values_wan:[])].filter(finite).map(Number);
+  const listings=sourceListings({...a,source_listings:[...sourceListings(a),...sourceListings(b)],source_urls:urls});
+  const asks=[a.asking_wan,b.asking_wan,...(Array.isArray(a.asking_values_wan)?a.asking_values_wan:[]),...(Array.isArray(b.asking_values_wan)?b.asking_values_wan:[]),...listings.map(x=>x.asking_wan)].filter(finite).map(Number);
   const minAsk=asks.length?Math.min(...asks):null,maxAsk=asks.length?Math.max(...asks):null;
   const prefer=(x,y)=>x!==null&&x!==undefined&&x!==''?x:y;
   const sameCoords=finite(a.lat)&&finite(a.lon)&&finite(b.lat)&&finite(b.lon)&&Math.abs(Number(a.lat)-Number(b.lat))<1e-7&&Math.abs(Number(a.lon)-Number(b.lon))<1e-7;
@@ -72,7 +134,7 @@ function mergeRecords(a,b){
     asking_values_wan:[...new Set(asks)].sort((x,y)=>x-y),
     total_ping:prefer(a.total_ping,b.total_ping),age_years:prefer(a.age_years,b.age_years),bedrooms:prefer(a.bedrooms,b.bedrooms),floor:prefer(a.floor,b.floor),address_text:prefer(a.address_text,b.address_text),
     lat:sameCoords?Number(a.lat):prefer(a.lat,b.lat),lon:sameCoords?Number(a.lon):prefer(a.lon,b.lon),
-    source_url:urls[0]||null,source_urls:urls,source_count:Math.max(urls.length,Number(a.source_count)||1,Number(b.source_count)||1),
+    source_url:urls[0]||null,source_urls:urls,source_listings:listings,source_count:listings.length||urls.length||Math.max(Number(a.source_count)||1,Number(b.source_count)||1),listing_count:listings.length||urls.length||1,
     duplicate_collapsed_count:(Number(a.duplicate_collapsed_count)||1)+(Number(b.duplicate_collapsed_count)||1)
   };
 }
@@ -88,7 +150,9 @@ export function normalizeBigFunVisibleRecord(record={},index=0){
   const asking=num(record.asking_wan)??parsed.asking_wan;
   if(finite(asking))askingValues.push(Number(asking));
   const uniqueAsks=[...new Set(askingValues)].sort((a,b)=>a-b);
-  return {id:record.id||`bigfun-visible-${(hash>>>0).toString(16)}`,source:SAFE_SOURCE,source_label:'BigFun visible',source_url:sourceUrl||preservedUrls[0]||null,source_urls:preservedUrls,source_count:Math.max(preservedUrls.length,Number(record.source_count)||0),captured_at:record.captured_at||null,page_url:clean(record.page_url||'')||null,title:clean(record.title||parsed.title),asking_wan:uniqueAsks.length?uniqueAsks[0]:asking,asking_range_wan:uniqueAsks.length?[uniqueAsks[0],uniqueAsks[uniqueAsks.length-1]]:null,asking_values_wan:uniqueAsks,total_ping:num(record.total_ping)??parsed.total_ping,age_years:num(record.age_years)??parsed.age_years,bedrooms:num(record.bedrooms)??parsed.bedrooms,floor:clean(record.floor||parsed.floor||'')||null,address_text:clean(record.address_text||parsed.address_text||'')||null,lat,lon,raw_visible_text:clean(record.visible_text||record.raw_visible_text||parsed.raw_visible_text).slice(0,1600),verification_status:'insufficient_location',research_only:true,duplicate_collapsed_count:Math.max(1,Number(record.duplicate_collapsed_count)||1),canonical_property_key:record.canonical_property_key||null};
+  const base={id:record.id||`bigfun-visible-${(hash>>>0).toString(16)}`,source:SAFE_SOURCE,source_label:extractBigFunListingLabel(record.visible_text||record.raw_visible_text||parsed.raw_visible_text,record.source_label),source_url:sourceUrl||preservedUrls[0]||null,source_urls:preservedUrls,source_count:Math.max(preservedUrls.length,Number(record.source_count)||0),captured_at:record.captured_at||null,page_url:clean(record.page_url||'')||null,title:clean(record.title||parsed.title),asking_wan:uniqueAsks.length?uniqueAsks[0]:asking,asking_range_wan:uniqueAsks.length?[uniqueAsks[0],uniqueAsks[uniqueAsks.length-1]]:null,asking_values_wan:uniqueAsks,total_ping:num(record.total_ping)??parsed.total_ping,age_years:num(record.age_years)??parsed.age_years,bedrooms:num(record.bedrooms)??parsed.bedrooms,floor:clean(record.floor||parsed.floor||'')||null,address_text:clean(record.address_text||parsed.address_text||'')||null,lat,lon,raw_visible_text:clean(record.visible_text||record.raw_visible_text||parsed.raw_visible_text).slice(0,1600),verification_status:'insufficient_location',research_only:true,duplicate_collapsed_count:Math.max(1,Number(record.duplicate_collapsed_count)||1),canonical_property_key:record.canonical_property_key||null};
+  const listings=sourceListings({...base,source_listings:record.source_listings});
+  return {...base,source_listings:listings,source_count:Math.max(listings.length,base.source_count),listing_count:Math.max(listings.length,Number(record.listing_count)||0)};
 }
 
 export function normalizeBigFunVisibleExport(payload={}){
@@ -99,10 +163,10 @@ export function normalizeBigFunVisibleExport(payload={}){
     dedup.set(key,dedup.has(key)?mergeRecords(dedup.get(key),item):item);
   });
   const items=[...dedup.values()].map(item=>{
-    const asks=[item.asking_wan,...(item.asking_values_wan||[])].filter(finite).map(Number);
+    const listings=sourceListings(item),asks=[item.asking_wan,...(item.asking_values_wan||[]),...listings.map(x=>x.asking_wan)].filter(finite).map(Number);
     const min=asks.length?Math.min(...asks):null,max=asks.length?Math.max(...asks):null;
-    const urls=sourceUrls(item);
-    return {...item,asking_wan:min,asking_range_wan:asks.length?[min,max]:null,asking_values_wan:[...new Set(asks)].sort((a,b)=>a-b),source_urls:urls,source_count:Math.max(urls.length,Number(item.source_count)||0),canonical_property_key:canonicalBigFunPropertyKey(item)};
+    const urls=[...new Set([...sourceUrls(item),...listings.map(x=>x.source_url)].map(clean).filter(Boolean))];
+    return {...item,asking_wan:min,asking_range_wan:asks.length?[min,max]:null,asking_values_wan:[...new Set(asks)].sort((a,b)=>a-b),source_urls:urls,source_listings:listings,source_count:Math.max(listings.length,urls.length,Number(item.source_count)||0),listing_count:Math.max(listings.length,Number(item.listing_count)||0),canonical_property_key:canonicalBigFunPropertyKey(item)};
   });
   return {schema:'buju.bigfun-visible.v0.3',imported_at:new Date().toISOString(),source:SAFE_SOURCE,count:items.length,items};
 }
@@ -112,6 +176,7 @@ export function toTemporaryInventoryHomes(payload={}){
     const hasAddress=Boolean(x.address_text),sourceLat=finite(x.lat)?Number(x.lat):null,sourceLon=finite(x.lon)?Number(x.lon):null;
     const range=Array.isArray(x.asking_range_wan)?x.asking_range_wan.filter(finite).map(Number):[];
     const askingLabel=range.length===2&&range[1]>range[0]?`${range[0].toLocaleString()}–${range[1].toLocaleString()}萬`:x.asking_wan?`${x.asking_wan.toLocaleString()}萬`:'價格未解析';
-    return {id:x.id,canonical_property_key:x.canonical_property_key,name:x.title,asking_wan:x.asking_wan,asking_range_wan:x.asking_range_wan,asking_label:askingLabel,total_ping:x.total_ping,age_years:x.age_years,bedrooms:x.bedrooms,floor:x.floor,street:x.address_text||'BigFun 可見資料 · 地址待確認',address_text:x.address_text||null,lon:hasAddress?null:sourceLon,lat:hasAddress?null:sourceLat,source_lon:sourceLon,source_lat:sourceLat,location_basis:hasAddress?'address-awaiting-official-doorplate':sourceLon!==null&&sourceLat!==null?'bigfun-dom-coordinate':null,source_label:`${x.source_label}${x.source_count>1?` · ${x.source_count} 刊登合併`:''}`,source_url:x.source_url||x.page_url||'https://www.ibigfun.com/',source_urls:x.source_urls||[],source_count:x.source_count||1,duplicate_collapsed_count:x.duplicate_collapsed_count||1,verification_status:'insufficient_location',official_junior:null,note:x.address_text?'BigFun 卡片提供相關地址；地圖位置優先以臺北市官方門牌資料重新定位。':'由使用者從 BigFun 搜尋結果手動匯入；地址／學區待驗證。',temporary_import:true,research_only:true};
+    const listings=sourceListings(x),listingCount=Math.max(listings.length,Number(x.listing_count)||0,Number(x.source_count)||0,1);
+    return {id:x.id,canonical_property_key:x.canonical_property_key,name:x.title,asking_wan:x.asking_wan,asking_range_wan:x.asking_range_wan,asking_label:askingLabel,total_ping:x.total_ping,age_years:x.age_years,bedrooms:x.bedrooms,floor:x.floor,street:x.address_text||'BigFun 可見資料 · 地址待確認',address_text:x.address_text||null,lon:hasAddress?null:sourceLon,lat:hasAddress?null:sourceLat,source_lon:sourceLon,source_lat:sourceLat,location_basis:hasAddress?'address-awaiting-official-doorplate':sourceLon!==null&&sourceLat!==null?'bigfun-dom-coordinate':null,source_label:`${x.source_label||'BigFun visible'}${listingCount>1?` · ${listingCount} 刊登合併`:''}`,source_url:x.source_url||x.page_url||'https://www.ibigfun.com/',source_urls:x.source_urls||[],source_listings:listings,source_count:listingCount,listing_count:listingCount,duplicate_collapsed_count:x.duplicate_collapsed_count||1,verification_status:'insufficient_location',official_junior:null,note:x.address_text?'BigFun 卡片提供相關地址；地圖位置優先以臺北市官方門牌資料重新定位。':'由使用者從 BigFun 搜尋結果手動匯入；地址／學區待驗證。',temporary_import:true,research_only:true};
   });
 }

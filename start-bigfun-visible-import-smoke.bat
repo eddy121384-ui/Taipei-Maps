@@ -3,8 +3,8 @@ setlocal
 cd /d "%~dp0"
 
 echo ==========================================================
-echo   Buju - BigFun Search Results Collector v0.4 smoke
-echo   Issue #77
+echo   Buju - Cross-site Listing Collector v0.4 smoke
+echo   BigFun + 591 + Yungching + Sinyi + Rakuya + 5168 + HouseFun
 echo ==========================================================
 echo.
 
@@ -22,19 +22,19 @@ for /f "delims=" %%I in ('git status --porcelain --untracked-files=normal ^| fin
   exit /b 1
 )
 
-echo [1/6] Fetching latest BigFun collector branch...
-git fetch origin feat/bigfun-visible-results-import-v01
+echo [1/6] Fetching latest market inventory branch...
+git fetch origin feat/market-inventory-ui-v02
 if errorlevel 1 goto :fail
 
 echo.
 echo [2/6] Switching branch...
-git switch feat/bigfun-visible-results-import-v01 >nul 2>nul
-if errorlevel 1 git switch -c feat/bigfun-visible-results-import-v01 --track origin/feat/bigfun-visible-results-import-v01
+git switch feat/market-inventory-ui-v02 >nul 2>nul
+if errorlevel 1 git switch -c feat/market-inventory-ui-v02 --track origin/feat/market-inventory-ui-v02
 if errorlevel 1 goto :fail
 
 echo.
 echo [3/6] Fast-forwarding branch...
-git pull --ff-only origin feat/bigfun-visible-results-import-v01
+git pull --ff-only origin feat/market-inventory-ui-v02
 if errorlevel 1 goto :fail
 
 set "NODE_CMD="
@@ -53,7 +53,7 @@ echo First run downloads about 119 MB of Taipei City open data; later runs reuse
 if errorlevel 1 goto :fail
 
 echo.
-echo [5/6] Running collector + doorplate regressions...
+echo [5/6] Running collector + property-cluster + doorplate regressions...
 "%NODE_CMD%" tools\dev\test_bigfun_visible_import_v01.mjs
 if errorlevel 1 goto :fail
 "%NODE_CMD%" tools\dev\test_taipei_doorplate_locator_v01.mjs
@@ -64,23 +64,27 @@ if errorlevel 1 goto :fail
 echo.
 echo [6/6] Starting desktop map...
 echo.
-echo BigFun helper folder in Edge:
+echo Reload this unpacked extension folder in Edge/Chrome:
 echo   %CD%\tools\browser\bigfun-visible-helper-v01
 echo.
+echo Supported sites in v0.4:
+echo   BigFun / 591 / Yungching / Sinyi / Rakuya / 5168 / HouseFun
+echo.
 echo Test flow:
-echo   1. Browse BigFun normally and collect one or more result pages.
-echo   2. Download the full JSON basket.
-echo   3. In Buju desktop click [BigFun JSON] and choose that file.
-echo   4. Confirm BigFun related addresses remain visible.
-echo   5. Buju now queries the LOCAL Taipei official doorplate index, not Nominatim.
-echo   6. Matching homes should become purple price pins with [Taipei official doorplate] status.
-echo   7. School truth remains separate and must still be officially verified.
+echo   1. Browse any supported property site normally.
+echo   2. Open [Buju collection basket] and press [Collect current page].
+echo   3. Switch pages or websites and keep collecting; the basket is shared locally across sites.
+echo   4. Download the full JSON basket.
+echo   5. In Buju desktop, use the current [BigFun JSON] importer button to choose that universal JSON file.
+echo      The button name is transitional; the importer accepts the shared listing schema through the same normalizer.
+echo   6. Same physical homes across different websites should collapse to one property card with N listings.
+echo   7. Taipei addresses are re-located with the LOCAL official doorplate index; other areas remain research-only for now.
 echo.
 call start-desktop-full-stack-smoke.bat
 exit /b %errorlevel%
 
 :fail
 echo.
-echo [ERROR] BigFun collector smoke preparation failed.
+echo [ERROR] Cross-site listing collector smoke preparation failed.
 pause
 exit /b 1

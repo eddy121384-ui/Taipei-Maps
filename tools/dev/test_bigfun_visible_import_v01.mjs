@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
-import {extractBigFunAddressText,parseVisibleListingText,normalizeBigFunVisibleExport,toTemporaryInventoryHomes} from '../../public/bigfun-visible-import-core-v01.mjs';
+import {extractBigFunAddressText,extractBigFunListingLabel,parseVisibleListingText,normalizeBigFunVisibleExport,toTemporaryInventoryHomes} from '../../public/bigfun-visible-import-core-v01.mjs';
 import {normalizeTaipeiAddressForGeocode,isTaipeiCoordinate,geocodeBigFunHomes} from '../../public/bigfun-address-geocode-v01.mjs';
 
 const parsed=parseVisibleListingText(`大安森林公園旁三房\n總價 3,680 萬\n35.6坪 · 42年 · 3房2廳\n相關地址 台北市大安區新生南路二段86號4樓之2 調電傳 地圖歷`);
@@ -11,6 +11,7 @@ assert.equal(parsed.age_years,42);
 assert.equal(parsed.bedrooms,3);
 assert.equal(parsed.address_text,'台北市大安區新生南路二段86號4樓之2');
 assert.equal(extractBigFunAddressText('591 $1,498萬 相關地址 台北市大安區杭州南路一段61巷38號4樓之2 調電傳 地圖歷'),'台北市大安區杭州南路一段61巷38號4樓之2');
+assert.equal(extractBigFunListingLabel('永慶房屋 3,680萬 35.6坪'),'永慶房屋');
 assert.equal(normalizeTaipeiAddressForGeocode('臺北市大安區杭州南路一段61巷38號4樓之2'),'台北市大安區杭州南路一段61巷38號');
 assert.ok(isTaipeiCoordinate(25.03,121.53));
 assert.ok(!isTaipeiCoordinate(0,0));
@@ -30,16 +31,24 @@ assert.ok(homes.every(x=>x.temporary_import&&x.research_only));
 assert.equal(homes.filter(x=>Number.isFinite(x.lat)&&Number.isFinite(x.lon)).length,1);
 
 const brokerDupes=normalizeBigFunVisibleExport({items:[
-  {visible_text:'A房仲 3,680萬 35.6坪 3房 相關地址 台北市大安區新生南路二段86號4樓之2 調電傳',source_url:'https://www.ibigfun.com/broker/A',address_text:'台北市大安區新生南路二段86號4樓之2',lat:25.0401,lon:121.5301},
-  {visible_text:'B房仲 3,750萬 35.6坪 3房 相關地址 台北市大安區新生南路二段86號4樓之2 調電傳',source_url:'https://www.ibigfun.com/broker/B',address_text:'台北市大安區新生南路二段86號4樓之2',lat:25.0415,lon:121.5322}
+  {visible_text:'永慶房屋 3,680萬 35.6坪 3房 相關地址 台北市大安區新生南路二段86號4樓之2 調電傳',source_url:'https://www.ibigfun.com/broker/A',address_text:'台北市大安區新生南路二段86號4樓之2',lat:25.0401,lon:121.5301},
+  {visible_text:'信義房屋 3,750萬 35.6坪 3房 相關地址 台北市大安區新生南路二段86號4樓之2 調電傳',source_url:'https://www.ibigfun.com/broker/B',address_text:'台北市大安區新生南路二段86號4樓之2',lat:25.0415,lon:121.5322}
 ]});
 assert.equal(brokerDupes.count,1,'same physical address/unit from different brokers must collapse to one canonical property');
 assert.equal(brokerDupes.items[0].source_count,2,'canonical property should preserve both source listings');
+assert.equal(brokerDupes.items[0].listing_count,2,'canonical property should expose listing count');
+assert.equal(brokerDupes.items[0].source_listings.length,2,'canonical property should retain listing rows');
+assert.deepEqual(new Set(brokerDupes.items[0].source_listings.map(x=>x.source_label)),new Set(['永慶房屋','信義房屋']));
 assert.deepEqual(brokerDupes.items[0].asking_range_wan,[3680,3750]);
+const renormalized=normalizeBigFunVisibleExport({items:brokerDupes.items});
+assert.equal(renormalized.items[0].listing_count,2,'re-normalizing a canonical property must not erase source listing cluster');
+assert.equal(renormalized.items[0].source_listings.length,2);
 const canonicalHome=toTemporaryInventoryHomes(brokerDupes)[0];
 assert.equal(canonicalHome.lat,null,'address-bearing BigFun DOM coordinates must not become canonical pins before official geocode');
 assert.equal(canonicalHome.lon,null,'address-bearing BigFun DOM coordinates must not become canonical pins before official geocode');
 assert.equal(canonicalHome.source_count,2);
+assert.equal(canonicalHome.listing_count,2);
+assert.equal(canonicalHome.source_listings.length,2);
 const relocated=await geocodeBigFunHomes([canonicalHome],{fetchImpl:async()=>({ok:true,status:200,json:async()=>({ok:true,lat:25.031234,lon:121.529876,matched_address:'台北市大安區新生南路二段86號'})})});
 assert.equal(relocated.located,1);
 assert.equal(relocated.homes[0].location_basis,'taipei-official-doorplate');
@@ -60,10 +69,10 @@ assert.ok(helper.includes('cursor:move'),'collector panel should be draggable');
 assert.ok(manifest.includes('https://www.ibigfun.com/*'),'extension must be scoped to BigFun');
 assert.ok(manifest.includes('0.3.0'),'extension manifest should expose v0.3 collector');
 assert.ok(!manifest.includes('"permissions"'),'collector should require no extension privileges');
-for(const token of ['📥 BigFun JSON','sessionStorage','toTemporaryInventoryHomes','BigFun 相關地址','臺北市官方門牌座標','geocodeBigFunHomes','fitBounds','BIGFUN IMPORT v0.4'])assert.ok(importer.includes(token),`desktop importer contract missing: ${token}`);
+for(const token of ['📥 BigFun JSON','sessionStorage','toTemporaryInventoryHomes','Canonical 地址','臺北市官方門牌座標','geocodeBigFunHomes','fitBounds','BIGFUN IMPORT v0.5','PROPERTY CLUSTERS','戶實體候選','筆刊登','source_listings','1 戶實體房屋','跨刊登價差','×${listingCount}'])assert.ok(importer.includes(token),`desktop property cluster UI contract missing: ${token}`);
 for(const token of ['/__buju/taipei-doorplate','taipei-official-doorplate','CACHE_KEY','doorplate_index_missing','bigfun-dom-coordinate-fallback'])assert.ok(geocoder.includes(token),`official doorplate locator guard missing: ${token}`);
 for(const forbidden of ['nominatim.openstreetmap.org','ibigfun.com','api_key','ospc_api','query_on_market_by_id'])assert.ok(!geocoder.includes(forbidden),`address locator must not use external/internal listing geocoder: ${forbidden}`);
 assert.ok(shell.includes('./bigfun-visible-import-desktop-v01.js'),'desktop shell must load BigFun importer');
 
 for(const file of ['public/bigfun-visible-import-core-v01.mjs','public/bigfun-address-geocode-v01.mjs','public/bigfun-visible-import-desktop-v01.js','tools/browser/bigfun-visible-helper-v01/content.js','tools/data/taipei_doorplate_core_v01.mjs','tools/data/build_taipei_doorplate_index_v01.mjs','tools/dev/serve_single_engine_core.mjs','tools/research/apply_bigfun_visible_import_v01.mjs'])execFileSync(process.execPath,['--check',file],{stdio:'pipe'});
-console.log('PASS BigFun collector v0.4 · physical-home dedupe + official doorplate precedence + loaded-page basket · no BigFun API');
+console.log('PASS BigFun collector v0.5 · property clusters + one physical pin / N listings + official doorplate precedence · no BigFun API');

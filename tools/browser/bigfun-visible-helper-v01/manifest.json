@@ -1,11 +1,20 @@
 {
   "manifest_version": 3,
-  "name": "Buju BigFun Search Results Collector v0.3",
-  "version": "0.3.0",
-  "description": "User-triggered collection of loaded BigFun search-result cards with address preservation for personal research in Buju.",
+  "name": "Buju Listing Collector v0.4",
+  "version": "0.4.0",
+  "description": "User-triggered, local-first collection of loaded property listing cards across major Taiwan real-estate sites for personal research in Buju.",
+  "permissions": ["storage"],
   "content_scripts": [
     {
-      "matches": ["https://www.ibigfun.com/*"],
+      "matches": [
+        "https://*.ibigfun.com/*",
+        "https://*.591.com.tw/*",
+        "https://*.yungching.com.tw/*",
+        "https://*.sinyi.com.tw/*",
+        "https://*.rakuya.com.tw/*",
+        "https://*.5168.com.tw/*",
+        "https://*.housefun.com.tw/*"
+      ],
       "js": ["content.js"],
       "run_at": "document_idle"
     }
